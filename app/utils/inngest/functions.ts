@@ -4,6 +4,21 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+interface JobExpirationEvent {
+  data: {
+    jobId: string;
+    expirationDays: number;
+  };
+}
+
+interface JobseekerCreatedEvent {
+  data: {
+    userId: string;
+    email: string;
+  };
+}
+
+
 export const handleJobExpiration = inngest.createFunction(
   { id: "job-expiration", cancelOn: [
     {
@@ -12,10 +27,10 @@ export const handleJobExpiration = inngest.createFunction(
     }
   ] },
   { event: "job/created" },
-  async ({ event, step }) => {
+  async ({ event, step }: { event: JobExpirationEvent; step: any }) => {
 
-     // Log the incoming event data
-     console.log("Received event:", event);
+    // Log the incoming event data
+    console.log("Received event:", event);
 
     const { jobId, expirationDays } = event.data;
 
@@ -37,7 +52,7 @@ export const handleJobExpiration = inngest.createFunction(
 export const sendPeriodicJobListing = inngest.createFunction(
   { id: "send-job-listing" },
   { event: "jobseeker/created" },
-  async ({ event, step }) => {
+  async ({ event, step }: { event: JobseekerCreatedEvent; step: any }) => {
     const { userId, email } = event.data;
     const baseUrl = process.env.NEXT_PUBLIC_URL; // Base URL for local development
 
@@ -66,7 +81,7 @@ export const sendPeriodicJobListing = inngest.createFunction(
 
       if (recentJobs.length > 0) {
         await step.run("send-email", async () => {
-          const jobListingsHtml = recentJobs.map((job) => `
+          const jobListingsHtml = recentJobs.map((job: { company: { logo: any; name: any; }; id: any; jobTitle: any; location: any; salaryFrom: { toLocaleString: () => any; }; salaryTo: { toLocaleString: () => any; }; employmentType: any; }) => `
             <div style="margin-bottom: 20px; border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; background-color: #f9f9f9;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
