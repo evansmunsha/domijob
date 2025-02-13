@@ -12,9 +12,14 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends(
     "next/core-web-vitals",
-    "next/typescript",
-    "@inngest/await-inngest-send", "error", // Enable specific rule
+    "next/typescript"
   ),
+  {
+    plugins: ["@inngest"],
+    rules: {
+      "@inngest/await-inngest-send": "error"
+    }
+  }
 ];
 
 export default eslintConfig;
