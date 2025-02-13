@@ -13,7 +13,7 @@ const eslintConfig = [
   ...compat.extends(
     "next/core-web-vitals",
     "next/typescript",
-    "plugin:@inngest/recommended"
+    "@inngest/await-inngest-send", "error", // Enable specific rule
   ),
 ];
 
