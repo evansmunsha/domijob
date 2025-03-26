@@ -83,8 +83,10 @@ export function EditJobForm({ jobPost }: iAppProps) {
   async function onSubmit(values: z.infer<typeof jobSchema>) {
     try {
       setPending(true);
-
       await updateJobPost(values, jobPost.id);
+      // Optionally, you can fetch the updated job post data here
+      // or update the UI state to reflect the changes
+      toast.success("Job updated successfully!");
     } catch (error) {
       if (error instanceof Error && error.message !== "NEXT_REDIRECT") {
         toast.error("Something went wrong. Please try again.");

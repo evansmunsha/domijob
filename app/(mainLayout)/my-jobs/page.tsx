@@ -1,21 +1,6 @@
-import React from "react";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import Image from "next/image";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import Image from "next/image"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,17 +8,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PenBoxIcon, User2, XCircle } from "lucide-react";
-import Link from "next/link";
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { MoreHorizontal, PenBoxIcon, User2, View, XCircle } from "lucide-react"
+import Link from "next/link"
 
-import { EmptyState } from "@/components/general/EmptyState";
-import { prisma } from "@/app/utils/db";
-import { requireUser } from "@/app/utils/hooks";
-import { CopyLinkMenuItem } from "@/components/general/CopyLink";
+import { EmptyState } from "@/components/general/EmptyState"
+import { prisma } from "@/app/utils/db"
+import { requireUser } from "@/app/utils/hooks"
+import { CopyLinkMenuItem } from "@/components/general/CopyLink"
 
 async function getJobs(userId: string) {
+  // Get all jobs with the applications count field
   const data = await prisma.jobPost.findMany({
     where: {
       company: {
@@ -45,8 +32,10 @@ async function getJobs(userId: string) {
       jobTitle: true,
       status: true,
       createdAt: true,
+      applications: true, // This is the scalar field that counts applications
       company: {
         select: {
+          id: true,
           name: true,
           logo: true,
         },
@@ -55,14 +44,33 @@ async function getJobs(userId: string) {
     orderBy: {
       createdAt: "desc",
     },
-  });
+  })
 
-  return data;
+  // Get unread notifications for each job
+  const jobsWithCounts = await Promise.all(
+    data.map(async (job) => {
+      // Count unread notifications for this job
+      const unreadCount = await prisma.companyNotification.count({
+        where: {
+          jobId: job.id,
+          type: "NEW_APPLICATION",
+          read: false,
+        },
+      })
+
+      return {
+        ...job,
+        unreadCount,
+      }
+    }),
+  )
+
+  return jobsWithCounts
 }
 
 const MyJobs = async () => {
-  const session = await requireUser();
-  const data = await getJobs(session.id as string);
+  const session = await requireUser()
+  const data = await getJobs(session.id as string)
 
   return (
     <>
@@ -77,9 +85,7 @@ const MyJobs = async () => {
         <Card>
           <CardHeader>
             <CardTitle>My Jobs</CardTitle>
-            <CardDescription>
-              Manage your job listings and applications here.
-            </CardDescription>
+            <CardDescription>Manage your job listings and applications here.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -100,7 +106,7 @@ const MyJobs = async () => {
                     <TableCell>
                       {listing.company.logo ? (
                         <Image
-                          src={listing.company.logo}
+                          src={listing.company.logo || "/placeholder.svg"}
                           alt={`${listing.company.name} logo`}
                           width={40}
                           height={40}
@@ -112,15 +118,24 @@ const MyJobs = async () => {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {listing.company.name}
-                    </TableCell>
+                    <TableCell className="font-medium">{listing.company.name}</TableCell>
                     <TableCell>{listing.jobTitle}</TableCell>
                     <TableCell>
-                      {listing.status.charAt(0).toUpperCase() +
-                        listing.status.slice(1).toLowerCase()}
+                      {listing.status.charAt(0).toUpperCase() + listing.status.slice(1).toLowerCase()}
                     </TableCell>
-                    <TableCell>5</TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/my-jobs/${listing.id}/applications`}
+                        className="text-primary hover:underline flex items-center gap-1"
+                      >
+                        {listing.applications} {listing.applications === 1 ? "applicant" : "applicants"}
+                        {listing.unreadCount > 0 && (
+                          <Badge variant="secondary" className="ml-1">
+                            {listing.unreadCount} new
+                          </Badge>
+                        )}
+                      </Link>
+                    </TableCell>
                     <TableCell>
                       {listing.createdAt.toLocaleDateString("en-US", {
                         month: "long",
@@ -138,18 +153,19 @@ const MyJobs = async () => {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem asChild>
+                            <Link href={`/my-jobs/${listing.id}/applications`}><View className="mr-2 h-4 w-4" />View Application</Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
                             <Link href={`/my-jobs/${listing.id}/edit`}>
-                              <PenBoxIcon className="size-4" />
+                              <PenBoxIcon className="size-4 mr-2" />
                               Edit Job
                             </Link>
                           </DropdownMenuItem>
-                          <CopyLinkMenuItem
-                            jobUrl={`${process.env.NEXT_PUBLIC_URL}/job/${listing.id}`}
-                          />
+                          <CopyLinkMenuItem jobUrl={`${process.env.NEXT_PUBLIC_URL}/job/${listing.id}`} />
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>
                             <Link href={`/my-jobs/${listing.id}/delete`}>
-                              <XCircle className="h-4 w-4" />
+                              <XCircle className="h-4 w-4 mr-2" />
                               Delete Job
                             </Link>
                           </DropdownMenuItem>
@@ -164,7 +180,8 @@ const MyJobs = async () => {
         </Card>
       )}
     </>
-  );
-};
+  )
+}
 
-export default MyJobs;
+export default MyJobs
+

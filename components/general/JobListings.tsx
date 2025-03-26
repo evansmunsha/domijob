@@ -25,8 +25,8 @@ async function getJobs(
       }),
   };
 
-  const [data, totalCount] = await Promise.all([
-    prisma.jobPost.findMany({
+  const [data, totalCount] = await Promise?.all([
+    prisma?.jobPost?.findMany({
       skip,
       take: pageSize,
       where,

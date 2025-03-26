@@ -13,6 +13,7 @@ export async function requireUser() {
   return session.user;
 }
 
+
 export async function requireCompany() {
   const session = await requireUser();
   const company = await prisma.company.findUnique({

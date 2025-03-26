@@ -1,146 +1,169 @@
-import { prisma } from "@/app/utils/db";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+"use client"
 
-import { notFound } from "next/navigation";
-import React from "react";
+import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
+import { applyForJob, saveJobPost, unsaveJobPost } from "@/app/actions"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardFooter } from "@/components/ui/card"
+import Image from "next/image"
+import Link from "next/link"
+import { Heart, Loader2 } from "lucide-react"
+import { JsonToHtml } from "@/components/general/JsonToHtml"
+import { benefits } from "@/app/utils/listOfBenefits"
+import { getFlagEmoji } from "@/app/utils/countriesList"
+import { toast } from "sonner"
+import LoadingJobPage from "./loading"
+import { ApplicationInsights } from "@/components/job/ApplicationInsights"
 
-import { benefits } from "@/app/utils/listOfBenefits";
-import Image from "next/image";
-import { Heart } from "lucide-react";
 
-import Link from "next/link";
-import { auth } from "@/app/utils/auth";
-import {
-  GeneralSubmitButton,
-  SaveJobButton,
-} from "@/components/general/SubmitButtons";
-import { getFlagEmoji } from "@/app/utils/countriesList";
-import { JsonToHtml } from "@/components/general/JsonToHtml";
-import { saveJobPost, unsaveJobPost } from "@/app/actions";
-import arcjet, { detectBot } from "@/app/utils/arcjet";
-import { request, tokenBucket } from "@arcjet/next";
-
-const aj = arcjet.withRule(
-  detectBot({
-    mode: "LIVE",
-    allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"],
-  })
-);
-
-function getClient(session: boolean) {
-  if (session) {
-       return aj.withRule(
-        tokenBucket({
-          mode: "LIVE",
-          capacity: 100,
-          interval: 60,
-          refillRate: 30,
-        })
-       )
-  }else{
-    return aj.withRule(
-      tokenBucket({
-        mode: "LIVE",
-        capacity: 100,
-        interval: 60,
-        refillRate: 10,
-      })
-     )
-
-  }
-}
-
-async function getJob(jobId: string, userId?: string) {
-  const [jobData, savedJob] = await Promise.all([
-    prisma.jobPost.findUnique({
-      where: {
-        id: jobId,
-        status: "ACTIVE",
-      },
-      select: {
-        jobTitle: true,
-        jobDescription: true,
-
-        location: true,
-
-        employmentType: true,
-        benefits: true,
-
-        createdAt: true,
-        listingDuration: true,
-        company: {
-          select: {
-            name: true,
-            logo: true,
-            location: true,
-            about: true,
-          },
-        },
-      },
-    }),
-    userId
-      ? prisma.savedJobPost.findUnique({
-          where: {
-            userId_jobId: {
-              userId,
-              jobId,
-            },
-          },
-          select: {
-            id: true,
-          },
-        })
-      : null,
-  ]);
-
-  if (!jobData) {
-    return notFound();
-  }
-
-  return {
-    jobData,
-    savedJob,
-  };
-}
-
-type Params = Promise<{ jobId: string }>;
-
-const JobIdPage = async ({ params }: { params: Params }) => {
-  const { jobId } = await params;
-  const req = await request();
-  const session = await auth();
-  //const decision = await aj.protect();
-
-  const decision = await getClient(!!session).protect(req, {requested: 10})
-
-  if (decision.isDenied()) {
-    throw new Error("forbidden");
-  }
-
+export default function JobIdPage({ params }: { params: { jobId: string } }) {
+  // Use a ref to track if we've already started fetching data
+  const dataFetchedRef = useRef(false)
+  // Store jobId in state to avoid using params directly
+  const [jobId, setJobId] = useState<string>("")
   
-  const { jobData, savedJob } = await getJob(jobId, session?.user?.id);
-  const locationFlag = getFlagEmoji(jobData.location);
+  const [jobData, setJobData] = useState<any>(null)
+  const [savedJob, setSavedJob] = useState<any>(null)
+  const [isApplying, setIsApplying] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [session, setSession] = useState<any>(null)
+  const [hasApplied, setHasApplied] = useState(false)
+  const router = useRouter()
+
+  // Set jobId from params on mount
+  useEffect(() => {
+    setJobId(params.jobId)
+  }, [params.jobId])
+
+  // Use useEffect with a ref to prevent duplicate fetches
+  useEffect(() => {
+    // Only fetch data if we haven't already started fetching and jobId is available
+    if (dataFetchedRef.current === false && jobId) {
+      dataFetchedRef.current = true
+
+      const fetchJobData = async () => {
+        try {
+          // Fetch job data
+          const jobResponse = await fetch(`/api/jobs/${jobId}`)
+          if (!jobResponse.ok) {
+            if (jobResponse.status === 404) {
+              router.push("/404")
+              return
+            }
+            throw new Error("Failed to fetch job data")
+          }
+
+          const data = await jobResponse.json()
+          setJobData(data)
+
+          // Fetch session data
+          const sessionResponse = await fetch("/api/auth/session")
+          if (sessionResponse.ok) {
+            const sessionData = await sessionResponse.json()
+            setSession(sessionData)
+
+            // If user is logged in, check if they've saved or applied for this job
+            if (sessionData?.user) {
+              const [savedResponse, appliedResponse] = await Promise.all([
+                fetch(`/api/jobs/${jobId}/saved`),
+                fetch(`/api/jobs/${jobId}/applied`),
+              ])
+
+              if (savedResponse.ok) {
+                const savedData = await savedResponse.json()
+                setSavedJob(savedData)
+              }
+
+              if (appliedResponse.ok) {
+                setHasApplied(true)
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching job data:", error)
+          toast.error("Failed to load job data")
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      fetchJobData()
+    }
+  }, [jobId, router])
+
+  const handleApply = async () => {
+    if (!session?.user) {
+      // Redirect to login if not logged in
+      router.push(`/login?callbackUrl=/job/${jobId}`)
+      return
+    }
+
+    setIsApplying(true)
+    try {
+      await applyForJob(jobId)
+      toast("Application submitted", {
+        description: "Your application has been sent to the company.",
+      })
+
+      // Update local state to reflect that user has applied
+      setHasApplied(true)
+    } catch (error) {
+      toast(`${error instanceof Error ? error.message : "An error occurred while submitting your application."}`)
+    } finally {
+      setIsApplying(false)
+    }
+  }
+
+  const handleSaveJob = async () => {
+    if (!session?.user) {
+      router.push(`/login?callbackUrl=/job/${jobId}`)
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      if (savedJob) {
+        await unsaveJobPost(savedJob.id)
+        setSavedJob(null)
+        toast.success("Job removed from saved jobs")
+      } else {
+        const result = await saveJobPost(jobData.id)
+        setSavedJob(result)
+        toast.success("Job saved successfully")
+      }
+    } catch (error) {
+      toast.error("Failed to save job")
+      console.error("Error saving job:", error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (loading) return <LoadingJobPage />
+  if (!jobData)
+    return (
+      <div className="container max-w-3xl mx-auto my-auto py-8">
+        <p>Job not found</p>
+      </div>
+    )
+
+  const locationFlag = jobData.location ? getFlagEmoji(jobData.location) : null
 
   return (
     <div className="container mx-auto py-8">
       <div className="grid lg:grid-cols-[1fr,400px] gap-8">
         {/* Main Content */}
         <div className="space-y-8">
-          {/* Header */}
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold">{jobData.jobTitle}</h1>
               <div className="flex items-center gap-2 mt-2">
                 <span className="font-medium">{jobData.company.name}</span>
-
                 <Badge className="rounded-full" variant="secondary">
                   {jobData.employmentType}
                 </Badge>
-                <span className="hidden md:inline text-muted-foreground">
-                  •
-                </span>
                 <Badge className="rounded-full">
                   {locationFlag && <span className="mr-1">{locationFlag}</span>}
                   {jobData.location} Only
@@ -149,15 +172,11 @@ const JobIdPage = async ({ params }: { params: Params }) => {
             </div>
 
             {session?.user ? (
-              <form
-                action={
-                  savedJob
-                    ? unsaveJobPost.bind(null, savedJob.id)
-                    : saveJobPost.bind(null, jobId)
-                }
-              >
-                <SaveJobButton savedJob={!!savedJob} />
-              </form>
+              <Button variant="outline" onClick={handleSaveJob} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Heart className="size-4 mr-2" fill={savedJob ? "currentColor" : "none"} />
+                {savedJob ? "Saved" : "Save Job"}
+              </Button>
             ) : (
               <Button variant="outline" asChild>
                 <Link href="/login">
@@ -173,29 +192,19 @@ const JobIdPage = async ({ params }: { params: Params }) => {
           </section>
 
           <section>
-            <h3 className="font-semibold mb-4">
-              Benefits{": "}
-              <span className="text-sm text-muted-foreground font-normal">
-                (green is offered and red is not offered)
-              </span>
-            </h3>
+            <h3 className="font-semibold mb-4">Benefits</h3>
             <div className="flex flex-wrap gap-3">
               {benefits.map((benefit) => {
-                const isOffered = jobData.benefits.includes(benefit.id);
+                const isOffered = jobData.benefits.includes(benefit.id)
                 return (
                   <Badge
                     key={benefit.id}
-                    variant={isOffered ? "default" : "outlines"}
-                    className={`text-sm px-4 py-1.5 rounded-full text-slate-300 ${
-                      !isOffered && " opacity-75 cursor-not-allowed"
-                    }`}
+                    variant={isOffered ? "default" : "outline"}
+                    className={`text-sm px-4 py-1.5 rounded-full ${!isOffered ? "opacity-75 cursor-not-allowed" : ""}`}
                   >
-                    <span className="flex items-center gap-2">
-                      {benefit.icon}
-                      {benefit.label}
-                    </span>
+                    {benefit.icon} {benefit.label}
                   </Badge>
-                );
+                )
               })}
             </div>
           </section>
@@ -203,105 +212,70 @@ const JobIdPage = async ({ params }: { params: Params }) => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Apply Now Card */}
           <Card className="p-6">
             <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">Apply now</h3>
-                  
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Please let {jobData.company.name} know you found this job on
-                  MiJob. This helps us grow!
-                </p>
-              </div>
-              <form>
-                <input type="hidden" name="jobId" value={jobId} />
-                <GeneralSubmitButton text="Apply now" />
-              </form>
+              <h3 className="font-semibold">Apply now</h3>
+              <p className="text-sm text-muted-foreground">
+                Please let {jobData.company.name} know you found this job on MiJob.
+              </p>
+              {hasApplied ? (
+                <Button disabled className="w-full">
+                  Already Applied
+                </Button>
+              ) : (
+                <Button onClick={handleApply} disabled={isApplying} className="w-full">
+                  {isApplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isApplying ? "Applying..." : "Apply now"}
+                </Button>
+              )}
             </div>
           </Card>
 
-          {/* Job Details Card */}
           <Card className="p-6">
-            <div className="space-y-4">
-              <h3 className="font-semibold">About the job</h3>
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Apply before
-                  </span>
-                  <span className="text-sm">
-                    {new Date(
-                      jobData.createdAt.getTime() +
-                        jobData.listingDuration * 24 * 60 * 60 * 1000
-                    ).toLocaleDateString("en-US", {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Posted on
-                  </span>
-                  <span className="text-sm">
-                    {jobData.createdAt.toLocaleDateString("en-US", {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Employment type
-                  </span>
-                  <span className="text-sm">{jobData.employmentType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Location
-                  </span>
-                  <Badge variant="secondary">{jobData.location}</Badge>
-                </div>
+            <h3 className="font-semibold">About the job</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Apply before</span>
+                <span className="text-sm">
+                  {new Date(
+                    new Date(jobData.createdAt).getTime() + jobData.listingDuration * 86400000,
+                  ).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Location</span>
+                <Badge variant="secondary">{jobData.location}</Badge>
               </div>
             </div>
           </Card>
 
-          {/* Company Card */}
           <Card className="p-2">
             <div className="space-y-4">
-              <div className="flex items-start gap-3 ">
+              <div className="flex items-start gap-3">
                 <Image
-                  src={
-                    jobData.company.logo ??
-                    `https://avatar.vercel.sh/${jobData.company.name}`
-                  }
+                  src={jobData.company.logo || `https://avatar.vercel.sh/${jobData.company.name}`}
                   alt={jobData.company.name}
                   width={48}
                   height={48}
-                  className="rounded-full size-12 float-start  inline-block"
+                  className="rounded-full size-12"
                 />
-                <div className="overflow-hidden">
+                <div>
                   <h3 className="font-semibold">{jobData.company.name}</h3>
-                  <p className="text-sm text-muted-foreground whitespace-normal">
-                    {jobData.company.about}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{jobData.company.about}</p>
                 </div>
               </div>
-              {/*  <Button variant="outline" className="w-full">
-                View company profile
-              </Button> */}
+              <CardFooter>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href={`/companies/${jobData.company.id}`}>View company profile</Link>
+                </Button>
+              </CardFooter>
             </div>
           </Card>
+
+          <ApplicationInsights jobId={jobId} />
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default JobIdPage;

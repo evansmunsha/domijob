@@ -3,47 +3,34 @@
 import { useFormStatus } from "react-dom";
 import { Button } from "../ui/button";
 import { Heart, Loader2 } from "lucide-react";
+import { useState } from "react"
 
-export function GeneralSubmitButton({
-  text,
-  icon,
-  variant,
-  width = "w-full",
-}: {
-  text: string;
-  icon?: React.ReactNode;
-  variant?:
-    | "default"
-    | "destructive"
-    | "outline"
-    | "secondary"
-    | "ghost"
-    | "link";
-  width?: string;
-}) {
-  const { pending } = useFormStatus();
+interface GeneralSubmitButtonProps {
+  text: string
+  onClick?: () => void
+}
+
+export function GeneralSubmitButton({ text, onClick }: GeneralSubmitButtonProps) {
+  const { pending } = useFormStatus()
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleClick = async () => {
+    if (onClick) {
+      setIsLoading(true)
+      await onClick()
+      setIsLoading(false)
+    }
+  }
 
   return (
-    <Button
-      type="submit"
-      variant={variant}
-      disabled={pending}
-      className={width}
-    >
-      {pending ? (
-        <>
-          <Loader2 className="w-4 h-4 animate-spin " />
-          <span>Submitting...</span>
-        </>
-      ) : (
-        <>
-          {icon && <div className="">{icon}</div>}
-          <span>{text}</span>
-        </>
-      )}
+    <Button type="submit" disabled={pending || isLoading} onClick={handleClick} className="w-full">
+      {(pending || isLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {text}
     </Button>
-  );
+  )
 }
+
+
 
 export function SaveJobButton({ savedJob }: { savedJob: boolean }) {
   const { pending } = useFormStatus();

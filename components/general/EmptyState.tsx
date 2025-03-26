@@ -1,35 +1,27 @@
-import { Button } from "@/components/ui/button";
-import { Ban, PlusCircle } from "lucide-react";
-import Link from "next/link";
+import type React from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
-interface iAppProps {
-  title: string;
-  description: string;
-  buttonText: string;
-  href: string;
+interface EmptyStateProps {
+  title: string
+  description: string
+  icon?: React.ReactNode // Make it optional with React.ReactNode type
+  buttonText?: string
+  href?: string
 }
 
-export function EmptyState({
-  buttonText,
-  description,
-  href,
-  title,
-}: iAppProps) {
+export function EmptyState({ title, description, icon, buttonText, href }: EmptyStateProps) {
   return (
-    <div className="flex flex-col flex-1 h-full items-center justify-center rounded-md border border-dashed p-8 text-center animate-in fade-in-50">
-      <div className="flex size-20 items-center justify-center rounded-full bg-primary/10">
-        <Ban className="size-10 text-primary" />
-      </div>
-      <h2 className="mt-6 text-xl font-semibold">{title}</h2>
-      <p className="mb-8 mt-2 text-center text-sm leading-tight text-muted-foreground max-w-sm mx-auto">
-        {description}
-      </p>
-
-      <Button asChild>
-        <Link href={href}>
-          <PlusCircle className="size-4" /> {buttonText}
-        </Link>
-      </Button>
+    <div className="flex flex-col items-center justify-center text-center p-8 my-8">
+      {icon && <div className="text-muted-foreground mb-4">{icon}</div>}
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <p className="text-muted-foreground mb-6 max-w-md">{description}</p>
+      {buttonText && href && (
+        <Button asChild>
+          <Link href={href}>{buttonText}</Link>
+        </Button>
+      )}
     </div>
-  );
+  )
 }
+
