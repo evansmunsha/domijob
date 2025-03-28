@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, use } from "react"
 import { useRouter } from "next/navigation"
 import { applyForJob, saveJobPost, unsaveJobPost } from "@/app/actions"
 import { Badge } from "@/components/ui/badge"
@@ -16,13 +16,14 @@ import { toast } from "sonner"
 import LoadingJobPage from "./loading"
 import { ApplicationInsights } from "@/components/job/ApplicationInsights"
 
+export default function JobIdPage({ params }: { params: Promise<{ jobId: string }> }) {
+  // Unwrap the params Promise using React.use()
+  const resolvedParams = use(params)
+  const jobId = resolvedParams.jobId
 
-export default function JobIdPage({ params }: { params: { jobId: string } }) {
   // Use a ref to track if we've already started fetching data
   const dataFetchedRef = useRef(false)
-  // Store jobId in state to avoid using params directly
-  const [jobId, setJobId] = useState<string>("")
-  
+
   const [jobData, setJobData] = useState<any>(null)
   const [savedJob, setSavedJob] = useState<any>(null)
   const [isApplying, setIsApplying] = useState(false)
@@ -32,15 +33,10 @@ export default function JobIdPage({ params }: { params: { jobId: string } }) {
   const [hasApplied, setHasApplied] = useState(false)
   const router = useRouter()
 
-  // Set jobId from params on mount
-  useEffect(() => {
-    setJobId(params.jobId)
-  }, [params.jobId])
-
   // Use useEffect with a ref to prevent duplicate fetches
   useEffect(() => {
-    // Only fetch data if we haven't already started fetching and jobId is available
-    if (dataFetchedRef.current === false && jobId) {
+    // Only fetch data if we haven't already started fetching
+    if (dataFetchedRef.current === false) {
       dataFetchedRef.current = true
 
       const fetchJobData = async () => {

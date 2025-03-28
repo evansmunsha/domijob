@@ -465,6 +465,14 @@ function formatDate(date: Date) {
 }
 
 export default async function Dashboard({ searchParams }: { searchParams: { welcome?: string } }) {
+  // Your existing code...
+
+  // Access searchParams directly as it's already resolved
+  const showWelcome = searchParams?.welcome === "true"
+
+ 
+
+
   const session = await auth()
 
   if (!session?.user?.id) {
@@ -477,7 +485,6 @@ export default async function Dashboard({ searchParams }: { searchParams: { welc
     getUserApplications(session.user.id),
   ])
 
-  const showWelcome = searchParams.welcome === "true"
   const isJobSeeker = user?.userType === "JOB_SEEKER"
 
   if (!user?.onboardingCompleted) {
