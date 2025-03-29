@@ -28,7 +28,7 @@ async function getCompany(id: string) {
 
 // Fix the params.id error by awaiting params
 export default async function CompanyProfile({ params }: { params: { id: string } }) {
-  const { id } = await params
+  const { id } = params
   const company = await getCompany(id)
 
   return (
@@ -129,7 +129,7 @@ export default async function CompanyProfile({ params }: { params: { id: string 
                           </div>
                           <div className="mt-2">
                             <Button asChild variant="outline" size="sm">
-                              <Link href={`/jobs/${job.id}`}>View Job</Link>
+                              <Link href={`/job/${job.id}`}>View Job</Link>
                             </Button>
                           </div>
                         </div>
