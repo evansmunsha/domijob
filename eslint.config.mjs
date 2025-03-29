@@ -1,6 +1,9 @@
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { FlatCompat } from "@eslint/eslintrc";
+// @ts-ignore
+import inngestPlugin from "@inngest/eslint-plugin";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,16 +13,15 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  ...compat.extends(
-    "next/core-web-vitals",
-    "next/typescript"
-  ),
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    plugins: ["@inngest"],
+    plugins: {
+      "@inngest": inngestPlugin, // Use object format for plugins
+    },
     rules: {
-      "@inngest/await-inngest-send": "error"
-    }
-  }
+      "@inngest/await-inngest-send": "error",
+    },
+  },
 ];
 
 export default eslintConfig;
