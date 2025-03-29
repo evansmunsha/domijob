@@ -39,7 +39,8 @@ export function ProfileViewsChart({ companyId }: { companyId: string }) {
           return
         }
 
-        const res = await fetch(`/api/company/analytics/profile-views?period=${period}&companyId=${companyId}`)
+        // Update the API endpoint to match the one we created
+        const res = await fetch(`/api/company/profile-views?period=${period}&companyId=${companyId}`)
 
         if (!res.ok) {
           const errorText = await res.text()

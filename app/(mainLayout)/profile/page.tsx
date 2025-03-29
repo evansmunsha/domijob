@@ -32,6 +32,14 @@ export default async function ProfilePage() {
     redirect("/onboarding")
   }
 
+  // Define initialPreferences based on the JobSeeker data
+  const initialPreferences = {
+    jobTypes: user.JobSeeker.preferredJobTypes || [],
+    locations: user.JobSeeker.preferredLocations || [],
+    salaryExpectation: user.JobSeeker.salaryExpectation || 50000,
+    remoteOnly: user.JobSeeker.remoteOnly || false,
+  }
+
   return (
     <div className="container py-8 max-w-4xl mx-auto">
       <ProfileHeader
@@ -42,10 +50,11 @@ export default async function ProfilePage() {
       />
 
       <Tabs defaultValue="profile" className="mt-8">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="skills">Skills</TabsTrigger>
           <TabsTrigger value="languages">Languages</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="resume">Resume</TabsTrigger>
         </TabsList>
 
@@ -94,6 +103,8 @@ export default async function ProfilePage() {
           </Card>
         </TabsContent>
 
+        
+
         <TabsContent value="resume" className="mt-6">
           <Card>
             <CardHeader>
@@ -109,6 +120,8 @@ export default async function ProfilePage() {
 
       {/* Add the SkillGapAnalysis component with the correct props */}
       <SkillGapAnalysis userId={user.id} currentSkills={user.JobSeeker.skills || []} />
+
+      
     </div>
   )
 }
