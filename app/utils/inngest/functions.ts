@@ -1,69 +1,108 @@
-import { inngest } from "./client";
-import { prisma } from "../db";
-import { Resend } from "resend";
-import { Prisma } from "@prisma/client";
-import { logger } from "../logger";
+import { inngest } from "./client"
+import { prisma } from "../db"
+import { Resend } from "resend"
+import { Prisma } from "@prisma/client"
+import { logger } from "../logger"
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 interface JobExpirationEvent {
   data: {
-    jobId: string;
-    expirationDays: number;
-  };
+    jobId: string
+    expirationDays: number
+  }
 }
 
 interface JobseekerCreatedEvent {
   data: {
-    userId: string;
-    email: string;
-  };
+    userId: string
+    email: string
+  }
 }
 
+// Define types for step functions
+interface InngestStep {
+  sleep: (id: string, duration: string) => Promise<void>
+  run: <T>(id: string, fn: () => Promise<T>) => Promise<T>
+}
+
+// Define job company interface
+interface JobCompany {
+  logo: string | null
+  name: string
+}
+
+// Define job interface
+interface Job {
+  id: string
+  jobTitle: string
+  company: JobCompany
+  location: string
+  salaryFrom: { toLocaleString: () => string }
+  salaryTo: { toLocaleString: () => string }
+  employmentType: string
+}
+
+// Define resource interface
+interface LearningResource {
+  id: string
+  title: string
+  url: string
+  type: string
+}
+
+// Define missing skill interface
+interface MissingSkill {
+  name: string
+  description: string
+  demandLevel: string
+  learningResources: LearningResource[]
+}
 
 export const handleJobExpiration = inngest.createFunction(
-  { id: "job-expiration", cancelOn: [
-    {
-      event: "job/cancel.expiration",
-      if: "event.data.jobId == async.data.jobId"
-    }
-  ] },
+  {
+    id: "job-expiration",
+    cancelOn: [
+      {
+        event: "job/cancel.expiration",
+        if: "event.data.jobId == async.data.jobId",
+      },
+    ],
+  },
   { event: "job/created" },
-  async ({ event, step }: { event: JobExpirationEvent; step: any }) => {
-
+  async ({ event, step }: { event: JobExpirationEvent; step: InngestStep }) => {
     // Log the incoming event data
-    console.log("Received event:", event);
+    console.log("Received event:", event)
 
-    const { jobId, expirationDays } = event.data;
+    const { jobId, expirationDays } = event.data
 
     // Wait for the specified duration
-    await step.sleep("wait-for-expiration", `${expirationDays}d`);
+    await step.sleep("wait-for-expiration", `${expirationDays}d`)
 
     // Update job status to expired
     await step.run("update-job-status", async () => {
       await prisma.jobPost.update({
         where: { id: jobId },
         data: { status: "EXPIRED" },
-      });
-    });
+      })
+    })
 
-    return { jobId, message: "Job marked as expired" };
-  }
-);
+    return { jobId, message: "Job marked as expired" }
+  },
+)
 
 export const sendPeriodicJobListing = inngest.createFunction(
   { id: "send-job-listing" },
   { event: "jobseeker/created" },
-  async ({ event, step }: { event: JobseekerCreatedEvent; step: any }) => {
-    const { userId, email } = event.data;
-    const baseUrl = process.env.NEXT_PUBLIC_URL; // Base URL for local development
+  async ({ event, step }: { event: JobseekerCreatedEvent; step: InngestStep }) => {
+    const { userId, email } = event.data
+    const baseUrl = process.env.NEXT_PUBLIC_URL // Base URL for local development
 
-    const totalDays = 30; // Total number of days to send job listings
-    const intervalDays = 2; // Interval between job listings (every 2 days)
+    const totalDays = 30 // Total number of days to send job listings
+    const intervalDays = 2 // Interval between job listings (every 2 days)
 
     for (let currentDay = 0; currentDay < totalDays; currentDay += intervalDays) {
-      await step.sleep("wait-interval", `${intervalDays}d`);
-
+      await step.sleep("wait-interval", `${intervalDays}d`)
 
       const recentJobs = await step.run("fetch-recent-jobs", async () => {
         return await prisma.jobPost.findMany({
@@ -75,15 +114,17 @@ export const sendPeriodicJobListing = inngest.createFunction(
               select: {
                 name: true,
                 logo: true,
-              }
-            }
-          }
-        });
-      });
+              },
+            },
+          },
+        })
+      })
 
       if (recentJobs.length > 0) {
         await step.run("send-email", async () => {
-          const jobListingsHtml = recentJobs.map((job: { company: { logo: any; name: any; }; id: any; jobTitle: any; location: any; salaryFrom: { toLocaleString: () => any; }; salaryTo: { toLocaleString: () => any; }; employmentType: any; }) => `
+          const jobListingsHtml = recentJobs
+            .map(
+              (job: Job) => `
             <div style="margin-bottom: 20px; border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; background-color: #f9f9f9;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
@@ -103,11 +144,13 @@ export const sendPeriodicJobListing = inngest.createFunction(
                 </tr>
               </table>
             </div>
-          `).join("");
-          
+          `,
+            )
+            .join("")
+
           try {
             await resend.emails.send({
-              from: 'MiJob <onboarding@resend.dev>',
+              from: "MiJob <onboarding@resend.dev>",
               to: [email],
               subject: "New Job Opportunities Just For You",
               html: `
@@ -139,35 +182,28 @@ export const sendPeriodicJobListing = inngest.createFunction(
               </body>
               </html>
               `,
-            });
-            console.log(`Email sent successfully to ${email}`);
+            })
+            console.log(`Email sent successfully to ${email}`)
           } catch (error) {
-            console.error(`Failed to send email to ${email}:`, error);
+            console.error(`Failed to send email to ${email}:`, error)
           }
-        });
+        })
       } else {
-        console.log(`No active job listings found for user ${userId}`);
+        console.log(`No active job listings found for user ${userId}`)
       }
     }
 
-    return { userId, email, message: "Completed 30 day job listing notifications" };
-  }
-);
-
-
-
-
-
+    return { userId, email, message: "Completed 30 day job listing notifications" }
+  },
+)
 
 const baseUrl = process.env.NEXT_PUBLIC_URL
-
-
 
 // Run this function daily to check for new job matches
 export const sendPersonalizedJobAlerts = inngest.createFunction(
   { id: "send-personalized-job-alerts" },
   { cron: "0 9 * * *" }, // Run at 9 AM every day
-  async ({ step }) => {
+  async ({ step }: { step: InngestStep }) => {
     // Get all job seekers
     const jobSeekers = await step.run("fetch-job-seekers", async () => {
       return await prisma.jobSeeker.findMany({
@@ -445,16 +481,11 @@ export const sendPersonalizedJobAlerts = inngest.createFunction(
   },
 )
 
-
-
-
-
-
 // This function runs when a new job is posted to find matching candidates
 export const handleJobCreated = inngest.createFunction(
   { id: "handle-job-created" },
   { event: "job/created" },
-  async ({ event, step }) => {
+  async ({ event, step }: { event: { data: { jobId: string; companyId: string } }; step: InngestStep }) => {
     const { jobId, companyId } = event.data
 
     logger.info(`Processing job/created event for job: ${jobId}, company: ${companyId}`)
@@ -589,10 +620,6 @@ export const handleJobCreated = inngest.createFunction(
   },
 )
 
-
-
-
-
 // Helper function to extract keywords from text
 function extractKeywords(text: string): string[] {
   // This is a simplified implementation
@@ -610,20 +637,12 @@ function extractKeywords(text: string): string[] {
   return Array.from(keywords)
 }
 
-
-
-
-
-
-
 interface SkillGapEvent {
   data: {
     userId: string
     targetJobTitle: string
   }
 }
-
-
 
 // Common tech skills with descriptions
 const skillDatabase = {
@@ -682,7 +701,7 @@ const skillDatabase = {
 }
 
 // Job title to required skills mapping
-const jobSkillsMap = {
+const jobSkillsMap: Record<string, string[]> = {
   "frontend developer": ["html", "css", "javascript", "react"],
   "senior frontend developer": ["html", "css", "javascript", "typescript", "react", "redux", "jest"],
   "react developer": ["javascript", "react", "html", "css"],
@@ -692,17 +711,10 @@ const jobSkillsMap = {
   // More job titles would be defined here...
 }
 
-interface SkillGapEvent {
-  data: {
-    userId: string
-    targetJobTitle: string
-  }
-}
-
 export const analyzeSkillGap = inngest.createFunction(
   { id: "analyze-skill-gap" },
   { event: "user/request.skill-gap-analysis" },
-  async ({ event, step }: { event: SkillGapEvent; step: any }) => {
+  async ({ event, step }: { event: SkillGapEvent; step: InngestStep }) => {
     const { userId, targetJobTitle } = event.data
 
     // Get user's current skills
@@ -733,7 +745,7 @@ export const analyzeSkillGap = inngest.createFunction(
 
     // Try to find an exact match first
     if (normalizedTargetJob in jobSkillsMap) {
-      requiredSkills = jobSkillsMap[normalizedTargetJob as keyof typeof jobSkillsMap]
+      requiredSkills = jobSkillsMap[normalizedTargetJob]
     } else {
       // If no exact match, find the closest match
       const jobTitles = Object.keys(jobSkillsMap)
@@ -742,7 +754,7 @@ export const analyzeSkillGap = inngest.createFunction(
       )
 
       if (closestMatch) {
-        requiredSkills = jobSkillsMap[closestMatch as keyof typeof jobSkillsMap]
+        requiredSkills = jobSkillsMap[closestMatch]
       } else {
         // If still no match, use a default set of skills
         requiredSkills = ["html", "css", "javascript", "react"]
@@ -776,11 +788,12 @@ export const analyzeSkillGap = inngest.createFunction(
           userId,
           targetJobTitle,
           currentSkills: userSkills,
-          missingSkills: missingSkills as any,
-          completeness
-        }
-      });
-      
+          //@ts-ignore
+          missingSkills: missingSkills as MissingSkill[],
+          completeness,
+        },
+      })
+
       console.log("Storing analysis results:", {
         userId,
         targetJobTitle,

@@ -9,6 +9,30 @@ import Link from "next/link"
 import { ArrowLeft, Building2, Calendar, Clock, Loader2 } from "lucide-react"
 import React from "react"
 import { ApplicationInsights } from "@/components/job/ApplicationInsights"
+import Image from "next/image"
+
+// Define proper types for the application data
+interface Company {
+  id: string
+  name: string
+  logo: string | null
+}
+
+interface Job {
+  id: string
+  jobTitle: string
+  employmentType: string
+  location: string
+  company?: Company
+}
+
+interface ApplicationData {
+  id: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  job?: Job
+}
 
 // Helper function to get status badge variant based on application status
 function getStatusBadgeVariant(status: string) {
@@ -38,12 +62,11 @@ function formatDate(date: Date) {
   }).format(date)
 }
 
-export default function ApplicationDetailsPage({ params }: { params: Promise<{ id: string,jobId:string }> }) {
-
+export default function ApplicationDetailsPage({ params }: { params: Promise<{ id: string; jobId: string }> }) {
   // Unwrap the params Promise using React.use()
-    const { id,jobId } = React.use(params)
+  const { id, jobId } = React.use(params)
   const router = useRouter()
-  const [application, setApplication] = useState<any>(null)
+  const [application, setApplication] = useState<ApplicationData | null>(null)
   const [loading, setLoading] = useState(true)
   const [viewJobLoading, setViewJobLoading] = useState(false)
   const [browseJobsLoading, setBrowseJobsLoading] = useState(false)
@@ -53,7 +76,7 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
       try {
         setLoading(true)
         const response = await fetch(`/api/applications/${id}`)
-        const jobResponse = await fetch(`/api/jobs/${jobId}`)
+
         if (!response.ok) {
           if (response.status === 401) {
             router.push("/login")
@@ -76,7 +99,7 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
     }
 
     fetchApplicationDetails()
-  }, [id, router])
+  }, [id, router, jobId]) // Added jobId to the dependency array
 
   const handleViewJob = () => {
     if (!application?.job?.id) return
@@ -98,7 +121,6 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
             Back to applications
           </Link>
           <h1 className="text-3xl font-bold mt-2">Application Details</h1>
-          
         </div>
       </div>
     )
@@ -132,10 +154,12 @@ export default function ApplicationDetailsPage({ params }: { params: Promise<{ i
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
                       {hasCompany && application.job?.company?.logo ? (
-                        <img
+                        <Image
                           src={application.job.company.logo || "/placeholder.svg"}
                           alt={application.job.company.name}
-                          className="h-10 w-10 rounded-md"
+                          className="rounded-md"
+                          width={40}
+                          height={40}
                         />
                       ) : (
                         <Building2 className="h-6 w-6 text-primary" />

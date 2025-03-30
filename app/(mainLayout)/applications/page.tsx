@@ -7,6 +7,27 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Building2, Clock, CheckCircle, XCircle, Briefcase, Loader2 } from "lucide-react"
+import Image from "next/image"
+
+// Define proper types for the application data
+interface Company {
+  id: string
+  name: string
+  logo: string | null
+}
+
+interface Job {
+  id: string
+  jobTitle: string
+  company?: Company
+}
+
+interface Application {
+  id: string
+  status: string
+  createdAt: string
+  job?: Job
+}
 
 // Helper function to get status badge variant based on application status
 function getStatusBadgeVariant(status: string) {
@@ -51,7 +72,7 @@ function formatDate(date: Date) {
 
 export default function ApplicationsPage() {
   const router = useRouter()
-  const [applications, setApplications] = useState<any[]>([])
+  const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [viewDetailsLoading, setViewDetailsLoading] = useState<string | null>(null)
   const [viewJobLoading, setViewJobLoading] = useState<string | null>(null)
@@ -114,7 +135,7 @@ export default function ApplicationsPage() {
           <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">No applications yet</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            You haven't applied to any jobs yet. Browse available jobs and start applying!
+            You haven&apos;t applied to any jobs yet. Browse available jobs and start applying!
           </p>
           <Button asChild>
             <Link href="/jobs">Browse Jobs</Link>
@@ -134,10 +155,12 @@ export default function ApplicationsPage() {
                 >
                   <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
                     {application.job?.company?.logo ? (
-                      <img
+                      <Image
                         src={application.job.company.logo || "/placeholder.svg"}
                         alt={application.job.company.name}
-                        className="h-10 w-10 rounded-md"
+                        width={40}
+                        height={40}
+                        className="rounded-md"
                       />
                     ) : (
                       <Building2 className="h-6 w-6 text-primary" />

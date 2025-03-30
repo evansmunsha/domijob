@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Briefcase, Building2, FileText, Search, User, Clock, CheckCircle, XCircle } from "lucide-react"
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner"
+import Image from "next/image"
 
 async function getUserProfile(userId: string) {
   return prisma.user.findUnique({
@@ -15,6 +16,15 @@ async function getUserProfile(userId: string) {
       JobSeeker: true,
     },
   })
+}
+
+// Define a proper type for the query object
+interface JobQuery {
+  status: string
+  employmentType?: { in: string[] }
+  location?: { in: string[] }
+  OR?: Array<{ location: { in: string[] } } | { location: { contains: string } }>
+  [key: string]: any // Allow for any additional properties
 }
 
 // Replace the getRecommendedJobs function with this updated version
@@ -120,7 +130,7 @@ async function getRecommendedJobs(userId: string) {
   })
 
   // Build the query based on user behavior
-  const query: any = {
+  const query: JobQuery = {
     status: "ACTIVE",
   }
 
@@ -470,9 +480,6 @@ export default async function Dashboard({ searchParams }: { searchParams: { welc
   // Access searchParams directly as it's already resolved
   const showWelcome = searchParams?.welcome === "true"
 
- 
-
-
   const session = await auth()
 
   if (!session?.user?.id) {
@@ -521,10 +528,12 @@ export default async function Dashboard({ searchParams }: { searchParams: { welc
                         >
                           <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
                             {job.company.logo ? (
-                              <img
+                              <Image
                                 src={job.company.logo || "/placeholder.svg"}
                                 alt={job.company.name}
-                                className="h-10 w-10 rounded-md"
+                                width={40}
+                                height={40}
+                                className="rounded-md"
                               />
                             ) : (
                               <Building2 className="h-6 w-6 text-primary" />
@@ -559,7 +568,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { welc
                       <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium">No recommended jobs yet</h3>
                       <p className="text-muted-foreground mb-4">
-                        We'll show personalized job recommendations here as they become available
+                        We&apos;ll show personalized job recommendations here as they become available
                       </p>
                       <Button asChild>
                         <Link href="/job">Browse All Jobs</Link>
@@ -584,10 +593,12 @@ export default async function Dashboard({ searchParams }: { searchParams: { welc
                         >
                           <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
                             {application.job?.company?.logo ? (
-                              <img
+                              <Image
                                 src={application.job.company.logo || "/placeholder.svg"}
                                 alt={application.job.company.name}
-                                className="h-10 w-10 rounded-md"
+                                width={40}
+                                height={40}
+                                className="rounded-md"
                               />
                             ) : (
                               <Building2 className="h-6 w-6 text-primary" />
@@ -617,9 +628,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { welc
                           </div>
                           <Button asChild size="sm" variant="outline">
                             <Link href={`/applications/${application.id}`}>View Details</Link>
-
                           </Button>
-                          
                         </div>
                       ))}
 
@@ -636,7 +645,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { welc
                       <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium">No applications yet</h3>
                       <p className="text-muted-foreground mb-4">
-                        When you apply for jobs, they'll appear here so you can track their status
+                        When you apply for jobs, they&apos;ll appear here so you can track their status
                       </p>
                       <Button asChild>
                         <Link href="/job">Find Jobs to Apply</Link>

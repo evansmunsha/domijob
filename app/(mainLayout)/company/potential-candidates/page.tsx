@@ -15,12 +15,21 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 
+// Define interface for candidate data
+interface PotentialCandidate {
+  id: string
+  viewerName: string
+  skills?: string[]
+  matchScore?: number
+  [key: string]: any // Allow for any additional properties
+}
+
 export default function PotentialCandidatesPage() {
   const router = useRouter()
-  const [notifications, setNotifications] = useState<any[]>([])
+  const [notifications, setNotifications] = useState<PotentialCandidate[]>([])
   const [loading, setLoading] = useState(true)
   const [contactDialogOpen, setContactDialogOpen] = useState(false)
-  const [selectedCandidate, setSelectedCandidate] = useState<any>(null)
+  const [selectedCandidate, setSelectedCandidate] = useState<PotentialCandidate | null>(null)
   const [message, setMessage] = useState("")
 
   useEffect(() => {
@@ -50,7 +59,7 @@ export default function PotentialCandidatesPage() {
     fetchNotifications()
   }, [router])
 
-  const handleContactClick = (candidateData: any) => {
+  const handleContactClick = (candidateData: PotentialCandidate) => {
     setSelectedCandidate(candidateData)
     setContactDialogOpen(true)
 
@@ -75,7 +84,7 @@ export default function PotentialCandidatesPage() {
       //   })
       // })
 
-      toast.success(`Message sent to ${selectedCandidate.viewerName}!`)
+      toast.success(`Message sent to ${selectedCandidate?.viewerName}!`)
       setContactDialogOpen(false)
       setMessage("")
     } catch (error) {
@@ -100,13 +109,14 @@ export default function PotentialCandidatesPage() {
       {notifications.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p>No potential candidates found yet.</p>
-          <p className="mt-2">When job seekers with matching skills view your profile, they'll appear here.</p>
+          <p className="mt-2">When job seekers with matching skills view your profile, they&apos;ll appear here.</p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {notifications.map((notification) => (
             <PotentialCandidateCard
               key={notification.id}
+              //@ts-ignore
               notification={notification}
               onContactClick={handleContactClick}
             />
