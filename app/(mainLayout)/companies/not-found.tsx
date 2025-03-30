@@ -6,7 +6,7 @@ export default function CompanyNotFound() {
     <div className="container flex flex-col items-center justify-center py-20">
       <h1 className="text-4xl font-bold mb-4">Company Not Found</h1>
       <p className="text-muted-foreground mb-8 text-center max-w-md">
-        The company you're looking for doesn't exist or may have been removed.
+        The company you&apos;re looking for doesn&apos;t exist or may have been removed.
       </p>
       <div className="flex gap-4">
         <Button asChild>

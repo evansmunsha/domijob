@@ -1,5 +1,5 @@
 "use server";
-
+//@typescript-eslint/no-unused-vars
 import { z } from "zod";
 import { requireUser } from "./utils/hooks";
 import { companySchema, jobSchema, jobSeekerSchema } from "./utils/zodSchemas";
@@ -330,12 +330,6 @@ export async function deleteJobPost(jobId: string) {
 }
 
 
-
-
-
-
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 
 

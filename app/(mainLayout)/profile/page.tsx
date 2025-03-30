@@ -33,12 +33,6 @@ export default async function ProfilePage() {
   }
 
   // Define initialPreferences based on the JobSeeker data
-  const initialPreferences = {
-    jobTypes: user.JobSeeker.preferredJobTypes || [],
-    locations: user.JobSeeker.preferredLocations || [],
-    salaryExpectation: user.JobSeeker.salaryExpectation || 50000,
-    remoteOnly: user.JobSeeker.remoteOnly || false,
-  }
 
   return (
     <div className="container py-8 max-w-4xl mx-auto">

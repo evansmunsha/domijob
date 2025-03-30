@@ -1,5 +1,5 @@
 "use client"
-
+//@typescript-eslint/no-explicit-any
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"

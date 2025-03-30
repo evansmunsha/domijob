@@ -1,5 +1,5 @@
 "use client"
-
+//@typescript-eslint/no-explicit-any
 import { useState, useEffect, useRef, use } from "react"
 import { useRouter } from "next/navigation"
 import { applyForJob, saveJobPost, unsaveJobPost } from "@/app/actions"

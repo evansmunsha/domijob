@@ -1,5 +1,4 @@
 import { Navbar } from "@/components/general/Navbar";
-import { NotificationCenter } from "@/components/general/NotificationCenter";
 import React from "react";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {

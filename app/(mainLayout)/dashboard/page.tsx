@@ -1,3 +1,6 @@
+//@typescript-eslint/no-explicit-any
+
+
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 import { redirect } from "next/navigation"

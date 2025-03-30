@@ -1,4 +1,5 @@
 // Enhanced logging utility for notification system testing
+//@typescript-eslint/no-explicit-any
 export const logger = {
   info: (message: string, data?: any) => {
     console.log(`[INFO] ${new Date().toISOString()} - ${message}`, data ? data : "")

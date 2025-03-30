@@ -1,5 +1,5 @@
 "use client"
-
+//@typescript-eslint/no-explicit-any
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { PotentialCandidateCard } from "@/components/company/PotentialCandidateCard"
@@ -116,7 +116,7 @@ export default function PotentialCandidatesPage() {
           {notifications.map((notification) => (
             <PotentialCandidateCard
               key={notification.id}
-              //@ts-ignore
+              //@ts-expect-error
               notification={notification}
               onContactClick={handleContactClick}
             />

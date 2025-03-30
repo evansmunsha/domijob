@@ -124,7 +124,7 @@ export function LanguagesSection({ userId, initialLanguages }: LanguagesSectionP
           </Button>
         </form>
         <p className="text-sm text-muted-foreground mt-4">
-          Include your proficiency level if desired (e.g., "Spanish - Fluent").
+          Include your proficiency level if desired (e.g., &quot;Spanish - Fluent&quot;).
         </p>
       </div>
     </div>

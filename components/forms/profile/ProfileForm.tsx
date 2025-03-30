@@ -11,7 +11,6 @@ import { toast } from "sonner"
 import { useState } from "react"
 import { updateProfile } from "@/app/actions"
 import { Loader2 } from "lucide-react"
-import { SkillsSection } from "@/components/profile/SkillsSection"
 
 // Update the profileFormSchema to include skills and languages
 const profileFormSchema = z.object({
@@ -103,7 +102,7 @@ export function ProfileForm({ initialData, userId }: ProfileFormProps) {
                 />
               </FormControl>
               <FormDescription>
-                Write a brief summary highlighting your expertise and what you're looking for
+                Write a brief summary highlighting your expertise and what you&apos;re looking for
               </FormDescription>
               <FormMessage />
             </FormItem>

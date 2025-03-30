@@ -44,7 +44,7 @@ export default async function CompanyAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Visitor Insights</CardTitle>
-                <CardDescription>Learn more about who's viewing your company profile</CardDescription>
+                <CardDescription>Learn more about who&apos;s viewing your company profile</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
@@ -64,7 +64,7 @@ export default async function CompanyAnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Coming soon: Job views, application rates, and conversion metrics.
+                  Coming soon: Job views&apos; application rates&apos; and conversion metrics.
                 </p>
               </CardContent>
             </Card>
@@ -80,7 +80,7 @@ export default async function CompanyAnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Coming soon: Skill match rates, candidate quality scores, and hiring funnel analytics.
+                  Coming soon: Skill match rates&apos; candidate quality scores&apos; and hiring funnel analytics.
                 </p>
               </CardContent>
             </Card>

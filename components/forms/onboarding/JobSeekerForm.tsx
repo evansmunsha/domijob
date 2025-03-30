@@ -150,7 +150,7 @@ export default function JobSeekerForm() {
                   />
                 </FormControl>
                 <FormDescription>
-                  A brief summary highlighting your expertise and what you're looking for
+                  A brief summary highlighting your expertise and what you&apos;re looking for
                 </FormDescription>
                 <FormMessage />
               </FormItem>

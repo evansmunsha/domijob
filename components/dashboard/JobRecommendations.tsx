@@ -1,5 +1,5 @@
 "use client"
-
+//@typescript-eslint/no-unused-vars
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -98,7 +98,7 @@ export function JobRecommendations() {
             <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium">No recommended jobs yet</h3>
             <p className="text-muted-foreground mb-4">
-              We'll show personalized job recommendations here as they become available
+              We&apos;ll show personalized job recommendations here as they become available
             </p>
             <Button asChild>
               <Link href="/jobs">Browse All Jobs</Link>
