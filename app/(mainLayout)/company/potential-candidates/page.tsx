@@ -1,5 +1,4 @@
 "use client"
-//@typescript-eslint/no-explicit-any
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { PotentialCandidateCard } from "@/components/company/PotentialCandidateCard"
@@ -21,7 +20,9 @@ interface PotentialCandidate {
   viewerName: string
   skills?: string[]
   matchScore?: number
-  [key: string]: any // Allow for any additional properties
+  jobId?: string
+  read: boolean
+  createdAt: Date
 }
 
 export default function PotentialCandidatesPage() {
@@ -47,7 +48,25 @@ export default function PotentialCandidatesPage() {
         }
 
         const data = await response.json()
-        setNotifications(data)
+        const formattedData = data.map((notification: any) => {
+          try {
+            const metadata = JSON.parse(notification.metadata || "{}")
+            return {
+              id: notification.id,
+              viewerName: metadata.viewerName || "Anonymous",
+              skills: metadata.skills || [],
+              matchScore: metadata.matchScore || 0,
+              jobId: notification.jobId,
+              read: notification.read,
+              createdAt: new Date(notification.createdAt),
+            }
+          } catch (error) {
+            console.error("Error parsing metadata:", error)
+            return null
+          }
+        }).filter(Boolean) // Remove null values
+
+        setNotifications(formattedData)
       } catch (error) {
         console.error("Error fetching potential candidates:", error)
         toast.error("Failed to load potential candidates")
@@ -59,31 +78,20 @@ export default function PotentialCandidatesPage() {
     fetchNotifications()
   }, [router])
 
-  const handleContactClick = (candidateData: PotentialCandidate) => {
-    setSelectedCandidate(candidateData)
+  const handleContactClick = (candidate: PotentialCandidate) => {
+    setSelectedCandidate(candidate)
     setContactDialogOpen(true)
 
-    // Pre-fill message based on skills
-    if (candidateData.skills && candidateData.skills.length > 0) {
-      const skillsList = candidateData.skills.slice(0, 3).join(", ")
+    if (candidate.skills && candidate.skills.length > 0) {
+      const skillsList = candidate.skills.slice(0, 3).join(", ")
       setMessage(
-        `Hi ${candidateData.viewerName},\n\nI noticed you viewed our company profile. Your skills in ${skillsList} caught our attention. We'd love to discuss potential opportunities with you.\n\nLooking forward to connecting!`,
+        `Hi ${candidate.viewerName},\n\nI noticed you viewed our company profile. Your skills in ${skillsList} caught our attention. We'd love to discuss potential opportunities with you.\n\nLooking forward to connecting!`
       )
     }
   }
 
   const handleSendMessage = async () => {
     try {
-      // In a real app, you'd implement this endpoint to send a message
-      // await fetch("/api/company/contact-candidate", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     candidateName: selectedCandidate.viewerName,
-      //     message
-      //   })
-      // })
-
       toast.success(`Message sent to ${selectedCandidate?.viewerName}!`)
       setContactDialogOpen(false)
       setMessage("")
@@ -113,13 +121,8 @@ export default function PotentialCandidatesPage() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {notifications.map((notification) => (
-            <PotentialCandidateCard
-              key={notification.id}
-              //@ts-expect-error
-              notification={notification}
-              onContactClick={handleContactClick}
-            />
+          {notifications.map((candidate) => (
+            <PotentialCandidateCard key={candidate.id} notification={candidate} onContactClick={handleContactClick} />
           ))}
         </div>
       )}
@@ -136,13 +139,7 @@ export default function PotentialCandidatesPage() {
               <label htmlFor="message" className="text-sm font-medium">
                 Message
               </label>
-              <Textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={8}
-                placeholder="Enter your message here..."
-              />
+              <Textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} rows={8} placeholder="Enter your message here..." />
             </div>
           </div>
 
@@ -157,4 +154,3 @@ export default function PotentialCandidatesPage() {
     </div>
   )
 }
-

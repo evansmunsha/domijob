@@ -214,7 +214,7 @@ export default function ApplicationsPage() {
                     {application.job && (
                       <Button
                         size="sm"
-                        variant="ghost"//@ts-ignore
+                        variant="ghost"//@ts-expect-error
                         onClick={() => handleViewJob(application.job.id)}
                         disabled={viewJobLoading === application.job.id}
                       >
