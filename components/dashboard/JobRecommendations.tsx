@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Building2, Search, Loader2 } from "lucide-react"
+import Image from "next/image"
 
 interface Job {
   id: string
@@ -24,12 +25,28 @@ export function JobRecommendations() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate loading recommendations
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 1500)
+    async function fetchRecommendedJobs() {
+      try {
+        setLoading(true)
+        // In a real app, you would fetch from your API
+        const response = await fetch("/api/jobs/recommended")
 
-    return () => clearTimeout(timer)
+        if (response.ok) {
+          const data = await response.json()
+          setJobs(data)
+        } else {
+          // If API fails, use empty array
+          setJobs([])
+        }
+      } catch (error) {
+        console.error("Error fetching job recommendations:", error)
+        setJobs([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRecommendedJobs()
   }, [])
 
   // Helper function to check if a job is new (posted within the last 7 days)
@@ -61,11 +78,13 @@ export function JobRecommendations() {
               >
                 <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
                   {job.company.logo ? (
-                    <img
-                      src={job.company.logo || "/placeholder.svg"}
-                      alt={job.company.name}
-                      className="h-10 w-10 rounded-md"
-                    />
+                    <Image
+                    src={job.company.logo || "/placeholder.svg"}
+                    alt={job.company.name}
+                    width={40}
+                    height={40}
+                    className="rounded-md"
+                  />
                   ) : (
                     <Building2 className="h-6 w-6 text-primary" />
                   )}

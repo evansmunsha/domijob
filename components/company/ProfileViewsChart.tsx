@@ -1,5 +1,5 @@
 "use client"
-//@typescript-eslint/no-explicit-any
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -71,7 +71,7 @@ export function ProfileViewsChart({ companyId }: { companyId: string }) {
           <CardTitle>Profile Views</CardTitle>
           {!loading && viewsData && <div className="text-sm font-medium">Total: {viewsData.totalViews}</div>}
         </div>
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as any)} className="mt-2">
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as "day" | "week" | "month")} className="mt-2">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="day">Today</TabsTrigger>
             <TabsTrigger value="week">This Week</TabsTrigger>

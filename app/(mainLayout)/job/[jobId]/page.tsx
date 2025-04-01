@@ -1,5 +1,5 @@
 "use client"
-//@typescript-eslint/no-explicit-any
+
 import { useState, useEffect, useRef, use } from "react"
 import { useRouter } from "next/navigation"
 import { applyForJob, saveJobPost, unsaveJobPost } from "@/app/actions"
@@ -16,6 +16,38 @@ import { toast } from "sonner"
 import LoadingJobPage from "./loading"
 import { ApplicationInsights } from "@/components/job/ApplicationInsights"
 
+// Define proper interfaces for our state variables
+interface Company {
+  id: string
+  name: string
+  logo: string | null
+  about?: string
+}
+
+interface JobData {
+  id: string
+  jobTitle: string
+  jobDescription: string
+  employmentType: string
+  location: string
+  benefits: string[]
+  createdAt: string
+  listingDuration: number
+  company: Company
+}
+
+interface SavedJob {
+  id: string
+}
+
+interface SessionData {
+  user?: {
+    id?: string
+    name?: string
+    email?: string
+  }
+}
+
 export default function JobIdPage({ params }: { params: Promise<{ jobId: string }> }) {
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params)
@@ -24,12 +56,12 @@ export default function JobIdPage({ params }: { params: Promise<{ jobId: string 
   // Use a ref to track if we've already started fetching data
   const dataFetchedRef = useRef(false)
 
-  const [jobData, setJobData] = useState<any>(null)
-  const [savedJob, setSavedJob] = useState<any>(null)
+  const [jobData, setJobData] = useState<JobData | null>(null)
+  const [savedJob, setSavedJob] = useState<SavedJob | null>(null)
   const [isApplying, setIsApplying] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [session, setSession] = useState<any>(null)
+  const [session, setSession] = useState<SessionData | null>(null)
   const [hasApplied, setHasApplied] = useState(false)
   const router = useRouter()
 
@@ -125,7 +157,7 @@ export default function JobIdPage({ params }: { params: Promise<{ jobId: string 
         setSavedJob(null)
         toast.success("Job removed from saved jobs")
       } else {
-        const result = await saveJobPost(jobData.id)
+        const result = await saveJobPost(jobData!.id)
         setSavedJob(result)
         toast.success("Job saved successfully")
       }

@@ -1,6 +1,3 @@
-//@typescript-eslint/no-explicit-any
-
-
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 import { redirect } from "next/navigation"
@@ -11,6 +8,7 @@ import Link from "next/link"
 import { Briefcase, Building2, FileText, Search, User, Clock, CheckCircle, XCircle } from "lucide-react"
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner"
 import Image from "next/image"
+import type { Prisma } from "@prisma/client"
 
 async function getUserProfile(userId: string) {
   return prisma.user.findUnique({
@@ -21,17 +19,28 @@ async function getUserProfile(userId: string) {
   })
 }
 
-// Define a proper type for the query object
-interface JobQuery {
-  status: string
-  employmentType?: { in: string[] }
-  location?: { in: string[] }
-  OR?: Array<{ location: { in: string[] } } | { location: { contains: string } }>
-  [key: string]: any // Allow for any additional properties
+// Define a proper type for the query object that matches Prisma's expected types
+type JobQuery = Prisma.JobPostWhereInput
+
+// Define proper types for the job objects
+interface JobWithCompany {
+  id: string
+  jobTitle: string
+  jobDescription: string
+  location: string
+  employmentType: string
+  createdAt: Date
+  company: {
+    name: string
+    logo: string | null
+  }
+  _count?: {
+    JobApplication: number
+  }
 }
 
-// Replace the getRecommendedJobs function with this updated version
-async function getRecommendedJobs(userId: string) {
+// Update the return type of the getRecommendedJobs function
+async function getRecommendedJobs(userId: string): Promise<JobWithCompany[]> {
   // Get the user profile
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -134,7 +143,7 @@ async function getRecommendedJobs(userId: string) {
 
   // Build the query based on user behavior
   const query: JobQuery = {
-    status: "ACTIVE",
+    status: "ACTIVE" as const,
   }
 
   // Filter by job types if we have data
@@ -197,9 +206,12 @@ async function getRecommendedJobs(userId: string) {
     })
   }
 
-  // Calculate a score for each job
+  // Update the scoredJobs mapping to ensure type safety
   const scoredJobs = matchingJobs.map((job) => {
-    const jobText = `${job.jobTitle} ${job.jobDescription}`.toLowerCase()
+    // Ensure job has the correct type
+    const typedJob = job as unknown as JobWithCompany
+
+    const jobText = `${typedJob.jobTitle} ${typedJob.jobDescription}`.toLowerCase()
 
     // Base score components
     let skillScore = 0
@@ -216,10 +228,10 @@ async function getRecommendedJobs(userId: string) {
 
     // 2. Location match score (0-5)
     if (appliedLocations.size > 0) {
-      if (appliedLocations.has(job.location)) {
+      if (appliedLocations.has(typedJob.location)) {
         locationScore = 5 // Exact match
       } else if (
-        job.location.toLowerCase().includes("remote") &&
+        typedJob.location.toLowerCase().includes("remote") &&
         Array.from(appliedLocations).some((loc) => loc.toLowerCase().includes("remote"))
       ) {
         locationScore = 4 // Remote match
@@ -229,10 +241,10 @@ async function getRecommendedJobs(userId: string) {
     }
 
     // 3. Recency score (0-5)
-    recencyScore = calculateRecencyScore(job.createdAt) * 5
+    recencyScore = calculateRecencyScore(typedJob.createdAt) * 5
 
     // 4. Popularity score based on application count (0-3)
-    const applicationCount = job._count?.JobApplication || 0
+    const applicationCount = typedJob._count?.JobApplication || 0
     if (applicationCount > 20) popularityScore = 3
     else if (applicationCount > 10) popularityScore = 2
     else if (applicationCount > 5) popularityScore = 1
@@ -244,7 +256,7 @@ async function getRecommendedJobs(userId: string) {
       recencyScore * 0.3 + // 30% weight for recency
       popularityScore * 0.1 // 10% weight for popularity
 
-    return { job, score: totalScore }
+    return { job: typedJob, score: totalScore }
   })
 
   // Sort by score (highest first) and take the top 5

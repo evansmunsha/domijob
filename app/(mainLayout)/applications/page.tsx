@@ -157,7 +157,7 @@ export default function ApplicationsPage() {
                     {application.job?.company?.logo ? (
                       <Image
                         src={application.job.company.logo || "/placeholder.svg"}
-                        alt={application.job.company.name}
+                        alt={application.job.company.name || "Company logo"}
                         width={40}
                         height={40}
                         className="rounded-md"
@@ -169,7 +169,7 @@ export default function ApplicationsPage() {
                   <div className="flex-1">
                     <h3 className="font-medium">
                       {application.job ? (
-                        <Link href={`/jobs/${application.job.id}`} className="hover:underline">
+                        <Link href={`/job/${application.job.id}`} className="hover:underline">
                           {application.job.jobTitle}
                         </Link>
                       ) : (
@@ -214,8 +214,8 @@ export default function ApplicationsPage() {
                     {application.job && (
                       <Button
                         size="sm"
-                        variant="ghost"//@ts-expect-error
-                        onClick={() => handleViewJob(application.job.id)}
+                        variant="ghost"
+                        onClick={() => application.job && handleViewJob(application.job.id)}
                         disabled={viewJobLoading === application.job.id}
                       >
                         {viewJobLoading === application.job.id ? (

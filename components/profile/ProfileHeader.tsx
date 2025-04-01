@@ -16,7 +16,7 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ name, email, image, resumeUrl }: ProfileHeaderProps) {
-  const [currentResume, setCurrentResume] = useState(resumeUrl)
+  const [currentResume] = useState(resumeUrl)
   return (
     <Card>
       <CardContent className="p-6">
