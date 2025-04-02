@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Globe, Calendar, Users, X } from "lucide-react";
 import Link from "next/link";
-
 // Fetch company data from Prisma
 async function getCompany(id: string) {
   const company = await prisma.company.findUnique({
@@ -27,20 +26,11 @@ async function getCompany(id: string) {
   return company;
 }
 
-// Type definition for page props
-interface CompanyProfileProps {
-  params: { id: string };
-}
 
-// Company profile page
-export default async function CompanyProfile({ params }: CompanyProfileProps) {
-  const { id } = params;
 
-  if (!id) {
-    notFound();
-  }
+export default async function CompanyProfile({ params }: { params: { id: string } }) {
+  const company = await getCompany(params.id);
 
-  const company = await getCompany(id);
 
   return (
     <div className="container mx-auto py-8">
