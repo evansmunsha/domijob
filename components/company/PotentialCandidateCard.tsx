@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Mail } from "lucide-react"
-import Link from "next/link"
 
 interface PotentialCandidate {
   id: string

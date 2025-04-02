@@ -1,45 +1,16 @@
 "use client"
-//@typescript-eslint/no-explicit-any
+
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Link from "@tiptap/extension-link"
 import TextAlign from "@tiptap/extension-text-align"
 import Typography from "@tiptap/extension-typography"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { MenuBar } from "./MenuBar"
 import TextStyle from "@tiptap/extension-text-style"
 import Color from "@tiptap/extension-color"
 import Highlight from "@tiptap/extension-highlight"
 import { FontSize } from "../extensions/FontSize"
-
-
-
-// Let's fix the any type on line 16
-// If you have something like:
-// const [content, setContent] = useState<any>(initialContent)
-
-// Change it to a more specific type, for example:
-// const [content, setContent] = useState<string | Record<string, unknown>>(initialContent)
-
-// Or if it's a specific editor content type:
-interface EditorContent {
-  blocks?: Array<{
-    id: string
-    type: string
-    data?: Record<string, unknown>
-    text?: string
-  }>
-  time?: number
-  version?: string
-}
-
-const initialContent: EditorContent = {
-  blocks: [],
-  time: 0,
-  version: "2.0",
-}
-
-const [content, setContent] = useState<EditorContent>(initialContent) // Removed conditional hook
 
 interface FormField {
   value: string
@@ -49,7 +20,6 @@ interface FormField {
 interface JobDescriptionEditorProps {
   field: FormField
 }
-
 
 export default function JobDescriptionEditor({ field }: JobDescriptionEditorProps) {
   const editor = useEditor({

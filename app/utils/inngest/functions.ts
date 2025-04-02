@@ -788,7 +788,7 @@ export const analyzeSkillGap = inngest.createFunction(
           userId,
           targetJobTitle,
           currentSkills: userSkills,
-          //@ts-expect-error
+          //@ts-expect-error - Type mismatch between generated missingSkills and MissingSkill[] interface
           missingSkills: missingSkills as MissingSkill[],
           completeness,
         },

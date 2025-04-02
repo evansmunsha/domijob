@@ -1,80 +1,77 @@
-"use server";
+"use server"
 //@typescript-eslint/no-unused-vars
-import { z } from "zod";
-import { requireUser } from "./utils/hooks";
-import { companySchema, jobSchema, jobSeekerSchema } from "./utils/zodSchemas";
-import { prisma } from "./utils/db";
-import { redirect } from "next/navigation";
-import { stripe } from "./utils/stripe";
-import { jobListingDurationPricing } from "./utils/pricingTiers";
-import { revalidatePath } from "next/cache";
-import arcjet, { detectBot, shield } from "./utils/arcjet";
-import { request } from "@arcjet/next";
-import { inngest } from "./utils/inngest/client";
-import { auth } from "./utils/auth";
-import { notifyCompanyOfNewApplication } from "./utils/notifications";
+import { z } from "zod"
+import { requireUser } from "./utils/hooks"
+import { companySchema, jobSchema, jobSeekerSchema } from "./utils/zodSchemas"
+import { prisma } from "./utils/db"
+import { redirect } from "next/navigation"
+import { stripe } from "./utils/stripe"
+import { jobListingDurationPricing } from "./utils/pricingTiers"
+import { revalidatePath } from "next/cache"
+import arcjet, { detectBot, shield } from "./utils/arcjet"
+import { request } from "@arcjet/next"
+import { inngest } from "./utils/inngest/client"
+import { auth } from "./utils/auth"
+import { notifyCompanyOfNewApplication } from "./utils/notifications"
 
 const aj = arcjet
   .withRule(
     shield({
       mode: "LIVE",
-    })
+    }),
   )
   .withRule(
     detectBot({
       mode: "LIVE",
       allow: [],
-    })
-  );
+    }),
+  )
 
-  export async function createCompany(data: z.infer<typeof companySchema>) {
-    const user = await requireUser();
-    const req = await request();
-    const decision = await aj.protect(req);
-  
-    if (decision.isDenied()) {
-      throw new Error("Forbidden");
-    }
-  
-    const validatedData = companySchema.parse(data);
-    console.log("Received data:", data);
-    console.log("Validated data:", validatedData);
-  
-    try {
-      // Check if the company already exists
-      const existingCompany = await prisma.company.findUnique({
-        where: { userId: user.id },
-      });
-  
-      if (existingCompany) {
-        // Update the existing company
-        await prisma.company.update({
-          where: { userId: user.id },
-          data: validatedData,
-        });
-      } else {
-        // Create a new company
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            onboardingCompleted: true,
-            userType: "COMPANY",
-            Company: {
-              create: validatedData,
-            },
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Error updating or creating company:", error);
-      throw new Error("Failed to create or update company.");
-    }
-  
-    return redirect("/");
+export async function createCompany(data: z.infer<typeof companySchema>) {
+  const user = await requireUser()
+  const req = await request()
+  const decision = await aj.protect(req)
+
+  if (decision.isDenied()) {
+    throw new Error("Forbidden")
   }
 
+  const validatedData = companySchema.parse(data)
+  console.log("Received data:", data)
+  console.log("Validated data:", validatedData)
 
+  try {
+    // Check if the company already exists
+    const existingCompany = await prisma.company.findUnique({
+      where: { userId: user.id },
+    })
 
+    if (existingCompany) {
+      // Update the existing company
+      await prisma.company.update({
+        where: { userId: user.id },
+        data: validatedData,
+      })
+    } else {
+      // Create a new company
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          onboardingCompleted: true,
+          userType: "COMPANY",
+          Company: {
+            create: validatedData,
+          },
+        },
+      })
+    }
+  } catch (error) {
+    console.error("Error updating or creating company:", error)
+    throw new Error("Failed to create or update company.")
+  }
+
+  return redirect("/")
+}
 
 export async function createJobSeeker(data: z.infer<typeof jobSeekerSchema>) {
   try {
@@ -148,18 +145,10 @@ export async function createJobSeeker(data: z.infer<typeof jobSeekerSchema>) {
   }
 }
 
-
-
-
-
-
-
 export async function createJob(data: z.infer<typeof jobSchema>) {
-  const user = await requireUser();
+  const user = await requireUser()
 
-
-
-  const validatedData = jobSchema.parse(data);
+  const validatedData = jobSchema.parse(data)
 
   const company = await prisma.company.findUnique({
     where: {
@@ -173,27 +162,27 @@ export async function createJob(data: z.infer<typeof jobSchema>) {
         },
       },
     },
-  });
+  })
 
   if (!company?.id) {
-    return redirect("/");
+    return redirect("/")
   }
 
-  let stripeCustomerId = company.user.stripeCustomerId;
+  let stripeCustomerId = company.user.stripeCustomerId
 
   if (!stripeCustomerId) {
     const customer = await stripe.customers.create({
       email: user.email!,
       name: user.name || undefined,
-    });
+    })
 
-    stripeCustomerId = customer.id;
+    stripeCustomerId = customer.id
 
     // Update user with Stripe customer ID
     await prisma.user.update({
       where: { id: user.id },
       data: { stripeCustomerId: customer.id },
-    });
+    })
   }
 
   const jobPost = await prisma.jobPost.create({
@@ -208,7 +197,7 @@ export async function createJob(data: z.infer<typeof jobSchema>) {
       listingDuration: validatedData.listingDuration,
       benefits: validatedData.benefits,
     },
-  });
+  })
 
   // Trigger the job expiration function
   await inngest?.send({
@@ -217,15 +206,13 @@ export async function createJob(data: z.infer<typeof jobSchema>) {
       jobId: jobPost.id,
       expirationDays: validatedData.listingDuration,
     },
-  });
+  })
 
   // Get price from pricing tiers based on duration
-  const pricingTier = jobListingDurationPricing.find(
-    (tier) => tier.days === validatedData.listingDuration
-  );
+  const pricingTier = jobListingDurationPricing.find((tier) => tier.days === validatedData.listingDuration)
 
   if (!pricingTier) {
-    throw new Error("Invalid listing duration selected");
+    throw new Error("Invalid listing duration selected")
   }
 
   const session = await stripe.checkout.sessions.create({
@@ -236,9 +223,7 @@ export async function createJob(data: z.infer<typeof jobSchema>) {
           product_data: {
             name: `Job Posting - ${pricingTier.days} Days`,
             description: pricingTier.description,
-            images: [
-              "https://pve1u6tfz1.ufs.sh/f/Ae8VfpRqE7c0gFltIEOxhiBIFftvV4DTM8a13LU5EyzGb2SQ",
-            ],
+            images: ["https://pve1u6tfz1.ufs.sh/f/Ae8VfpRqE7c0gFltIEOxhiBIFftvV4DTM8a13LU5EyzGb2SQ"],
           },
           currency: "USD",
           unit_amount: pricingTier.price * 100, // Convert to cents for Stripe
@@ -252,28 +237,24 @@ export async function createJob(data: z.infer<typeof jobSchema>) {
     },
     success_url: `${process.env.NEXT_PUBLIC_URL}/payment/success`,
     cancel_url: `${process.env.NEXT_PUBLIC_URL}/payment/cancel`,
-  });
+  })
 
-  return redirect(session.url as string);
+  return redirect(session.url as string)
 }
 
-export async function updateJobPost(
-  data: z.infer<typeof jobSchema>,
-  jobId: string
-) {
-  const user = await requireUser();
+export async function updateJobPost(data: z.infer<typeof jobSchema>, jobId: string) {
+  const user = await requireUser()
 
   // Access the request object so Arcjet can analyze it
-  const req = await request();
+  const req = await request()
   // Call Arcjet protect
-  const decision = await aj.protect(req);
+  const decision = await aj.protect(req)
 
   if (decision.isDenied()) {
-    throw new Error("Forbidden");
+    throw new Error("Forbidden")
   }
 
-  const validatedData = jobSchema.parse(data);
-
+  const validatedData = jobSchema.parse(data)
 
   await prisma.jobPost.update({
     where: {
@@ -291,25 +272,23 @@ export async function updateJobPost(
       salaryTo: validatedData.salaryTo,
       listingDuration: validatedData.listingDuration,
       benefits: validatedData.benefits,
-      
     },
-  });
+  })
 
-  return redirect("/my-jobs");
+  return redirect("/my-jobs")
 }
 
 export async function deleteJobPost(jobId: string) {
-  const user = await requireUser();
+  const user = await requireUser()
 
   // Access the request object so Arcjet can analyze it
-  const req = await request();
+  const req = await request()
   // Call Arcjet protect
-  const decision = await aj.protect(req);
+  const decision = await aj.protect(req)
 
   if (decision.isDenied()) {
-    throw new Error("Forbidden");
+    throw new Error("Forbidden")
   }
-
 
   await prisma.jobPost.delete({
     where: {
@@ -318,20 +297,16 @@ export async function deleteJobPost(jobId: string) {
         userId: user.id,
       },
     },
-  });
-
-  await inngest.send({
-    name: "job/cancel.expiration",
-    data: {jobId: jobId}
   })
 
-  return redirect("/my-jobs");
+  // Fixed: Added await before inngest.send()
+  await inngest.send({
+    name: "job/cancel.expiration",
+    data: { jobId: jobId },
+  })
+
+  return redirect("/my-jobs")
 }
-
-
-
-
-
 
 export async function applyForJob(jobId: string) {
   const session = await auth()
@@ -385,7 +360,7 @@ export async function applyForJob(jobId: string) {
 
   console.log(`Application created: ${application.id}`)
 
-  const applicantName = jobSeeker.name || "A candidate"
+  // Fixed: Removed duplicate declaration of applicantName
 
   // Create a notification for the company
   try {
@@ -471,14 +446,6 @@ export async function unsaveJobPost(savedJobId: string) {
   return { success: true }
 }
 
-
-
-
-
-
-
-
-
 type ApplicationStatus = "PENDING" | "REVIEWING" | "SHORTLISTED" | "REJECTED"
 
 export async function updateApplicationStatus(applicationId: string, status: ApplicationStatus): Promise<void> {
@@ -525,14 +492,6 @@ export async function updateApplicationStatus(applicationId: string, status: App
   revalidatePath(`/my-jobs/${application.job.id}/applications/${applicationId}`)
   revalidatePath(`/my-jobs/${application.job.id}/applications`)
 }
-
-
-
-
-
-
-
-
 
 // Update the profileSchema to include skills and languages
 const profileSchema = z.object({
@@ -581,8 +540,6 @@ export async function updateProfile(userId: string, data: z.infer<typeof profile
   revalidatePath("/profile")
   revalidatePath("/dashboard")
 }
-
-
 
 export async function updateSkills(userId: string, skills: string[]) {
   const session = await auth()
@@ -636,8 +593,6 @@ export async function updateLanguages(userId: string, languages: string[]) {
   revalidatePath(`/job-seekers/${userId}`)
 }
 
-
-
 export async function updateResume(userId: string, resumeUrl: string) {
   const session = await auth()
 
@@ -667,10 +622,4 @@ export async function updateResume(userId: string, resumeUrl: string) {
   revalidatePath("/profile")
   revalidatePath("/dashboard")
 }
-
-
-
-
-
-// Other actions remain the same...
 
