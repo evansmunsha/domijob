@@ -207,7 +207,6 @@ export async function createJob(data: z.infer<typeof jobSchema>) {
       expirationDays: validatedData.listingDuration,
     },
   })
-
   // Get price from pricing tiers based on duration
   const pricingTier = jobListingDurationPricing.find((tier) => tier.days === validatedData.listingDuration)
 
