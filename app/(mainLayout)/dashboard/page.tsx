@@ -9,6 +9,7 @@ import { Briefcase, Building2, FileText, Search, User, Clock, CheckCircle, XCirc
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner"
 import Image from "next/image"
 import type { Prisma } from "@prisma/client"
+import { use } from "react"
 
 async function getUserProfile(userId: string) {
   return prisma.user.findUnique({
@@ -489,23 +490,24 @@ function formatDate(date: Date) {
   }).format(date)
 }
 
-export default async function Dashboard({ searchParams }: { searchParams: { welcome?: string } }) {
-  // Your existing code...
+export default function Dashboard({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
+  // Unwrap the searchParams Promise using React.use()
+  const resolvedSearchParams = use(searchParams)
+  const showWelcome = resolvedSearchParams?.welcome === "true"
 
-  // Access searchParams directly as it's already resolved
-  const showWelcome = searchParams?.welcome === "true"
-
-  const session = await auth()
+  const session = use(auth())
 
   if (!session?.user?.id) {
     redirect("/login")
   }
 
-  const [user, recommendedJobs, userApplications] = await Promise.all([
-    getUserProfile(session.user.id),
-    getRecommendedJobs(session.user.id),
-    getUserApplications(session.user.id),
-  ])
+  const [user, recommendedJobs, userApplications] = use(
+    Promise.all([
+      getUserProfile(session.user.id),
+      getRecommendedJobs(session.user.id),
+      getUserApplications(session.user.id),
+    ]),
+  )
 
   const isJobSeeker = user?.userType === "JOB_SEEKER"
 
