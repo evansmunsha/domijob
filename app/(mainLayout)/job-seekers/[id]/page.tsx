@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { use } from "react"
 
 async function getJobSeeker(id: string) {
   const jobSeeker = await prisma.jobSeeker.findUnique({
@@ -31,14 +32,20 @@ async function checkApplicationStatus(jobSeekerId: string, companyId: string) {
   return !!application
 }
 
-export default async function JobSeekerProfile({ params }: { params: { id: string } }) {
-  const session = await auth()
-  const jobSeeker = await getJobSeeker(params.id)
+export default function JobSeekerProfile({ params }: { params: Promise<{ id: string }> }) {
+  // Unwrap the params Promise using React.use()
+  const resolvedParams = use(params)
+  const id = resolvedParams.id
+
+  // Use the use() hook to handle async functions
+  const session = use(auth())
+  const jobSeeker = use(getJobSeeker(id))
 
   let canViewFullProfile = false
 
   if (session?.user?.userType === "COMPANY" && session.user.companyId) {
-    canViewFullProfile = await checkApplicationStatus(jobSeeker.userId, session.user.companyId)
+    // We need to handle this Promise with use() as well
+    canViewFullProfile = use(checkApplicationStatus(jobSeeker.userId, session.user.companyId))
   }
 
   return (
