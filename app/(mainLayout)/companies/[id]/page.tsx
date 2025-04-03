@@ -1,13 +1,13 @@
-import { prisma } from "@/app/utils/db";
-import { notFound } from "next/navigation";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Globe, Calendar, Users, X } from "lucide-react";
-import Link from "next/link";
-// Fetch company data from Prisma
+import { prisma } from "@/app/utils/db"
+import { notFound } from "next/navigation"
+import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { MapPin, Globe, Calendar, Users, X } from "lucide-react"
+import Link from "next/link"
+
 async function getCompany(id: string) {
   const company = await prisma.company.findUnique({
     where: { id },
@@ -17,27 +17,24 @@ async function getCompany(id: string) {
         orderBy: { createdAt: "desc" },
       },
     },
-  });
+  })
 
   if (!company) {
-    notFound();
+    notFound()
   }
 
-  return company;
+  return company
 }
 
-
-
+// Fix: Changed the params type to match Next.js App Router expectations
 export default async function CompanyProfile({ params }: { params: { id: string } }) {
-  const company = await getCompany(params.id);
-
+  const { id } = params
+  const company = await getCompany(id)
 
   return (
     <div className="container mx-auto py-8">
       <div className="grid grid-cols-1 md:grid-cols-[2fr,1fr] gap-8">
-        {/* Left Column - Company Info */}
         <div>
-          {/* Company Header */}
           <div className="flex items-center gap-6 mb-6">
             <Image
               src={company.logo || `https://avatar.vercel.sh/${company.name}`}
@@ -90,14 +87,11 @@ export default async function CompanyProfile({ params }: { params: { id: string 
             </div>
           </div>
 
-          {/* Tabs Section */}
           <Tabs defaultValue="about">
             <TabsList>
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="jobs">Jobs ({company.JobPost.length})</TabsTrigger>
             </TabsList>
-
-            {/* About Tab */}
             <TabsContent value="about" className="mt-6">
               <Card>
                 <CardHeader>
@@ -108,8 +102,6 @@ export default async function CompanyProfile({ params }: { params: { id: string 
                 </CardContent>
               </Card>
             </TabsContent>
-
-            {/* Jobs Tab */}
             <TabsContent value="jobs" className="mt-6">
               <Card>
                 <CardHeader>
@@ -152,7 +144,6 @@ export default async function CompanyProfile({ params }: { params: { id: string 
           </Tabs>
         </div>
 
-        {/* Right Column - Company Details */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -178,8 +169,26 @@ export default async function CompanyProfile({ params }: { params: { id: string 
               {company.website && (
                 <div>
                   <h3 className="text-sm font-medium">Website</h3>
-                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  <a
+                    href={company.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
                     {company.website.replace(/^https?:\/\//, "")}
+                  </a>
+                </div>
+              )}
+              {company.xAccount && (
+                <div>
+                  <h3 className="text-sm font-medium">X (Twitter)</h3>
+                  <a
+                    href={`https://twitter.com/${company.xAccount}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    @{company.xAccount}
                   </a>
                 </div>
               )}
@@ -200,5 +209,6 @@ export default async function CompanyProfile({ params }: { params: { id: string 
         </div>
       </div>
     </div>
-  );
+  )
 }
+
