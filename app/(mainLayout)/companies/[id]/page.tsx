@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Globe, Calendar, Users, X } from "lucide-react"
 import Link from "next/link"
+import { use } from "react"
 
 async function getCompany(id: string) {
   const company = await prisma.company.findUnique({
@@ -26,10 +27,13 @@ async function getCompany(id: string) {
   return company
 }
 
-// Fix: Changed the params type to match Next.js App Router expectations
-export default async function CompanyProfile({ params }: { params: { id: string } }) {
-  const { id } = params
-  const company = await getCompany(id)
+// Fix: Updated to match the pattern used in other components
+export default function CompanyProfile({ params }: { params: Promise<{ id: string }> }) {
+  // Unwrap the params Promise using React.use()
+  const resolvedParams = use(params)
+  const { id } = resolvedParams
+
+  const company = use(getCompany(id))
 
   return (
     <div className="container mx-auto py-8">
