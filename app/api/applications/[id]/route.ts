@@ -2,8 +2,13 @@ import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 import { NextResponse } from "next/server"
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
+
+    console.log(request)
+    // Await the params Promise to get the actual params
+    const { id } = await context.params
+
     const session = await auth()
 
     if (!session?.user?.id) {
@@ -12,7 +17,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 
     const application = await prisma.jobApplication.findUnique({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id,
       },
       include: {
