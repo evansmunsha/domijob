@@ -10,7 +10,9 @@ interface GeneralSubmitButtonProps {
   onClick?: () => void;
   variant?: "default" | "destructive" | "outline" | "ghost" | "link" | "secondary";
   icon?: React.ReactNode;
+  width?: string; // ✅ Add this line
 }
+
 
 
 export function GeneralSubmitButton({ text, onClick }: GeneralSubmitButtonProps) {
