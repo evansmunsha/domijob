@@ -2,15 +2,16 @@ import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
-export async function POST(_request: Request, { params }: { params: { id: string } }) {
+export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    const notificationId = params.id
+// Await the params Promise to get the actual id
+const { id } = await context.params
+    const notificationId = id
 
     // Get user's company ID if they are a company user
     let companyId = null

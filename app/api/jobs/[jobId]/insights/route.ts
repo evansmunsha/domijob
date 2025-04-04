@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
-export async function GET(request: Request, { params }: { params: { jobId: string } }) {
+export async function GET(_request: Request, context: { params: Promise<{ jobId: string }> }) {
   try {
     const session = await auth()
 
@@ -11,7 +11,7 @@ export async function GET(request: Request, { params }: { params: { jobId: strin
     }
 
     // Properly await params to get jobId
-    const { jobId } = await params
+    const { jobId } = await context.params
 
     // Check if the user has applied to this job
     const userApplication = await prisma.jobApplication.findUnique({
