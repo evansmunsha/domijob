@@ -5,15 +5,18 @@ import { prisma } from "@/app/utils/db"
 // Import the notification utilities
 import { notifyUserOfApplicationStatusChange } from "@/app/utils/notifications"
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
+    // Await the params Promise to get the actual params
+    const { id } = await context.params
+
     const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const applicationId = params.id
+    const applicationId = id
     const { status } = await request.json()
 
     if (!status) {
