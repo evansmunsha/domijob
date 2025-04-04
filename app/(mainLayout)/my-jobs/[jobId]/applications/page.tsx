@@ -16,6 +16,7 @@ import Link from "next/link"
 import { EmptyState } from "@/components/general/EmptyState"
 import { prisma } from "@/app/utils/db"
 import { requireUser } from "@/app/utils/hooks"
+import { use } from "react"
 
 // Helper function to format relative time without date-fns
 function formatRelativeTime(date: Date): string {
@@ -40,7 +41,11 @@ function formatRelativeTime(date: Date): string {
   return `${diffInYears} year${diffInYears === 1 ? "" : "s"} ago`
 }
 
-async function getJobWithApplications(jobId: string, userId: string) {
+async function getJobWithApplications(jobId: string, userId: string | undefined) {
+  if (!userId) {
+    return null
+  }
+
   try {
     // First verify the job belongs to the user's company
     const job = await prisma.jobPost.findFirst({
@@ -113,14 +118,18 @@ async function getJobWithApplications(jobId: string, userId: string) {
   }
 }
 
-export default async function JobApplicationsPage({
+export default function JobApplicationsPage({
   params,
 }: {
-  params: { jobId: string }
+  params: Promise<{ jobId: string }>
 }) {
-  const { jobId } = params
-  const session = await requireUser()
-  const data = await getJobWithApplications(jobId, session.id as string)
+  // Unwrap the params Promise using React.use()
+  const resolvedParams = use(params)
+  const { jobId } = resolvedParams
+
+  // Use the use() hook to handle async functions
+  const session = use(requireUser())
+  const data = use(getJobWithApplications(jobId, session.id))
 
   if (!data) {
     notFound()
