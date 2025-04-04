@@ -6,9 +6,12 @@ import { Heart, Loader2 } from "lucide-react";
 import { useState } from "react"
 
 interface GeneralSubmitButtonProps {
-  text: string
-  onClick?: () => void
+  text: string;
+  onClick?: () => void;
+  variant?: "default" | "destructive" | "outline" | "ghost" | "link" | "secondary";
+  icon?: React.ReactNode;
 }
+
 
 export function GeneralSubmitButton({ text, onClick }: GeneralSubmitButtonProps) {
   const { pending } = useFormStatus()
