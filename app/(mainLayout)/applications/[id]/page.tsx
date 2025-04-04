@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, Building2, Calendar, Clock, Loader2 } from "lucide-react"
 import React from "react"
-import { ApplicationInsights } from "@/components/job/ApplicationInsights"
 import Image from "next/image"
 
 // Define proper types for the application data
