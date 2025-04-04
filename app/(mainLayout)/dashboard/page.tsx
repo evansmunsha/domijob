@@ -774,13 +774,13 @@ const profileCompletion = calculateProfileCompletion(user);
             <CardContent>
               <div className="space-y-2">
                 <Button asChild variant="outline" className="w-full justify-start">
-                  <Link href="/job">
+                  <Link href="/jobs">
                     <Search className="h-4 w-4 mr-2" />
                     Browse Jobs
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start">
-                  <Link href="/saved-jobs">
+                  <Link href="/favorites">
                     <Briefcase className="h-4 w-4 mr-2" />
                     Saved Jobs
                   </Link>
