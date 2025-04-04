@@ -2,6 +2,7 @@ import { prisma } from "@/app/utils/db"
 import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { use } from "react"
 
 async function getJobs(companyId?: string) {
   return prisma.jobPost.findMany({
@@ -22,13 +23,17 @@ async function getJobs(companyId?: string) {
   })
 }
 
-export default async function JobsPage({
+export default function JobsPage({
   searchParams,
 }: {
-  searchParams: { company?: string }
+  searchParams: Promise<{ company?: string }>
 }) {
-  const { company: companyId } = searchParams
-  const jobs = await getJobs(companyId)
+  // Unwrap the searchParams Promise using React.use()
+  const resolvedSearchParams = use(searchParams)
+  const companyId = resolvedSearchParams.company
+
+  // Use the use() hook to handle the async getJobs function
+  const jobs = use(getJobs(companyId))
 
   return (
     <div className="container mx-auto py-8">
