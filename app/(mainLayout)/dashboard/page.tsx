@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Briefcase, Building2, FileText, Search, User, Clock, CheckCircle, XCircle } from "lucide-react"
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner"
-import Image from "next/image"
 import type { Prisma } from "@prisma/client"
 import { use } from "react"
 
@@ -18,6 +17,37 @@ async function getUserProfile(userId: string) {
       JobSeeker: true,
     },
   })
+}
+// Function to calculate profile completion percentage
+function calculateProfileCompletion(user: any): number {
+  if (!user || !user.JobSeeker) return 0
+
+  const jobSeeker = user.JobSeeker
+  let totalFields = 0
+  let completedFields = 0
+
+  // Check name
+  totalFields++
+  if (jobSeeker.name) completedFields++
+
+  // Check about
+  totalFields++
+  if (jobSeeker.about) completedFields++
+
+  // Check skills
+  totalFields++
+  if (jobSeeker.skills && jobSeeker.skills.length > 0) completedFields++
+
+  // Check languages
+  totalFields++
+  if (jobSeeker.languages && jobSeeker.languages.length > 0) completedFields++
+
+  // Check resume
+  totalFields++
+  if (jobSeeker.resume) completedFields++
+
+  // Calculate percentage
+  return Math.round((completedFields / totalFields) * 100)
 }
 
 // Define a proper type for the query object that matches Prisma's expected types
@@ -510,7 +540,8 @@ export default function Dashboard({ searchParams }: { searchParams: Promise<{ we
   )
 
   const isJobSeeker = user?.userType === "JOB_SEEKER"
-
+// Calculate profile completion percentage
+const profileCompletion = calculateProfileCompletion(user)
   if (!user?.onboardingCompleted) {
     redirect("/onboarding")
   }
@@ -545,12 +576,10 @@ export default function Dashboard({ searchParams }: { searchParams: Promise<{ we
                         >
                           <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
                             {job.company.logo ? (
-                              <Image
+                              <img
                                 src={job.company.logo || "/placeholder.svg"}
                                 alt={job.company.name}
-                                width={40}
-                                height={40}
-                                className="rounded-md"
+                                className="h-10 w-10 rounded-md"
                               />
                             ) : (
                               <Building2 className="h-6 w-6 text-primary" />
@@ -585,7 +614,7 @@ export default function Dashboard({ searchParams }: { searchParams: Promise<{ we
                       <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium">No recommended jobs yet</h3>
                       <p className="text-muted-foreground mb-4">
-                        We&apos;ll show personalized job recommendations here as they become available
+                        We'll show personalized job recommendations here as they become available
                       </p>
                       <Button asChild>
                         <Link href="/job">Browse All Jobs</Link>
@@ -610,12 +639,10 @@ export default function Dashboard({ searchParams }: { searchParams: Promise<{ we
                         >
                           <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
                             {application.job?.company?.logo ? (
-                              <Image
+                              <img
                                 src={application.job.company.logo || "/placeholder.svg"}
                                 alt={application.job.company.name}
-                                width={40}
-                                height={40}
-                                className="rounded-md"
+                                className="h-10 w-10 rounded-md"
                               />
                             ) : (
                               <Building2 className="h-6 w-6 text-primary" />
@@ -662,7 +689,7 @@ export default function Dashboard({ searchParams }: { searchParams: Promise<{ we
                       <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium">No applications yet</h3>
                       <p className="text-muted-foreground mb-4">
-                        When you apply for jobs, they&apos;ll appear here so you can track their status
+                        When you apply for jobs, they'll appear here so you can track their status
                       </p>
                       <Button asChild>
                         <Link href="/job">Find Jobs to Apply</Link>
@@ -696,10 +723,10 @@ export default function Dashboard({ searchParams }: { searchParams: Promise<{ we
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Profile Completion</span>
-                    <span className="text-sm font-medium">80%</span>
+                    <span className="text-sm font-medium">{profileCompletion}%</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full" style={{ width: "80%" }}></div>
+                    <div className="bg-primary h-2 rounded-full" style={{ width: `${profileCompletion}%` }}></div>
                   </div>
                 </div>
 
