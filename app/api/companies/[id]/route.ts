@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth()
 
@@ -10,7 +10,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const companyId = params.id
+    // Await the params Promise to get the actual id
+    const { id } = await context.params
+    const companyId = id
     const data = await request.json()
 
     // Verify the user owns this company
