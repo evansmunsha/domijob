@@ -18,8 +18,25 @@ async function getUserProfile(userId: string) {
     },
   })
 }
+
+type JobSeeker = {
+  name?: string;
+  about?: string;
+  resume?: string;
+  skills?: string[];
+  languages?: string[];
+  preferredJobTypes?: string[];
+  preferredLocations?: string[];
+  salaryExpectation?: number;
+  remoteOnly?: boolean;
+};
+
+type User = {
+  JobSeeker: JobSeeker | null; // ✅ allow null
+};
+
 // Function to calculate profile completion percentage
-function calculateProfileCompletion(user: any): number {
+function calculateProfileCompletion(user: User): number {
   if (!user || !user.JobSeeker) return 0
 
   const jobSeeker = user.JobSeeker
@@ -541,10 +558,14 @@ export default function Dashboard({ searchParams }: { searchParams: Promise<{ we
 
   const isJobSeeker = user?.userType === "JOB_SEEKER"
 // Calculate profile completion percentage
-const profileCompletion = calculateProfileCompletion(user)
-  if (!user?.onboardingCompleted) {
-    redirect("/onboarding")
-  }
+
+
+if (!user || !user.onboardingCompleted) {
+  redirect("/onboarding");
+}
+
+const profileCompletion = calculateProfileCompletion(user);
+
 
   return (
     <div className="container py-8 max-w-7xl">
@@ -614,7 +635,7 @@ const profileCompletion = calculateProfileCompletion(user)
                       <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium">No recommended jobs yet</h3>
                       <p className="text-muted-foreground mb-4">
-                        We'll show personalized job recommendations here as they become available
+                        We&apos;ll show personalized job recommendations here as they become available
                       </p>
                       <Button asChild>
                         <Link href="/job">Browse All Jobs</Link>
@@ -689,7 +710,7 @@ const profileCompletion = calculateProfileCompletion(user)
                       <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium">No applications yet</h3>
                       <p className="text-muted-foreground mb-4">
-                        When you apply for jobs, they'll appear here so you can track their status
+                        When you apply for jobs&lsquo; they&apos;ll appear here so you can track their status
                       </p>
                       <Button asChild>
                         <Link href="/job">Find Jobs to Apply</Link>
