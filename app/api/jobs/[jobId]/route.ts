@@ -1,10 +1,10 @@
 import { prisma } from "@/app/utils/db"
 import { NextResponse } from "next/server"
 
-export async function GET(_request: Request, { params }: { params: Promise<{ jobId: string }> }) {
+export async function GET(_request: Request, context: { params: Promise<{ jobId: string }> }) {
   try {
     // Await the params object before accessing jobId
-    const { jobId } = await params
+    const { jobId } = await context.params
 
     const job = await prisma.jobPost.findUnique({
       where: {
