@@ -110,7 +110,7 @@ export default function ApplicationsPage() {
 
   const handleViewJob = (id: string) => {
     setViewJobLoading(id)
-    router.push(`/jobs/${id}`)
+    router.push(`/job/${id}`)
   }
 
   if (loading) {
