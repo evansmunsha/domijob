@@ -188,7 +188,10 @@ export default function ApplicationsPage() {
                     <div className="flex flex-wrap items-center gap-3 mt-2">
                       <Badge variant={getStatusBadgeVariant(application.status)} className="flex items-center gap-1">
                         {getStatusIcon(application.status)}
-                        {application.status.charAt(0).toUpperCase() + application.status.slice(1).toLowerCase()}
+                        {application.status
+  ? application.status.charAt(0).toUpperCase() + application.status.slice(1).toLowerCase()
+  : "Unknown"}
+
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         Applied on {formatDate(new Date(application.createdAt))}
