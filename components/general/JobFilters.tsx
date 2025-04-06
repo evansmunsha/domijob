@@ -145,38 +145,7 @@ export function JobFilters() {
             </SelectContent>
           </Select>
         </div>
-        <Separator />
-        <div className="space-y-4">
-          <Label className="text-lg font-semibold">Salary Range</Label>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="minSalary" className="text-sm">
-                Min Salary
-              </Label>
-              <Input
-                id="minSalary"
-                type="number"
-                placeholder="0"
-                value={currentMinSalary}
-                onChange={handleMinSalaryChange}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="maxSalary" className="text-sm">
-                Max Salary
-              </Label>
-              <Input
-                id="maxSalary"
-                type="number"
-                placeholder="500,000"
-                value={currentMaxSalary}
-                onChange={handleMaxSalaryChange}
-                className="w-full"
-              />
-            </div>
-          </div>
-        </div>
+        
       </CardContent>
     </Card>
   );
