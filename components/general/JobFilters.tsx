@@ -21,7 +21,6 @@ import { useCallback } from "react";
 import { Checkbox } from "../ui/checkbox";
 import { countryList } from "@/app/utils/countriesList";
 import { Separator } from "../ui/separator";
-import { Input } from "@/components/ui/input";
 
 export function JobFilters() {
   const router = useRouter();
