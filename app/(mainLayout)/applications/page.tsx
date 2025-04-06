@@ -189,8 +189,8 @@ export default function ApplicationsPage() {
                       <Badge variant={getStatusBadgeVariant(application.status)} className="flex items-center gap-1">
                         {getStatusIcon(application.status)}
                         {application.status
-  ? application.status.charAt(0).toUpperCase() + application.status.slice(1).toLowerCase()
-  : "Unknown"}
+                        ? application.status.charAt(0).toUpperCase() + application.status.slice(1).toLowerCase()
+                        : "Unknown"}
 
                       </Badge>
                       <span className="text-xs text-muted-foreground">

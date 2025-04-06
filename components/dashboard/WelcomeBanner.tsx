@@ -38,7 +38,7 @@ export function WelcomeBanner({ name, userType }: WelcomeBannerProps) {
         </Button>
 
         <div className="max-w-3xl">
-          <h2 className="text-2xl font-bold mb-2">Welcome to MiJob, {name}! 🎉</h2>
+          <h2 className="text-2xl font-bold mb-2">Welcome to domijob, {name}! 🎉</h2>
           <p className="mb-4">
             {userType === "JOB_SEEKER"
               ? "Your job seeker profile has been created successfully. Now you can start exploring job opportunities that match your skills and experience."

@@ -18,9 +18,9 @@ export function Navbar() {
   return (
     <nav className="flex justify-between items-center py-5">
       <Link href="/" className="flex items-center gap-2">
-        <Image src={Logo || "/placeholder.svg"} alt="MiJob Logo" width={40} height={40} />
+        <Image src={Logo || "/placeholder.svg"} alt="domijob Logo" width={40} height={40} />
         <h1 className="text-2xl font-bold">
-          Mi<span className="text-primary">Job</span>
+        Do<span className="text-primary">MiJob</span>
         </h1>
       </Link>
 

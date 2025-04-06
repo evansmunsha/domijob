@@ -150,7 +150,7 @@ export const sendPeriodicJobListing = inngest.createFunction(
 
           try {
             await resend.emails.send({
-              from: "MiJob <onboarding@resend.dev>",
+              from: "domijob <onboarding@resend.dev>",
               to: [email],
               subject: "New Job Opportunities Just For You",
               html: `
@@ -169,7 +169,7 @@ export const sendPeriodicJobListing = inngest.createFunction(
                   <div style="padding: 20px;">
                     ${jobListingsHtml}
                     <p style="text-align: center; font-size: 14px; color: #888; margin-top: 30px;">
-                      Find your next career move with MiJob!
+                      Find your next career move with domijob!
                     </p>
                     <div style="text-align: center; margin-top: 20px;">
                       <a href="${baseUrl}" style="background-color: #0066cc; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-size: 16px;">Explore More Jobs</a>
@@ -418,7 +418,7 @@ export const sendPersonalizedJobAlerts = inngest.createFunction(
 
             try {
               await resend.emails.send({
-                from: "MiJob <onboarding@resend.dev>",
+                from: "domijob <onboarding@resend.dev>",
                 to: [jobSeeker.user.email],
                 subject: "Personalized Job Matches Just For You",
                 html: `
@@ -853,7 +853,7 @@ export const analyzeSkillGap = inngest.createFunction(
 
         try {
           await resend.emails.send({
-            from: "MiJob <onboarding@resend.dev>",
+            from: "domijob <onboarding@resend.dev>",
             to: [jobSeeker.user.email],
             subject: `Your Skill Gap Analysis for ${targetJobTitle}`,
             html: `

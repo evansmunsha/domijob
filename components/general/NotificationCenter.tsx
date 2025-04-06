@@ -157,7 +157,7 @@ export function NotificationCenter({ pollingInterval = 60000 }) {
                         setOpen(false)
                       }}
                     >
-                      <Link href={`/jobs/${notification.jobId}`}>View Job</Link>
+                      <Link href={`/job/${notification.jobId}`}>View Job</Link>
                     </Button>
                   )}
                   {notification.type === "SKILL_GAP_ANALYSIS" && (

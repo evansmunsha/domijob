@@ -150,7 +150,7 @@ export default function JobApplicationsPage({
           description="When candidates apply for this job, they'll appear here."
           icon={<User className="h-10 w-10" />}
           buttonText="View job post"
-          href={`/jobs/${job.id}`}
+          href={`/job/${job.id}`}
         />
       ) : (
         <Card>

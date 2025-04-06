@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "MiJob - Find Your Next Opportunity",
-  description: "MiJob is a platform for job seekers and employers to connect.",
+  title: "domijob - Find Your Next Opportunity",
+  description: "domijob is a platform for job seekers and employers to connect.",
 }
 
 export default function RootLayout({

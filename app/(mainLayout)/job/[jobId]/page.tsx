@@ -244,7 +244,7 @@ export default function JobIdPage({ params }: { params: Promise<{ jobId: string 
             <div className="space-y-4">
               <h3 className="font-semibold">Apply now</h3>
               <p className="text-sm text-muted-foreground">
-                Please let {jobData.company.name} know you found this job on MiJob.
+                Please let {jobData.company.name} know you found this job on domijob.
               </p>
               {hasApplied ? (
                 <Button disabled className="w-full">
