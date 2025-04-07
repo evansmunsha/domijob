@@ -18,7 +18,7 @@ export default function CompanyLayout({ children }: Props) {
             Dashboard
           </Link>
           <Link href="/my-jobs" className="block p-2 rounded hover:bg-muted">
-            My Jobs
+            Manage listings
           </Link>
           <Link href="/applications" className="block p-2 rounded hover:bg-muted">
             Applications
