@@ -9,7 +9,7 @@ export async function GET(_request: Request, { params }: { params: { jobId: stri
       return new NextResponse(null, { status: 401 })
     }
 
-    const { jobId } = params
+    const { jobId } = params // no need for await
 
     const application = await prisma.jobApplication.findUnique({
       where: {
