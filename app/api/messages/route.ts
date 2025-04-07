@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
+import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
   try {
@@ -13,19 +13,22 @@ export async function GET(request: Request) {
     const url = new URL(request.url)
     const limit = Number.parseInt(url.searchParams.get("limit") || "20")
 
-    // Determine if the user is a company or job seeker
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { userType: true, company: { select: { id: true } } },
+      select: {
+        userType: true,
+        Company: { select: { id: true } },
+      },
     })
 
-    let threads
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
 
-    if (user?.userType === "COMPANY") {
-      // Get threads for company
-      threads = await prisma.chatThread.findMany({
+    if (user.userType === "COMPANY") {
+      const threads = await prisma.chatThread.findMany({
         where: {
-          companyId: user.company?.id,
+          companyId: user.Company?.id,
         },
         include: {
           jobSeeker: {
@@ -34,27 +37,47 @@ export async function GET(request: Request) {
               name: true,
               image: true,
               JobSeeker: {
-                select: {
-                  name: true,
-                },
+                select: { name: true },
               },
             },
           },
           messages: {
-            orderBy: {
-              createdAt: "desc",
-            },
+            orderBy: { createdAt: "desc" },
             take: 1,
           },
         },
-        orderBy: {
-          lastMessageAt: "desc",
-        },
+        orderBy: { lastMessageAt: "desc" },
         take: limit,
       })
+
+      const formattedThreads = threads.map((thread) => {
+        const lastMessage = thread.messages[0]
+        return {
+          id: thread.id,
+          participant: {
+            id: thread.jobSeeker.id,
+            name:
+              thread.jobSeeker.JobSeeker?.name ||
+              thread.jobSeeker.name ||
+              "Job Seeker",
+            image: thread.jobSeeker.image,
+            type: "JOB_SEEKER",
+          },
+          lastMessage: lastMessage
+            ? {
+                content: lastMessage.content,
+                sentAt: lastMessage.createdAt,
+                isFromUser: lastMessage.senderId === session.user.id,
+                read: lastMessage.read,
+              }
+            : null,
+          updatedAt: thread.lastMessageAt,
+        }
+      })
+
+      return NextResponse.json(formattedThreads)
     } else {
-      // Get threads for job seeker
-      threads = await prisma.chatThread.findMany({
+      const threads = await prisma.chatThread.findMany({
         where: {
           jobSeekerId: session.user.id,
         },
@@ -67,55 +90,40 @@ export async function GET(request: Request) {
             },
           },
           messages: {
-            orderBy: {
-              createdAt: "desc",
-            },
+            orderBy: { createdAt: "desc" },
             take: 1,
           },
         },
-        orderBy: {
-          lastMessageAt: "desc",
-        },
+        orderBy: { lastMessageAt: "desc" },
         take: limit,
       })
-    }
 
-    // Format the threads for the response
-    const formattedThreads = threads.map((thread) => {
-      const lastMessage = thread.messages[0]
-
-      return {
-        id: thread.id,
-        participant:
-          user?.userType === "COMPANY"
+      const formattedThreads = threads.map((thread) => {
+        const lastMessage = thread.messages[0]
+        return {
+          id: thread.id,
+          participant: {
+            id: thread.company.id,
+            name: thread.company.name,
+            image: thread.company.logo,
+            type: "COMPANY",
+          },
+          lastMessage: lastMessage
             ? {
-                id: thread.jobSeeker.id,
-                name: thread.jobSeeker.JobSeeker?.name || thread.jobSeeker.name || "Job Seeker",
-                image: thread.jobSeeker.image,
-                type: "JOB_SEEKER",
+                content: lastMessage.content,
+                sentAt: lastMessage.createdAt,
+                isFromUser: lastMessage.senderId === session.user.id,
+                read: lastMessage.read,
               }
-            : {
-                id: thread.company.id,
-                name: thread.company.name,
-                image: thread.company.logo,
-                type: "COMPANY",
-              },
-        lastMessage: lastMessage
-          ? {
-              content: lastMessage.content,
-              sentAt: lastMessage.createdAt,
-              isFromUser: lastMessage.senderId === session.user.id,
-              read: lastMessage.read,
-            }
-          : null,
-        updatedAt: thread.lastMessageAt,
-      }
-    })
+            : null,
+          updatedAt: thread.lastMessageAt,
+        }
+      })
 
-    return NextResponse.json(formattedThreads)
+      return NextResponse.json(formattedThreads)
+    }
   } catch (error) {
     console.error("Error fetching messages:", error)
     return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 })
   }
 }
-
