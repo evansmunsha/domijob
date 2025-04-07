@@ -85,7 +85,7 @@ export function Navbar() {
       </div>
 
       {/* Mobile Navigation */}
-      <div className="md:hidden flex items-center gap-4">
+      <div className="md:hidden flex items-center gap-2">
         {isCompanyUser && <NotificationCenter />}
         {!isCompanyUser && <NotificationCenter />}
         <ThemeToggle />
@@ -103,13 +103,13 @@ export function Navbar() {
               <SheetDescription>Find or post your next job opportunity</SheetDescription>
             </SheetHeader>
 
-            <div className="flex flex-col gap-4 mt-6">
+            <div className="flex flex-col gap-2 mt-6">
               {!isCompanyUser && (
                 
                 <>
                   <Link
                     href="/jobs"
-                    className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
                   >
                     Find Jobs
                   </Link>
@@ -121,21 +121,21 @@ export function Navbar() {
                 <>
                   <Link
                     href="/post-job"
-                    className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
                   >
                     Post a Job
                   </Link>
                   
                   <Link
                     href="/company/analytics"
-                    className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
                   >
                     <BarChart className="h-4 w-4 mr-2 inline-block" />
                     Analytics
                   </Link>
                   <Link
                     href="/company/potential-candidates"
-                    className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
                   >
                     <Users className="h-4 w-4 mr-2 inline-block" />
                     Potential Candidates
@@ -147,13 +147,13 @@ export function Navbar() {
                 <>
                   <Link
                     href={isCompanyUser ? `/company-profile` : "/profile"}
-                    className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
                   >
                     Profiles
                   </Link>
                   <Link
                     href={isCompanyUser ? "/company-dashboard" : "/dashboard"}
-                    className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
                   >
                     Dashboard
                   </Link>
@@ -164,13 +164,13 @@ export function Navbar() {
               ) : (
                 <Link
                   href="/login"
-                  className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
+                  className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
                 >
                   Login
                 </Link>
               )}
 
-          <Link href="/messages" className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200 flex flex-wrap items-center">
+          <Link href="/messages" className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200 flex flex-wrap items-center">
             <MessageSquare className="h-4 w-4 mr-2" />
             Messages
             <UnreadMessagesIndicator />
