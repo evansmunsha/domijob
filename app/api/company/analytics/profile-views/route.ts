@@ -127,8 +127,11 @@ export async function GET(req: Request) {
     }
 
     // Format data based on period
-    let data: any[] = []
-    let rawData: any[] = []
+    type RawViewData = { hour?: number; day?: number; views: bigint | number }
+    type ChartDataPoint = { label: string; views: number }
+
+    let rawData: RawViewData[] = []
+    let data: ChartDataPoint[] = []
 
     try {
       if (period === "day") {
