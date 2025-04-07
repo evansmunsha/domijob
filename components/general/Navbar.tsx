@@ -51,7 +51,7 @@ export function Navbar() {
               Candidates
             </Link>
 
-            <Link href="/messages" className="text-gray-300 hover:text-white">
+            <Link href="/messages" className="text-gray-300 hover:text-green-500">
             Messages <UnreadMessagesIndicator />
           </Link>
           </>
@@ -170,7 +170,7 @@ export function Navbar() {
                 </Link>
               )}
 
-          <Link href="/messages" className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200 flex-wrap items-center">
+          <Link href="/messages" className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200 flex flex-wrap items-center">
             <MessageSquare className="h-4 w-4 mr-2" />
             Messages
             <UnreadMessagesIndicator />
