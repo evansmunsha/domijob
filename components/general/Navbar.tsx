@@ -113,9 +113,7 @@ export function Navbar() {
                   >
                     Find Jobs
                   </Link>
-                  <Link href="/messages" className="text-gray-300 hover:text-white">
-                  Messages <UnreadMessagesIndicator />
-                </Link>
+                  
                 </>
               )}
 
@@ -127,9 +125,7 @@ export function Navbar() {
                   >
                     Post a Job
                   </Link>
-                  <Link href="/messages"  className="text-gray-300 hover:text-white">
-                    Messages <UnreadMessagesIndicator />
-                  </Link>
+                  
                   <Link
                     href="/company/analytics"
                     className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
@@ -174,7 +170,7 @@ export function Navbar() {
                 </Link>
               )}
 
-          <Link href="/messages" className="text-gray-300 hover:text-white">
+          <Link href="/messages" className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200 flex-wrap items-center">
             <MessageSquare className="h-4 w-4 mr-2" />
             Messages
             <UnreadMessagesIndicator />
