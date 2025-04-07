@@ -42,6 +42,7 @@ export default function PotentialCandidatesPage() {
   const [contactDialogOpen, setContactDialogOpen] = useState(false)
   const [selectedCandidate, setSelectedCandidate] = useState<PotentialCandidate | null>(null)
   const [message, setMessage] = useState("")
+  const [sendingMessage, setSendingMessage] = useState(false)
 
   useEffect(() => {
     async function fetchNotifications() {
@@ -104,23 +105,41 @@ export default function PotentialCandidatesPage() {
   }
 
   const handleSendMessage = async () => {
-    try {
-      // In a real app, you'd implement this endpoint to send a message
-      // await fetch("/api/company/contact-candidate", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     candidateName: selectedCandidate.viewerName,
-      //     message
-      //   })
-      // })
+    if (!selectedCandidate) return
 
-      toast.success(`Message sent to ${selectedCandidate?.viewerName}!`)
+    try {
+      setSendingMessage(true)
+
+      const response = await fetch("/api/company/contact-candidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidateName: selectedCandidate.viewerName,
+          message,
+          notificationId: selectedCandidate.id,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to send message")
+      }
+
+      // Update the local state to mark this notification as read
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === selectedCandidate.id ? { ...notification, read: true } : notification,
+        ),
+      )
+
+      toast.success(`Message sent to ${selectedCandidate.viewerName}!`)
       setContactDialogOpen(false)
       setMessage("")
     } catch (error) {
       console.error("Error sending message:", error)
-      toast.error("Failed to send message")
+      toast.error(error instanceof Error ? error.message : "Failed to send message")
+    } finally {
+      setSendingMessage(false)
     }
   }
 
@@ -172,15 +191,18 @@ export default function PotentialCandidatesPage() {
                 onChange={(e) => setMessage(e.target.value)}
                 rows={8}
                 placeholder="Enter your message here..."
+                disabled={sendingMessage}
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setContactDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setContactDialogOpen(false)} disabled={sendingMessage}>
               Cancel
             </Button>
-            <Button onClick={handleSendMessage}>Send Message</Button>
+            <Button onClick={handleSendMessage} disabled={sendingMessage}>
+              {sendingMessage ? "Sending..." : "Send Message"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

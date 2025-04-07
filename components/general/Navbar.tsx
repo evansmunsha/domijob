@@ -4,12 +4,13 @@ import Link from "next/link"
 import { Button, buttonVariants } from "@/components/ui/button"
 import Image from "next/image"
 import Logo from "@/public/logo.png"
-import { Menu, BarChart, Users } from "lucide-react"
+import { Menu, BarChart, Users, MessageSquare } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "./ThemeToggle"
 import { useSession, signOut } from "next-auth/react"
 import { NotificationCenter } from "./NotificationCenter"
 import { UserDropdown } from "../UserDropdown"
+import { UnreadMessagesIndicator } from "../messages/UnreadMessagesIndicator"
 
 export function Navbar() {
   const { data: session, status } = useSession()
@@ -27,9 +28,16 @@ export function Navbar() {
       {/* Desktop Navigation */}
       <div className="hidden md:flex items-center gap-5">
         {!isCompanyUser && (
-          <Link href="/jobs" className={buttonVariants({ variant: "ghost" })}>
-            Find Jobs
-          </Link>
+          <>
+            <Link href="/jobs" className={buttonVariants({ variant: "ghost" })}>
+              Find Jobs
+            </Link>
+
+            <Link href="/messages" className="text-gray-300 hover:text-white">
+            Messages <UnreadMessagesIndicator />
+            </Link>
+          </>
+          
         )}
 
         {isCompanyUser && (
@@ -42,6 +50,10 @@ export function Navbar() {
               <Users className="h-4 w-4 mr-2" />
               Candidates
             </Link>
+
+            <Link href="/messages" className="text-gray-300 hover:text-white">
+            Messages <UnreadMessagesIndicator />
+          </Link>
           </>
         )}
 
@@ -86,19 +98,25 @@ export function Navbar() {
           <SheetContent>
             <SheetHeader className="text-left">
               <SheetTitle>
-                Mi<span className="text-primary">Job</span>
+                Do<span className="text-primary">MiJob</span>
               </SheetTitle>
               <SheetDescription>Find or post your next job opportunity</SheetDescription>
             </SheetHeader>
 
             <div className="flex flex-col gap-4 mt-6">
               {!isCompanyUser && (
-                <Link
-                  href="/jobs"
-                  className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
-                >
-                  Find Jobs
+                
+                <>
+                  <Link
+                    href="/jobs"
+                    className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
+                  >
+                    Find Jobs
+                  </Link>
+                  <Link href="/messages" className="text-gray-300 hover:text-white">
+                  Messages <UnreadMessagesIndicator />
                 </Link>
+                </>
               )}
 
               {isCompanyUser && (
@@ -108,6 +126,9 @@ export function Navbar() {
                     className="text-lg px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
                   >
                     Post a Job
+                  </Link>
+                  <Link href="/messages"  className="text-gray-300 hover:text-white">
+                    Messages <UnreadMessagesIndicator />
                   </Link>
                   <Link
                     href="/company/analytics"
@@ -152,6 +173,12 @@ export function Navbar() {
                   Login
                 </Link>
               )}
+
+          <Link href="/messages" className="text-gray-300 hover:text-white">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Messages
+            <UnreadMessagesIndicator />
+          </Link>
             </div>
           </SheetContent>
         </Sheet>
