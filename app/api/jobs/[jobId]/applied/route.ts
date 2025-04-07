@@ -2,14 +2,15 @@ import { prisma } from "@/app/utils/db"
 import { auth } from "@/app/utils/auth"
 import { NextResponse } from "next/server"
 
-export async function GET(_request: Request, { params }: { params: { jobId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ jobId: string }> }) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return new NextResponse(null, { status: 401 })
     }
-
-    const { jobId } = params // no need for await
+console.log(request)
+    // Await the params object before accessing jobId
+    const { jobId } = await params
 
     const application = await prisma.jobApplication.findUnique({
       where: {
@@ -33,3 +34,4 @@ export async function GET(_request: Request, { params }: { params: { jobId: stri
     return new NextResponse(null, { status: 500 })
   }
 }
+
