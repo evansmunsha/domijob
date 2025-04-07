@@ -31,8 +31,6 @@ export function JobFilters() {
   // Get current filters from URL
   const currentJobTypes = searchParams.get("jobTypes")?.split(",") || [];
   const currentLocation = searchParams.get("location") || "";
-  const currentMinSalary = searchParams.get("minSalary") || "";
-  const currentMaxSalary = searchParams.get("maxSalary") || "";
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -65,13 +63,7 @@ export function JobFilters() {
     router.push(`?${createQueryString("location", location)}`);
   };
 
-  const handleMinSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    router.push(`?${createQueryString("minSalary", e.target.value)}`);
-  };
-
-  const handleMaxSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    router.push(`?${createQueryString("maxSalary", e.target.value)}`);
-  };
+  
 
   const clearFilters = () => {
     router.push("/");
