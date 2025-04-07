@@ -4,10 +4,8 @@ import { prisma } from "@/app/utils/db"
 import { z } from "zod"
 import { Resend } from "resend"
 
-// Initialize Resend with API key
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// Define a schema for validating the request body
 const contactSchema = z.object({
   candidateName: z.string(),
   message: z.string().min(10, "Message must be at least 10 characters long"),
@@ -23,7 +21,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get the company associated with the user
     const company = await prisma.company.findUnique({
       where: { userId: session.user.id },
       select: { id: true, name: true },
@@ -33,11 +30,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 })
     }
 
-    // Parse and validate the request body
     const body = await request.json()
     const validatedData = contactSchema.parse(body)
 
-    // Get the notification to extract candidate information
     const notification = await prisma.companyNotification.findUnique({
       where: { id: validatedData.notificationId },
       select: { metadata: true, jobId: true },
@@ -47,28 +42,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Notification not found" }, { status: 404 })
     }
 
-    // Parse the metadata to get candidate information
-    let metadata = {}
+    type NotificationMetadata = {
+      userId?: string
+      [key: string]: unknown
+    }
+
+    let metadata: NotificationMetadata = {}
     try {
       metadata = JSON.parse(notification.metadata || "{}")
     } catch (error) {
       console.error("Error parsing notification metadata:", error)
     }
 
-    // Get the candidate's user ID from the metadata or the request
-    const candidateId = validatedData.candidateId || (metadata as any).userId
+    const candidateId = validatedData.candidateId || metadata.userId
 
     if (!candidateId) {
       return NextResponse.json({ error: "Candidate ID not found" }, { status: 400 })
     }
 
-    // Mark the notification as read
     await prisma.companyNotification.update({
       where: { id: validatedData.notificationId },
       data: { read: true },
     })
 
-    // Create a record of the contact attempt
     const contactRecord = await prisma.candidateContact.create({
       data: {
         companyId: company.id,
@@ -79,13 +75,11 @@ export async function POST(request: Request) {
       },
     })
 
-    // Get the job seeker's email
     const jobSeeker = await prisma.user.findUnique({
       where: { id: candidateId },
       select: { email: true, JobSeeker: { select: { name: true } } },
     })
 
-    // Create a chat thread between the company and the candidate
     const chatThread = await prisma.chatThread.create({
       data: {
         companyId: company.id,
@@ -104,7 +98,6 @@ export async function POST(request: Request) {
       },
     })
 
-    // Create a notification for the job seeker
     await prisma.userNotification.create({
       data: {
         userId: candidateId,
@@ -119,7 +112,6 @@ export async function POST(request: Request) {
       },
     })
 
-    // Send an email to the candidate if we have their email
     if (jobSeeker?.email) {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000"
@@ -131,11 +123,7 @@ export async function POST(request: Request) {
           html: `
             <!DOCTYPE html>
             <html lang="en">
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>New Message from ${company.name}</title>
-            </head>
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>New Message from ${company.name}</title></head>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f4f4; margin: 0; padding: 0;">
               <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
                 <div style="background-color: #0066cc; color: #ffffff; text-align: center; padding: 20px;">
@@ -144,15 +132,12 @@ export async function POST(request: Request) {
                 <div style="padding: 20px;">
                   <p>Hello ${jobSeeker.JobSeeker?.name || validatedData.candidateName},</p>
                   <p>${company.name} has shown interest in your profile and sent you a message:</p>
-                  
                   <div style="background-color: #f9f9f9; border-left: 4px solid #0066cc; padding: 15px; margin: 20px 0;">
                     <p style="white-space: pre-line;">${validatedData.message}</p>
                   </div>
-                  
                   <div style="text-align: center; margin-top: 30px;">
                     <a href="${baseUrl}/messages/${chatThread.id}" style="background-color: #0066cc; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-size: 16px;">Reply to Message</a>
                   </div>
-                  
                   <p style="margin-top: 30px;">You can also view and reply to this message directly in your DoMiJob inbox.</p>
                 </div>
                 <div style="background-color: #f0f0f0; text-align: center; padding: 10px; font-size: 12px; color: #666;">
@@ -167,7 +152,6 @@ export async function POST(request: Request) {
         console.log(`Email sent to ${jobSeeker.email}`)
       } catch (emailError) {
         console.error("Error sending email:", emailError)
-        // Continue with the process even if email fails
       }
     }
 
@@ -181,21 +165,9 @@ export async function POST(request: Request) {
     console.error("Error sending contact message:", error)
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: "Validation error",
-          details: error.errors,
-        },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
     }
 
-    return NextResponse.json(
-      {
-        error: "Failed to send contact message",
-      },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Failed to send contact message" }, { status: 500 })
   }
 }
-
