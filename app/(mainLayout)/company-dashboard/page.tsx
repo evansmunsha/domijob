@@ -86,9 +86,7 @@ export default async function CompanyDashboard() {
                 <Button asChild variant="outline" className="w-full">
                   <Link href="/my-jobs">Manage Job Postings</Link>
                 </Button>
-                <Button asChild variant="outline" className="w-full">
-                  <Link href="/applications">View All Applications</Link>
-                </Button>
+                
                 <Button asChild variant="outline" className="w-full">
                   <Link href="/company/analytics">View Analytics</Link>
                 </Button>
