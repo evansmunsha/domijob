@@ -1,161 +1,258 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
-import { logger } from "@/app/utils/logger"
 
 export async function GET(req: Request) {
   try {
     const session = await auth()
+    const url = new URL(req.url)
+    const period = url.searchParams.get("period") || "week"
+    const queryCompanyId = url.searchParams.get("companyId")
+
+    console.log("Profile views analytics request:", {
+      authenticated: !!session?.user?.id,
+      userType: session?.user?.userType,
+      period,
+      queryCompanyId,
+    })
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get URL parameters
-    const url = new URL(req.url)
-    const periodParam = url.searchParams.get("period") || "week"
-    const companyId = url.searchParams.get("companyId")
+    // Get the company ID - either from query param or from the session
+    let companyId: string | null = null
+
+    if (queryCompanyId) {
+      // If companyId is provided in query, use it (but verify user has access if they're a company user)
+      if (session.user.userType === "COMPANY") {
+        const userCompany = await prisma.company.findFirst({
+          where: {
+            AND: [{ id: queryCompanyId }, { userId: session.user.id }],
+          },
+          select: { id: true },
+        })
+
+        if (userCompany) {
+          companyId = userCompany.id
+        }
+      } else {
+        // For non-company users (like admins), just use the provided companyId
+        companyId = queryCompanyId
+      }
+    }
+
+    // If no valid companyId from query, get it from the session (for company users)
+    if (!companyId && session.user.userType === "COMPANY") {
+      const company = await prisma.company.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+      })
+
+      if (!company) {
+        console.error("Company profile not found for user:", session.user.id)
+        return NextResponse.json({ error: "Company profile not found" }, { status: 404 })
+      }
+
+      companyId = company.id
+    }
 
     if (!companyId) {
-      return NextResponse.json({ error: "Company ID is required" }, { status: 400 })
+      console.error("No valid companyId could be determined")
+      return NextResponse.json({ error: "No valid company ID provided" }, { status: 400 })
     }
 
-    // Verify the user has access to this company's data
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: {
-        Company: true,
-      },
-    })
+    console.log(`Fetching profile views for company: ${companyId}, period: ${period}`)
 
-    // Only allow access if the user is associated with the company
-    if (user?.Company?.id !== companyId) {
-      return NextResponse.json({ error: "Unauthorized to access this company's data" }, { status: 403 })
-    }
-
-    // Determine date range based on period
+    // Calculate date range based on period
     const now = new Date()
     let startDate: Date
 
-    switch (periodParam) {
+    switch (period) {
       case "day":
         startDate = new Date(now.setHours(0, 0, 0, 0))
         break
       case "week":
         const day = now.getDay()
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1) // Adjust for Sunday
-        startDate = new Date(now.setDate(diff))
+        startDate = new Date(now)
+        startDate.setDate(now.getDate() - day)
         startDate.setHours(0, 0, 0, 0)
         break
       case "month":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1)
         break
       default:
-        startDate = new Date(now.setDate(now.getDate() - 7))
+        startDate = new Date(now)
+        startDate.setDate(now.getDate() - 7)
     }
 
-    logger.debug(`Fetching profile views for company ${companyId} from ${startDate.toISOString()}`)
+    // Check if there are any profile views for this company
+    const viewsExist = await prisma.companyProfileView.findFirst({
+      where: {
+        companyId: companyId,
+      },
+    })
 
-    // Query profile views for the company within the date range
-    const profileViews = await prisma.companyProfileView.findMany({
+    // If no views exist, return empty data with proper structure
+    if (!viewsExist) {
+      console.log(`No profile views found for company: ${companyId}`)
+
+      // Return empty data with the expected structure
+      let emptyData
+      if (period === "day") {
+        emptyData = Array.from({ length: 24 }, (_, i) => ({
+          label: `${i}:00`,
+          views: 0,
+        }))
+      } else if (period === "week") {
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        emptyData = dayNames.map((day) => ({
+          label: day,
+          views: 0,
+        }))
+      } else {
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+        emptyData = Array.from({ length: daysInMonth }, (_, i) => ({
+          label: `${i + 1}`,
+          views: 0,
+        }))
+      }
+
+      return NextResponse.json({
+        data: emptyData,
+        locations: [],
+        period,
+        totalViews: 0,
+      })
+    }
+
+    // Format data based on period
+    let data: any[] = []
+    let rawData: any[] = []
+
+    try {
+      if (period === "day") {
+        // Group by hour for day view
+        rawData = await prisma.$queryRaw`
+          SELECT EXTRACT(HOUR FROM "timestamp") as hour, COUNT(*) as views
+          FROM "CompanyProfileView"
+          WHERE "companyId" = ${companyId}
+          AND "timestamp" >= ${startDate}
+          GROUP BY EXTRACT(HOUR FROM "timestamp")
+          ORDER BY hour
+        `
+
+        // Format hours data
+        data = Array.from({ length: 24 }, (_, i) => {
+          const hourData = rawData.find((h) => Number(h.hour) === i)
+          return {
+            label: `${i}:00`,
+            views: hourData ? Number(hourData.views) : 0,
+          }
+        })
+      } else if (period === "week") {
+        // Group by day for week view
+        rawData = await prisma.$queryRaw`
+          SELECT EXTRACT(DOW FROM "timestamp") as day, COUNT(*) as views
+          FROM "CompanyProfileView"
+          WHERE "companyId" = ${companyId}
+          AND "timestamp" >= ${startDate}
+          GROUP BY EXTRACT(DOW FROM "timestamp")
+          ORDER BY day
+        `
+
+        // Format days data
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        data = Array.from({ length: 7 }, (_, i) => {
+          const dayData = rawData.find((d) => Number(d.day) === i)
+          return {
+            label: dayNames[i],
+            views: dayData ? Number(dayData.views) : 0,
+          }
+        })
+      } else {
+        // Group by day for month view
+        rawData = await prisma.$queryRaw`
+          SELECT EXTRACT(DAY FROM "timestamp") as day, COUNT(*) as views
+          FROM "CompanyProfileView"
+          WHERE "companyId" = ${companyId}
+          AND "timestamp" >= ${startDate}
+          GROUP BY EXTRACT(DAY FROM "timestamp")
+          ORDER BY day
+        `
+
+        // Format days data
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+        data = Array.from({ length: daysInMonth }, (_, i) => {
+          const dayData = rawData.find((d) => Number(d.day) === i + 1)
+          return {
+            label: `${i + 1}`,
+            views: dayData ? Number(dayData.views) : 0,
+          }
+        })
+      }
+    } catch (error) {
+      console.error("Error executing raw query:", error)
+      // Fallback to a simpler query if raw query fails
+      const views = await prisma.companyProfileView.findMany({
+        where: {
+          companyId: companyId,
+          timestamp: {
+            gte: startDate,
+          },
+        },
+      })
+
+      // Create a simple count by day
+      const viewsByDay = new Map()
+      views.forEach((view) => {
+        const day = view.timestamp.getDate()
+        viewsByDay.set(day, (viewsByDay.get(day) || 0) + 1)
+      })
+
+      data = Array.from(viewsByDay.entries())
+        .map(([day, count]) => ({
+          label: String(day),
+          views: count,
+        }))
+        .sort((a, b) => Number(a.label) - Number(b.label))
+    }
+
+    // Get location data
+    const locations = await prisma.companyProfileView.groupBy({
+      by: ["location"],
       where: {
         companyId: companyId,
         timestamp: {
           gte: startDate,
         },
       },
-      orderBy: {
-        timestamp: "asc",
-      },
+      _count: true,
     })
 
-    // Calculate total views
-    const totalViews = profileViews.length
-
-    // Process data for chart based on period
-    let data: Array<{ label: string; views: number }> = []
-    const locationMap = new Map<string, number>()
-
-    if (periodParam === "day") {
-      // Group by hour for day view
-      const hourlyData = new Map<string, number>()
-
-      // Initialize hours
-      for (let i = 0; i < 24; i++) {
-        const hour = i.toString().padStart(2, "0")
-        hourlyData.set(`${hour}:00`, 0)
-      }
-
-      // Count views by hour
-      profileViews.forEach((view) => {
-        const hour = new Date(view.timestamp).getHours().toString().padStart(2, "0")
-        hourlyData.set(`${hour}:00`, (hourlyData.get(`${hour}:00`) || 0) + 1)
-
-        // Track locations
-        locationMap.set(view.location, (locationMap.get(view.location) || 0) + 1)
-      })
-
-      data = Array.from(hourlyData.entries()).map(([label, views]) => ({ label, views }))
-    } else if (periodParam === "week") {
-      // Group by day for week view
-      const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-      const dailyData = new Map<string, number>()
-
-      // Initialize days
-      dayNames.forEach((day) => {
-        dailyData.set(day, 0)
-      })
-
-      // Count views by day
-      profileViews.forEach((view) => {
-        const dayIndex = new Date(view.timestamp).getDay()
-        // Convert from Sunday=0 to Monday=0 format
-        const adjustedIndex = dayIndex === 0 ? 6 : dayIndex - 1
-        const dayName = dayNames[adjustedIndex]
-        dailyData.set(dayName, (dailyData.get(dayName) || 0) + 1)
-
-        // Track locations
-        locationMap.set(view.location, (locationMap.get(view.location) || 0) + 1)
-      })
-
-      data = Array.from(dailyData.entries()).map(([label, views]) => ({ label, views }))
-    } else if (periodParam === "month") {
-      // Group by date for month view
-      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-      const dailyData = new Map<string, number>()
-
-      // Initialize days
-      for (let i = 1; i <= daysInMonth; i++) {
-        const date = i.toString().padStart(2, "0")
-        dailyData.set(date, 0)
-      }
-
-      // Count views by date
-      profileViews.forEach((view) => {
-        const date = new Date(view.timestamp).getDate().toString().padStart(2, "0")
-        dailyData.set(date, (dailyData.get(date) || 0) + 1)
-
-        // Track locations
-        locationMap.set(view.location, (locationMap.get(view.location) || 0) + 1)
-      })
-
-      data = Array.from(dailyData.entries()).map(([label, views]) => ({ label, views }))
-    }
-
-    // Format location data and sort by views (descending)
-    const locations = Array.from(locationMap.entries())
-      .map(([location, views]) => ({ location, views }))
+    const locationData = locations
+      .map((loc) => ({
+        location: loc.location || "Unknown",
+        views: loc._count,
+      }))
       .sort((a, b) => b.views - a.views)
+
+    const totalViews = data.reduce((sum, item) => sum + item.views, 0)
+
+    console.log(`Successfully fetched profile views for company ${companyId}:`, {
+      totalViews,
+      locationCount: locationData.length,
+    })
 
     return NextResponse.json({
       data,
-      locations,
-      period: periodParam,
+      locations: locationData,
+      period,
       totalViews,
     })
   } catch (error) {
-    logger.error("Error fetching profile views analytics:", error)
-    return NextResponse.json({ error: "Failed to fetch profile views analytics" }, { status: 500 })
+    console.error("Error fetching profile views analytics:", error)
+    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 })
   }
 }
 
