@@ -6,7 +6,7 @@ export async function GET(request: Request) {
     // Manually extract jobId from the URL
     const url = new URL(request.url)
     const segments = url.pathname.split("/")
-    const jobId = segments[segments.indexOf("job") + 1]
+    const jobId = segments[segments.indexOf("jobs") + 1]
 
     if (!jobId) {
       return NextResponse.json({ error: "Job ID is missing" }, { status: 400 })
