@@ -331,7 +331,7 @@ enum NotificationType {
   POTENTIAL_CANDIDATE
   NEW_REGION
   SKILL_GAP_ANALYSIS
-  // Add more notification types as needed
+  REGION_MILESTONE
 }
 
 // Add this model to your Prisma schema if it doesn't exist

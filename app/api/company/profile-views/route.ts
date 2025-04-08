@@ -249,24 +249,17 @@ export async function POST(req: Request) {
           gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
       },
+      _count: {
+        _all: true
+      }
     })
 
+    const locationCount = existingLocations.find((l) => l.location === userLocation)?._count._all || 0
     const isNewRegion = !existingLocations.find((l) => l.location === userLocation)
 
-    if (isNewRegion && userLocation !== "Unknown") {
-      // Check if we already have a notification for this region today
-      const existingNotification = await prisma.companyNotification.findFirst({
-        where: {
-          companyId,
-          type: "NEW_REGION",
-          message: `Your profile was viewed from ${userLocation} for the first time!`,
-          createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          },
-        },
-      })
-
-      if (!existingNotification) {
+    if (userLocation !== "Unknown") {
+      if (isNewRegion) {
+        // First view from this region today
         const notification = await prisma.companyNotification.create({
           data: {
             companyId,
@@ -277,6 +270,20 @@ export async function POST(req: Request) {
         })
 
         logger.notification("NEW_REGION", companyId, `Created company notification for new region: ${userLocation}`, {
+          notificationId: notification.id,
+        })
+      } else if (locationCount === 5 || locationCount === 10 || locationCount === 20) {
+        // Create milestone notifications for multiple views from the same region
+        const notification = await prisma.companyNotification.create({
+          data: {
+            companyId,
+            type: "REGION_MILESTONE",
+            message: `Your profile has been viewed ${locationCount} times from ${userLocation} today!`,
+            read: false,
+          },
+        })
+
+        logger.notification("REGION_MILESTONE", companyId, `Created milestone notification for ${locationCount} views from ${userLocation}`, {
           notificationId: notification.id,
         })
       }
