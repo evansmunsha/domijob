@@ -1,6 +1,7 @@
 import { prisma } from "@/app/utils/db"
 import { notFound } from "next/navigation"
 import CompanyProfileClient from "./CompanyProfileClient"
+import { use } from "react"
 
 async function getCompany(id: string) {
   const company = await prisma.company.findUnique({
@@ -33,8 +34,9 @@ async function getCompany(id: string) {
   }
 }
 
-export default async function CompanyProfilePage({ params }: { params: { id: string } }) {
-  const company = await getCompany(params.id)
+export default function CompanyProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
+  const company = use(getCompany(resolvedParams.id))
   
   return <CompanyProfileClient company={company} />
 }
