@@ -2,9 +2,10 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Check } from "lucide-react"
+import { Check, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 interface NotificationItemProps {
   id: string
@@ -43,27 +44,41 @@ export function NotificationItem({ id, message, read, createdAt, onMarkAsRead }:
   }
 
   return (
-    <li className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-      <div className="flex justify-between items-start">
+    <li className={cn(
+      "p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors",
+      !read && "bg-blue-50 dark:bg-blue-900/10"
+    )}>
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <p className={`${isRead ? "text-muted-foreground" : "font-medium"}`}>
+          <p className={cn(
+            "text-sm",
+            !read && "font-medium"
+          )}>
             {message}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
           </p>
         </div>
-        {!isRead && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 w-8 p-0"
-            onClick={handleMarkAsRead}
-            disabled={isLoading}
+        <div className="flex items-center gap-2">
+          {!read && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleMarkAsRead}
+              className="h-8 w-8"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
           >
-            <Check className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" />
           </Button>
-        )}
+        </div>
       </div>
     </li>
   )
