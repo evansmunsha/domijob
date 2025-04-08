@@ -246,7 +246,7 @@ export async function POST(req: Request) {
       where: {
         companyId,
         timestamp: {
-          lt: new Date(new Date().setHours(0, 0, 0, 0)),
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
       },
     })
@@ -254,18 +254,32 @@ export async function POST(req: Request) {
     const isNewRegion = !existingLocations.find((l) => l.location === userLocation)
 
     if (isNewRegion && userLocation !== "Unknown") {
-      const notification = await prisma.companyNotification.create({
-        data: {
+      // Check if we already have a notification for this region today
+      const existingNotification = await prisma.companyNotification.findFirst({
+        where: {
           companyId,
           type: "NEW_REGION",
           message: `Your profile was viewed from ${userLocation} for the first time!`,
-          read: false,
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
         },
       })
 
-      logger.notification("NEW_REGION", companyId, `Created company notification for new region: ${userLocation}`, {
-        notificationId: notification.id,
-      })
+      if (!existingNotification) {
+        const notification = await prisma.companyNotification.create({
+          data: {
+            companyId,
+            type: "NEW_REGION",
+            message: `Your profile was viewed from ${userLocation} for the first time!`,
+            read: false,
+          },
+        })
+
+        logger.notification("NEW_REGION", companyId, `Created company notification for new region: ${userLocation}`, {
+          notificationId: notification.id,
+        })
+      }
     }
 
     // If the viewer is a job seeker with relevant skills, notify the company
