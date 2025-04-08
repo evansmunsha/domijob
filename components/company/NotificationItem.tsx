@@ -67,6 +67,7 @@ export function NotificationItem({ id, message, read, createdAt, onMarkAsRead }:
               size="icon"
               onClick={handleMarkAsRead}
               className="h-8 w-8"
+              disabled={isLoading}
             >
               <Check className="h-4 w-4" />
             </Button>
