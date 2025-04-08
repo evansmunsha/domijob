@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
+type RouteContext = {
+  params: {
+    id: string
+  }
+}
+
 export async function POST(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
   try {
     const session = await auth()
@@ -27,7 +33,7 @@ export async function POST(
 
     const notification = await prisma.companyNotification.findFirst({
       where: {
-        id: params.id,
+        id: context.params.id,
         companyId: company.id,
       },
     })
@@ -37,7 +43,7 @@ export async function POST(
     }
 
     await prisma.companyNotification.update({
-      where: { id: params.id },
+      where: { id: context.params.id },
       data: { read: true },
     })
 
