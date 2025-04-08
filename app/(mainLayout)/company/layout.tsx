@@ -4,6 +4,9 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { NotificationBadge } from "@/components/company/NotificationBadge"
+import { useState } from "react"
+import { Menu, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface Props {
   children: ReactNode
@@ -11,19 +14,41 @@ interface Props {
 
 export default function CompanyLayout({ children }: Props) {
   const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(path + "/")
   }
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen)
+  }
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar */}
-      <div className="w-64 bg-white dark:bg-gray-800 shadow-md flex flex-col">
+      {/* Mobile menu button */}
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={toggleSidebar}
+          className="bg-white dark:bg-gray-800"
+        >
+          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+      </div>
+
+      {/* Sidebar - hidden on mobile by default */}
+      <div className={`
+        fixed md:static inset-y-0 left-0 z-40
+        w-64 bg-white dark:bg-gray-800 shadow-md flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Company Dashboard</h1>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           <Link 
             href="/company-dashboard" 
             className={`flex items-center p-3 rounded-lg transition-colors ${
@@ -31,6 +56,7 @@ export default function CompanyLayout({ children }: Props) {
                 ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium" 
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
+            onClick={() => setSidebarOpen(false)}
           >
             <span className="ml-2">Dashboard</span>
           </Link>
@@ -41,6 +67,7 @@ export default function CompanyLayout({ children }: Props) {
                 ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium" 
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
+            onClick={() => setSidebarOpen(false)}
           >
             <span className="ml-2">Manage listings</span>
           </Link>
@@ -51,6 +78,7 @@ export default function CompanyLayout({ children }: Props) {
                 ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium" 
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
+            onClick={() => setSidebarOpen(false)}
           >
             <span className="ml-2">Applications</span>
           </Link>
@@ -61,6 +89,7 @@ export default function CompanyLayout({ children }: Props) {
                 ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium" 
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
+            onClick={() => setSidebarOpen(false)}
           >
             <span className="ml-2">Analytics</span>
           </Link>
@@ -71,6 +100,7 @@ export default function CompanyLayout({ children }: Props) {
                 ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium" 
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
+            onClick={() => setSidebarOpen(false)}
           >
             <span className="ml-2">Potential Candidates</span>
           </Link>
@@ -81,10 +111,22 @@ export default function CompanyLayout({ children }: Props) {
                 ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium" 
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
+            onClick={() => setSidebarOpen(false)}
           >
             <span className="ml-2">Company Profile</span>
           </Link>
-          <NotificationBadge />
+          <Link 
+            href="/company/notifications" 
+            className={`flex items-center p-3 rounded-lg transition-colors ${
+              isActive("/company/notifications") 
+                ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium" 
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            }`}
+            onClick={() => setSidebarOpen(false)}
+          >
+            <span className="ml-2">Notifications</span>
+            <NotificationBadge />
+          </Link>
         </nav>
         
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
@@ -93,6 +135,14 @@ export default function CompanyLayout({ children }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Overlay for mobile when sidebar is open */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
