@@ -65,69 +65,71 @@ export function ProfileViewsChart({ companyId }: { companyId: string }) {
   }, [period, companyId])
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="w-full h-full">
+      <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle>Profile Views</CardTitle>
-          {!loading && viewsData && <div className="text-sm font-medium">Total: {viewsData.totalViews}</div>}
+          <CardTitle className="text-base md:text-lg lg:text-xl">Profile Views</CardTitle>
+          {!loading && viewsData && <div className="text-xs md:text-sm font-medium">Total: {viewsData.totalViews}</div>}
         </div>
         <Tabs value={period} onValueChange={(v) => setPeriod(v as "day" | "week" | "month")} className="mt-2">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="day">Today</TabsTrigger>
-            <TabsTrigger value="week">This Week</TabsTrigger>
-            <TabsTrigger value="month">This Month</TabsTrigger>
+            <TabsTrigger value="day" className="text-xs md:text-sm">Today</TabsTrigger>
+            <TabsTrigger value="week" className="text-xs md:text-sm">This Week</TabsTrigger>
+            <TabsTrigger value="month" className="text-xs md:text-sm">This Month</TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         {loading ? (
           <div className="space-y-4">
-            <Skeleton className="h-[300px] w-full" />
+            <Skeleton className="h-[200px] md:h-[250px] lg:h-[300px] w-full" />
           </div>
         ) : error ? (
-          <div className="py-8 text-center text-muted-foreground">
-            <p>Error: {error}</p>
-            <p className="mt-2 text-sm">Please try again later</p>
+          <div className="py-4 md:py-6 text-center text-muted-foreground">
+            <p className="text-sm">Error: {error}</p>
+            <p className="mt-2 text-xs md:text-sm">Please try again later</p>
           </div>
         ) : viewsData ? (
-          <div className="space-y-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={viewsData.data}>
-                <XAxis dataKey="label" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="views" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="space-y-4 md:space-y-6">
+            <div className="w-full h-[200px] md:h-[250px] lg:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={viewsData.data}>
+                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="views" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-2">Top Locations</h4>
+              <h4 className="text-xs md:text-sm font-medium mb-2">Top Locations</h4>
               <div className="space-y-2">
                 {viewsData.locations.length > 0 ? (
                   viewsData.locations.slice(0, 5).map((loc) => (
                     <div key={loc.location} className="flex justify-between items-center">
-                      <span className="text-sm">{loc.location}</span>
+                      <span className="text-xs md:text-sm">{loc.location}</span>
                       <div className="flex items-center">
-                        <div className="w-32 bg-muted rounded-full h-2 mr-2">
+                        <div className="w-24 md:w-32 bg-muted rounded-full h-1.5 md:h-2 mr-2">
                           <div
-                            className="bg-primary h-2 rounded-full"
+                            className="bg-primary h-1.5 md:h-2 rounded-full"
                             style={{
                               width: `${Math.min(100, (loc.views / viewsData.totalViews) * 100)}%`,
                             }}
                           />
                         </div>
-                        <span className="text-sm text-muted-foreground">{loc.views}</span>
+                        <span className="text-xs md:text-sm text-muted-foreground">{loc.views}</span>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">No location data available</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">No location data available</p>
                 )}
               </div>
             </div>
           </div>
         ) : (
-          <div className="py-8 text-center text-muted-foreground">No profile views data available</div>
+          <div className="py-4 md:py-6 text-center text-muted-foreground text-sm">No profile views data available</div>
         )}
       </CardContent>
     </Card>
