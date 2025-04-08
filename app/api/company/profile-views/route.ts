@@ -197,6 +197,29 @@ export async function POST(req: Request) {
     // Get user location from headers if available
     const userLocation = req.headers.get("x-vercel-ip-country") || "Unknown"
 
+    // Check for recent views from this user (within last 5 minutes)
+    if (userId) {
+      const recentView = await prisma.companyProfileView.findFirst({
+        where: {
+          companyId,
+          userId,
+          timestamp: {
+            gte: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+          },
+        },
+        orderBy: {
+          timestamp: 'desc',
+        },
+      })
+
+      if (recentView) {
+        logger.debug(`Skipping duplicate view from user ${userId} within 5 minutes`, {
+          lastViewTime: recentView.timestamp,
+        })
+        return NextResponse.json({ success: true, skipped: true })
+      }
+    }
+
     logger.info(`Recording profile view for company ${companyId}`, {
       userId: userId || "anonymous",
       location: userLocation,
