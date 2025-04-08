@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/app/utils/db"
 
-export async function GET(request: Request, context: { params: { jobId: string } }) {
+export async function GET(request: Request) {
   try {
-    const { jobId } = context.params
-    console.log(request)
+    // Manually extract jobId from the URL
+    const url = new URL(request.url)
+    const segments = url.pathname.split("/")
+    const jobId = segments[segments.indexOf("job") + 1]
+
+    if (!jobId) {
+      return NextResponse.json({ error: "Job ID is missing" }, { status: 400 })
+    }
 
     // Fetch the job with company details
     const job = await prisma.jobPost.findUnique({
