@@ -4,7 +4,7 @@ import { prisma } from "@/app/utils/db"
 
 export async function POST(
   _request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await auth()
@@ -29,7 +29,7 @@ export async function POST(
     // Update the notification
     const notification = await prisma.companyNotification.findFirst({
       where: {
-        id: context.params.id,
+        id: params.id,
         companyId: company.id
       }
     })
@@ -39,7 +39,7 @@ export async function POST(
     }
     
     await prisma.companyNotification.update({
-      where: { id: context.params.id },
+      where: { id: params.id },
       data: { read: true }
     })
     
