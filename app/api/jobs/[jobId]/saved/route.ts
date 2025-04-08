@@ -2,15 +2,22 @@ import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
-export async function GET(request: Request, context: { params: { jobId: string } }) {
+export async function GET(request: Request) {
   try {
     const session = await auth()
-console.log(request)
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { jobId } = context.params
+    // Extract jobId from the URL
+    const url = new URL(request.url)
+    const segments = url.pathname.split("/")
+    const jobId = segments[segments.indexOf("job") + 1]
+
+    if (!jobId) {
+      return NextResponse.json({ error: "Missing jobId" }, { status: 400 })
+    }
 
     // Check if the job exists
     const job = await prisma.jobPost.findUnique({
