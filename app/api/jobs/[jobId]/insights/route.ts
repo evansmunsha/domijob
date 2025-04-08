@@ -5,13 +5,13 @@ import { prisma } from "@/app/utils/db"
 export async function GET(request: Request, context: { params: { jobId: string } }) {
   try {
     const session = await auth()
-    console.log(request)
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { jobId } = context.params
-
+    console.log(request)
     // Check if the job exists
     const job = await prisma.jobPost.findUnique({
       where: { id: jobId },
@@ -123,4 +123,3 @@ export async function GET(request: Request, context: { params: { jobId: string }
     return NextResponse.json({ error: "Failed to fetch job insights" }, { status: 500 })
   }
 }
-
