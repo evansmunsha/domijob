@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { NotificationBadge } from "@/components/company/NotificationBadge"
 
 interface Props {
   children: ReactNode
@@ -83,16 +84,7 @@ export default function CompanyLayout({ children }: Props) {
           >
             <span className="ml-2">Company Profile</span>
           </Link>
-          <Link 
-            href="/company/notifications" 
-            className={`flex items-center p-3 rounded-lg transition-colors ${
-              isActive("/company/notifications") 
-                ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium" 
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
-          >
-            <span className="ml-2">View notifications</span>
-          </Link>
+          <NotificationBadge />
         </nav>
         
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
