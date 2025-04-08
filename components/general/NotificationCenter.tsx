@@ -21,8 +21,11 @@ interface Notification {
   }
 }
 
-// Add polling interval as a prop with a default value
-export function NotificationCenter({ pollingInterval = 60000 }) {
+interface NotificationCenterProps {
+  pollingInterval?: number // Added a pollingInterval prop
+}
+
+export function NotificationCenter({ pollingInterval = 60000 }: NotificationCenterProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -30,6 +33,7 @@ export function NotificationCenter({ pollingInterval = 60000 }) {
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
+  // Fetch notifications from the API
   const fetchNotifications = async () => {
     try {
       setLoading(true)
@@ -44,7 +48,7 @@ export function NotificationCenter({ pollingInterval = 60000 }) {
 
       const data = await response.json()
       console.log("Fetched notifications:", data)
-      setNotifications(data)
+      setNotifications(data.notifications || [])
     } catch (error) {
       console.error("Error fetching notifications:", error)
       setError("Failed to load notifications")
@@ -62,6 +66,7 @@ export function NotificationCenter({ pollingInterval = 60000 }) {
     return () => clearInterval(intervalId)
   }, [pollingInterval])
 
+  // Mark a specific notification as read
   const markAsRead = async (id: string) => {
     try {
       const response = await fetch(`/api/notifications/${id}/read`, {
@@ -80,6 +85,7 @@ export function NotificationCenter({ pollingInterval = 60000 }) {
     }
   }
 
+  // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
       const response = await fetch("/api/notifications/read-all", {
@@ -198,4 +204,3 @@ export function NotificationCenter({ pollingInterval = 60000 }) {
     </Popover>
   )
 }
-
