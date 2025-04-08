@@ -10,14 +10,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get jobId from the URL manually
+    // Parse jobId from the URL
     const url = new URL(request.url)
-    const segments = url.pathname.split("/")
-    const jobId = segments[segments.indexOf("job") + 1] // gets the [jobId] segment
-
-    if (!jobId) {
-      return NextResponse.json({ error: "Job ID missing" }, { status: 400 })
-    }
+    const pathParts = url.pathname.split("/")
+    const jobId = pathParts[pathParts.length - 2] // Get the jobId from the path
 
     // Check if the job exists
     const job = await prisma.jobPost.findUnique({
@@ -28,7 +24,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 })
     }
 
-    // Check if the user has applied
+    // Check if the user has applied for this job
     const application = await prisma.jobApplication.findUnique({
       where: {
         userId_jobId: {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
-export async function GET(request: Request, context: { params: { jobId: string } }) {
+export async function GET(request: Request) {
   try {
     const session = await auth()
 
@@ -10,8 +10,15 @@ export async function GET(request: Request, context: { params: { jobId: string }
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { jobId } = context.params
-    console.log(request)
+    // Manually extract jobId from URL
+    const url = new URL(request.url)
+    const segments = url.pathname.split("/")
+    const jobId = segments[segments.indexOf("job") + 1]
+
+    if (!jobId) {
+      return NextResponse.json({ error: "Job ID missing from URL" }, { status: 400 })
+    }
+
     // Check if the job exists
     const job = await prisma.jobPost.findUnique({
       where: { id: jobId },
@@ -34,32 +41,26 @@ export async function GET(request: Request, context: { params: { jobId: string }
       },
     })
 
-    // If the user is not the company owner and hasn't applied, they can't see insights
     const isCompanyOwner = job.company.userId === session.user.id
 
     if (!isCompanyOwner && !hasApplied) {
       return NextResponse.json({ error: "You must apply to this job to view insights" }, { status: 403 })
     }
 
-    // Get total applications count
     const totalApplicants = await prisma.jobApplication.count({
       where: { jobId },
     })
 
-    // Get the user's skills if they're a job seeker
     const jobSeeker = await prisma.jobSeeker.findUnique({
       where: { userId: session.user.id },
       select: { skills: true },
     })
 
     const userSkills = jobSeeker?.skills || []
-
-    // Count applicants with similar skills
     let applicantsWithSimilarSkills = 0
     let userSkillMatch = 0
 
     if (userSkills.length > 0) {
-      // Get all applicants with their skills
       const applicantsWithSkills = await prisma.jobApplication.findMany({
         where: { jobId },
         include: {
@@ -73,21 +74,22 @@ export async function GET(request: Request, context: { params: { jobId: string }
         },
       })
 
-      // Count applicants with at least one matching skill
       applicantsWithSimilarSkills = applicantsWithSkills.filter((app) => {
         const appSkills = app.user.JobSeeker?.skills || []
         return appSkills.some((skill) => userSkills.includes(skill))
       }).length
 
-      // Calculate user's skill match percentage
-      // This is a simplified calculation - in a real app, you might want to compare against job requirements
       const jobDescription = job.jobDescription.toLowerCase()
-      const matchingSkills = userSkills.filter((skill) => jobDescription.includes(skill.toLowerCase()))
+      const matchingSkills = userSkills.filter((skill) =>
+        jobDescription.includes(skill.toLowerCase())
+      )
 
-      userSkillMatch = userSkills.length > 0 ? Math.round((matchingSkills.length / userSkills.length) * 100) : 0
+      userSkillMatch =
+        userSkills.length > 0
+          ? Math.round((matchingSkills.length / userSkills.length) * 100)
+          : 0
     }
 
-    // Get application status breakdown
     const statusCounts = await prisma.jobApplication.groupBy({
       by: ["status"],
       where: { jobId },
@@ -108,8 +110,7 @@ export async function GET(request: Request, context: { params: { jobId: string }
       }
     })
 
-    // Calculate average experience (placeholder - would need a field for this)
-    const averageExperience = 3
+    const averageExperience = 3 // Placeholder
 
     return NextResponse.json({
       totalApplicants,
