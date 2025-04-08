@@ -25,14 +25,29 @@ export function NotificationList({ initialNotifications, companyId }: Notificati
     setNotifications(notifications.map(notification => 
       notification.id === id ? { ...notification, read: true } : notification
     ))
+    
+    // Use companyId in API call
+    fetch(`/api/company/${companyId}/notifications/${id}/mark-read`, {
+      method: 'POST',
+    }).catch(error => console.error('Error marking notification as read:', error))
   }
 
   const handleMarkAllRead = () => {
     setNotifications(notifications.map(notification => ({ ...notification, read: true })))
+    
+    // Use companyId in API call
+    fetch(`/api/company/${companyId}/notifications/mark-all-read`, {
+      method: 'POST',
+    }).catch(error => console.error('Error marking all notifications as read:', error))
   }
 
   const handleClearAll = () => {
     setNotifications([])
+    
+    // Use companyId in API call
+    fetch(`/api/company/${companyId}/notifications/clear-all`, {
+      method: 'DELETE',
+    }).catch(error => console.error('Error clearing notifications:', error))
   }
 
   return (
@@ -57,7 +72,7 @@ export function NotificationList({ initialNotifications, companyId }: Notificati
             <div className="p-6 text-center">
               <Bell className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
               <p className="text-muted-foreground">No notifications yet.</p>
-              <p className="text-sm text-muted-foreground mt-2">We'll notify you when there's something new.</p>
+              <p className="text-sm text-muted-foreground mt-2">We&apos;ll notify you when there&apos;s something new.</p>
             </div>
           ) : (
             <ul className="divide-y divide-gray-200 dark:divide-gray-700">
