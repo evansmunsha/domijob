@@ -298,11 +298,10 @@ model CompanyNotification {
   type      String
   message   String
   read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  metadata  String?  // Add this field for storing additional data as JSON
+  createdAt DateTime @default(now()) // Add this field for storing additional data as JSON
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   job       JobPost? @relation(fields: [jobId], references: [id], onDelete: SetNull)
-  
+  metadata  String?  @db.Text
   @@index([companyId])
   @@index([jobId])
 }
@@ -317,7 +316,7 @@ model UserNotification {
   
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   job       JobPost? @relation(fields: [jobId], references: [id], onDelete: SetNull)
-  metadata  Json?    // ← ✅ Add this if you want to store extra structured info
+  metadata  String?  @db.Text   // ← ✅ Add this if you want to store extra structured info
   @@index([userId])
   @@index([jobId])
 }

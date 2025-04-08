@@ -5,17 +5,28 @@ import { Badge } from "@/components/ui/badge"
 
 export function UnreadMessagesIndicator() {
   const [unreadCount, setUnreadCount] = useState(0)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    let isMounted = true
+
     async function fetchUnreadCount() {
+      // Don't fetch if we're already loading or component is unmounted
+      if (loading || !isMounted) return
+
       try {
+        setLoading(true)
         const response = await fetch("/api/messages/unread-count")
-        if (response.ok) {
+        if (response.ok && isMounted) {
           const data = await response.json()
           setUnreadCount(data.count)
         }
       } catch (error) {
         console.error("Error fetching unread message count:", error)
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
@@ -24,8 +35,11 @@ export function UnreadMessagesIndicator() {
     // Poll for updates every 30 seconds
     const intervalId = setInterval(fetchUnreadCount, 30000)
 
-    return () => clearInterval(intervalId)
-  }, [])
+    return () => {
+      isMounted = false
+      clearInterval(intervalId)
+    }
+  }, [loading])
 
   if (unreadCount === 0) return null
 
@@ -35,4 +49,3 @@ export function UnreadMessagesIndicator() {
     </Badge>
   )
 }
-

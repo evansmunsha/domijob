@@ -27,6 +27,7 @@ export async function GET() {
           },
           senderType: "JOB_SEEKER",
           read: false,
+          senderId: { not: session.user.id }, // Ensure we don't count user's own messages
         },
       })
     } else {
@@ -38,6 +39,7 @@ export async function GET() {
           },
           senderType: "COMPANY",
           read: false,
+          senderId: { not: session.user.id }, // Ensure we don't count user's own messages
         },
       })
     }
@@ -45,7 +47,6 @@ export async function GET() {
     return NextResponse.json({ count: unreadCount })
   } catch (error) {
     console.error("Error fetching unread message count:", error)
-    return NextResponse.json({ error: "Failed to fetch unread message count" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to fetch unread message count", count: 0 }, { status: 500 })
   }
 }
-
