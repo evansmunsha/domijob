@@ -51,28 +51,28 @@ export function NotificationList({ initialNotifications, companyId }: Notificati
   }
 
   return (
-    <>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Notifications</h1>
+    <div className="w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-2 sm:gap-0">
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">Notifications</h1>
         <NotificationActions 
           onMarkAllRead={handleMarkAllRead}
           onClearAll={handleClearAll}
         />
       </div>
 
-      <Card>
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
+      <Card className="w-full">
+        <CardHeader className="p-4 border-b">
+          <CardTitle className="text-base md:text-lg flex items-center gap-2">
+            <Bell className="h-4 w-4 md:h-5 md:w-5" />
             Recent Notifications
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {notifications.length === 0 ? (
-            <div className="p-6 text-center">
-              <Bell className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-              <p className="text-muted-foreground">No notifications yet.</p>
-              <p className="text-sm text-muted-foreground mt-2">We&apos;ll notify you when there&apos;s something new.</p>
+            <div className="p-4 md:p-6 text-center">
+              <Bell className="h-8 w-8 md:h-12 md:w-12 mx-auto text-gray-300 dark:text-gray-600 mb-2 md:mb-4" />
+              <p className="text-xs md:text-sm text-muted-foreground">No notifications yet.</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground mt-1 md:mt-2">We&apos;ll notify you when there&apos;s something new.</p>
             </div>
           ) : (
             <ul className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -87,6 +87,6 @@ export function NotificationList({ initialNotifications, companyId }: Notificati
           )}
         </CardContent>
       </Card>
-    </>
+    </div>
   )
 } 

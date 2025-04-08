@@ -76,80 +76,80 @@ export function NotificationSummary({ companyId }: NotificationSummaryProps) {
   const getIcon = (type: string) => {
     switch (type) {
       case "NEW_APPLICATION":
-        return <FileText className="h-4 w-4" />
+        return <FileText className="h-3.5 w-3.5 md:h-4 md:w-4" />
       case "APPLICATION_STATUS_UPDATED":
-        return <CheckCircle className="h-4 w-4" />
+        return <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
       case "PROFILE_VIEWS":
-        return <Eye className="h-4 w-4" />
+        return <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
       case "POTENTIAL_CANDIDATE":
-        return <Users className="h-4 w-4" />
+        return <Users className="h-3.5 w-3.5 md:h-4 md:w-4" />
       default:
-        return <Bell className="h-4 w-4" />
+        return <Bell className="h-3.5 w-3.5 md:h-4 md:w-4" />
     }
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center">
-          <Bell className="mr-2 h-5 w-5" />
+    <Card className="w-full h-full">
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="text-base md:text-lg flex items-center">
+          <Bell className="mr-2 h-4 w-4 md:h-5 md:w-5" />
           Notification Summary
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">Total Unread</span>
-            <Badge variant={counts.total > 0 ? "default" : "outline"}>{counts.total}</Badge>
+            <span className="text-xs md:text-sm font-medium">Total Unread</span>
+            <Badge variant={counts.total > 0 ? "default" : "outline"} className="text-xs md:text-sm">{counts.total}</Badge>
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2">
-            <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
+            <div className="flex items-center justify-between p-1.5 md:p-2 bg-muted/50 rounded-md">
               <div className="flex items-center">
                 {getIcon("NEW_APPLICATION")}
-                <span className="text-xs ml-2">New Applications</span>
+                <span className="text-[10px] md:text-xs ml-1.5 md:ml-2">New Applications</span>
               </div>
-              <Badge variant="outline" className="ml-2">
+              <Badge variant="outline" className="ml-1.5 md:ml-2 text-[10px] md:text-xs">
                 {counts.byType.NEW_APPLICATION}
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
+            <div className="flex items-center justify-between p-1.5 md:p-2 bg-muted/50 rounded-md">
               <div className="flex items-center">
                 {getIcon("APPLICATION_STATUS_UPDATED")}
-                <span className="text-xs ml-2">Status Updates</span>
+                <span className="text-[10px] md:text-xs ml-1.5 md:ml-2">Status Updates</span>
               </div>
-              <Badge variant="outline" className="ml-2">
+              <Badge variant="outline" className="ml-1.5 md:ml-2 text-[10px] md:text-xs">
                 {counts.byType.APPLICATION_STATUS_UPDATED}
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
+            <div className="flex items-center justify-between p-1.5 md:p-2 bg-muted/50 rounded-md">
               <div className="flex items-center">
                 {getIcon("PROFILE_VIEWS")}
-                <span className="text-xs ml-2">Profile Views</span>
+                <span className="text-[10px] md:text-xs ml-1.5 md:ml-2">Profile Views</span>
               </div>
-              <Badge variant="outline" className="ml-2">
+              <Badge variant="outline" className="ml-1.5 md:ml-2 text-[10px] md:text-xs">
                 {counts.byType.PROFILE_VIEWS}
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
+            <div className="flex items-center justify-between p-1.5 md:p-2 bg-muted/50 rounded-md">
               <div className="flex items-center">
                 {getIcon("POTENTIAL_CANDIDATE")}
-                <span className="text-xs ml-2">Potential Matches</span>
+                <span className="text-[10px] md:text-xs ml-1.5 md:ml-2">Potential Matches</span>
               </div>
-              <Badge variant="outline" className="ml-2">
+              <Badge variant="outline" className="ml-1.5 md:ml-2 text-[10px] md:text-xs">
                 {counts.byType.POTENTIAL_CANDIDATE}
               </Badge>
             </div>
           </div>
 
           <div className="pt-2 flex justify-between">
-            <Link href="/company/notifications" className="text-xs text-primary hover:underline">
+            <Link href="/company/notifications" className="text-[10px] md:text-xs text-primary hover:underline">
               View all notifications
             </Link>
-            <Link href="/company/potential-candidates" className="text-xs text-primary hover:underline">
+            <Link href="/company/potential-candidates" className="text-[10px] md:text-xs text-primary hover:underline">
               View potential candidates
             </Link>
           </div>
@@ -161,25 +161,25 @@ export function NotificationSummary({ companyId }: NotificationSummaryProps) {
 
 function NotificationSummarySkeleton() {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <Skeleton className="h-6 w-48" />
+    <Card className="w-full h-full">
+      <CardHeader className="p-4 pb-2">
+        <Skeleton className="h-5 md:h-6 w-36 md:w-48" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-6 w-8" />
+            <Skeleton className="h-3 md:h-4 w-20 md:w-24" />
+            <Skeleton className="h-5 md:h-6 w-6 md:w-8" />
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-10 w-full" />
+              <Skeleton key={i} className="h-8 md:h-10 w-full" />
             ))}
           </div>
 
           <div className="pt-2">
-            <Skeleton className="h-4 w-32 mx-auto" />
+            <Skeleton className="h-3 md:h-4 w-28 md:w-32 mx-auto" />
           </div>
         </div>
       </CardContent>
