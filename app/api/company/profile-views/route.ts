@@ -197,14 +197,23 @@ export async function POST(req: Request) {
     // Get user location from headers if available
     const userLocation = req.headers.get("x-vercel-ip-country") || "Unknown"
 
-    // Check for recent views from this user (within last 5 minutes)
+    // Check if the viewer is the company owner
+    if (userId === company.userId) {
+      logger.debug(`Skipping view from company owner ${userId}`)
+      return NextResponse.json({ success: true, skipped: true })
+    }
+
+    // Check for any views from this user today
     if (userId) {
-      const recentView = await prisma.companyProfileView.findFirst({
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+      
+      const existingView = await prisma.companyProfileView.findFirst({
         where: {
           companyId,
           userId,
           timestamp: {
-            gte: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+            gte: todayStart,
           },
         },
         orderBy: {
@@ -212,9 +221,9 @@ export async function POST(req: Request) {
         },
       })
 
-      if (recentView) {
-        logger.debug(`Skipping duplicate view from user ${userId} within 5 minutes`, {
-          lastViewTime: recentView.timestamp,
+      if (existingView) {
+        logger.debug(`Skipping duplicate view from user ${userId} on same day`, {
+          lastViewTime: existingView.timestamp,
         })
         return NextResponse.json({ success: true, skipped: true })
       }
