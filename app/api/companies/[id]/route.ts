@@ -93,6 +93,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(company)
   } catch (error) {
+    console.error("Error fetching company:", error)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
