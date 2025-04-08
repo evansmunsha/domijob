@@ -204,4 +204,3 @@ function ApplicationInsightsSkeleton() {
     </Card>
   )
 }
-
