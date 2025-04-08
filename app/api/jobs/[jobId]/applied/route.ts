@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
-export async function GET(_request: Request, { params }: { params: { jobId: string } }) {
+// Using the NextRequest type and a simpler params approach
+export async function GET(_request: NextRequest, { params }: { params: { jobId: string } }) {
   try {
     const session = await auth()
 
@@ -10,7 +11,7 @@ export async function GET(_request: Request, { params }: { params: { jobId: stri
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { jobId } = params
+    const jobId = params.jobId
 
     // Check if the job exists
     const job = await prisma.jobPost.findUnique({
