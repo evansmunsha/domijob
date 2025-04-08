@@ -1,8 +1,7 @@
 "use client"
 
-import { use, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
-import { prisma } from "@/app/utils/db"
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -12,40 +11,57 @@ import { Badge } from "@/components/ui/badge"
 import { MapPin, Globe, Calendar, Users, X } from "lucide-react"
 import Link from "next/link"
 
-async function getCompany(id: string) {
-  const company = await prisma.company.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      name: true,
-      userId: true, // Needed to prevent tracking self-views
-      logo: true,
-      location: true,
-      website: true,
-      about: true,
-      foundedYear: true,
-      size: true,
-      xAccount: true,
-      industry: true,
-      JobPost: {
-        where: { status: "ACTIVE" },
-        orderBy: { createdAt: "desc" },
-      },
-    },
-  })
-
-  if (!company) notFound()
-  return company
+type Company = {
+  id: string
+  name: string
+  userId: string
+  logo: string | null
+  location: string | null
+  website: string | null
+  about: string | null
+  foundedYear: number | null
+  size: string | null
+  xAccount: string | null
+  industry: string | null
+  JobPost: Array<{
+    id: string
+    jobTitle: string
+    location: string
+    employmentType: string
+    salaryFrom: number | null
+    salaryTo: number | null
+  }>
 }
 
-export default function CompanyProfile({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params)
-  const { id } = resolvedParams
-  const company = use(getCompany(id))
+export default function CompanyProfile({ params }: { params: { id: string } }) {
+  const [company, setCompany] = useState<Company | null>(null)
+  const [loading, setLoading] = useState(true)
   const { data: session } = useSession()
 
   useEffect(() => {
-    if (!session?.user?.id || !session?.user?.userType) return
+    const fetchCompany = async () => {
+      try {
+        const response = await fetch(`/api/companies/${params.id}`)
+        if (!response.ok) {
+          if (response.status === 404) {
+            notFound()
+          }
+          throw new Error('Failed to fetch company')
+        }
+        const data = await response.json()
+        setCompany(data)
+      } catch (error) {
+        console.error('Error fetching company:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCompany()
+  }, [params.id])
+
+  useEffect(() => {
+    if (!session?.user?.id || !session?.user?.userType || !company) return
 
     const viewerId = session.user.id
 
@@ -56,10 +72,18 @@ export default function CompanyProfile({ params }: { params: Promise<{ id: strin
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ companyId: id, viewerId }),
+        body: JSON.stringify({ companyId: params.id, viewerId }),
       }).catch((err) => console.error("Profile view tracking failed", err))
     }
-  }, [session, company.userId, id])
+  }, [session, company, params.id])
+
+  if (loading) {
+    return <div className="container mx-auto py-8">Loading...</div>
+  }
+
+  if (!company) {
+    return null
+  }
 
   return (
     <div className="container mx-auto py-8">

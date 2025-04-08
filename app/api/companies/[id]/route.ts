@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
-export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: Request) {
   try {
     const session = await auth()
 
@@ -10,8 +10,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Await the params Promise to get the actual id
-    const { id } = await context.params
+    // Extract the company ID from the URL
+    const url = new URL(request.url)
+    const id = url.pathname.split('/').pop()
+    
+    if (!id) {
+      return NextResponse.json({ error: "Company ID is required" }, { status: 400 })
+    }
+
     const companyId = id
     const data = await request.json()
 
@@ -47,6 +53,47 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   } catch (error) {
     console.error("Error updating company profile:", error)
     return NextResponse.json({ error: "Failed to update company profile" }, { status: 500 })
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    // Extract the company ID from the URL
+    const url = new URL(request.url)
+    const id = url.pathname.split('/').pop()
+    
+    if (!id) {
+      return NextResponse.json({ error: "Company ID is required" }, { status: 400 })
+    }
+
+    const company = await prisma.company.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        userId: true,
+        logo: true,
+        location: true,
+        website: true,
+        about: true,
+        foundedYear: true,
+        size: true,
+        xAccount: true,
+        industry: true,
+        JobPost: {
+          where: { status: "ACTIVE" },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    })
+
+    if (!company) {
+      return NextResponse.json({ error: "Company not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(company)
+  } catch (error) {
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
