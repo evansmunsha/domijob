@@ -1,3 +1,7 @@
+"use client"
+
+import { use, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { prisma } from "@/app/utils/db"
 import { notFound } from "next/navigation"
 import Image from "next/image"
@@ -7,12 +11,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Globe, Calendar, Users, X } from "lucide-react"
 import Link from "next/link"
-import { use } from "react"
 
 async function getCompany(id: string) {
   const company = await prisma.company.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      userId: true, // Needed to prevent tracking self-views
+      logo: true,
+      location: true,
+      website: true,
+      about: true,
+      foundedYear: true,
+      size: true,
+      xAccount: true,
+      industry: true,
       JobPost: {
         where: { status: "ACTIVE" },
         orderBy: { createdAt: "desc" },
@@ -20,20 +34,32 @@ async function getCompany(id: string) {
     },
   })
 
-  if (!company) {
-    notFound()
-  }
-
+  if (!company) notFound()
   return company
 }
 
-// Fix: Updated to match the pattern used in other components
 export default function CompanyProfile({ params }: { params: Promise<{ id: string }> }) {
-  // Unwrap the params Promise using React.use()
   const resolvedParams = use(params)
   const { id } = resolvedParams
-
   const company = use(getCompany(id))
+  const { data: session } = useSession()
+
+  useEffect(() => {
+    if (!session?.user?.id || !session?.user?.userType) return
+
+    const viewerId = session.user.id
+
+    // Only track if a job seeker is viewing a different company
+    if (session.user.userType === "JOB_SEEKER" && viewerId !== company.userId) {
+      fetch("/api/company/profile-views", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ companyId: id, viewerId }),
+      }).catch((err) => console.error("Profile view tracking failed", err))
+    }
+  }, [session, company.userId, id])
 
   return (
     <div className="container mx-auto py-8">
@@ -215,4 +241,3 @@ export default function CompanyProfile({ params }: { params: Promise<{ id: strin
     </div>
   )
 }
-
