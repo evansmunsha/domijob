@@ -2,8 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
-// Using the NextRequest type and a simpler params approach
-export async function GET(_request: Request, context: { params: { jobId: string } }) {
+export async function GET(request: Request) {
   try {
     const session = await auth()
 
@@ -11,7 +10,14 @@ export async function GET(_request: Request, context: { params: { jobId: string 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { jobId } = context.params
+    // Get jobId from the URL manually
+    const url = new URL(request.url)
+    const segments = url.pathname.split("/")
+    const jobId = segments[segments.indexOf("job") + 1] // gets the [jobId] segment
+
+    if (!jobId) {
+      return NextResponse.json({ error: "Job ID missing" }, { status: 400 })
+    }
 
     // Check if the job exists
     const job = await prisma.jobPost.findUnique({
@@ -22,7 +28,7 @@ export async function GET(_request: Request, context: { params: { jobId: string 
       return NextResponse.json({ error: "Job not found" }, { status: 404 })
     }
 
-    // Check if the user has applied for this job
+    // Check if the user has applied
     const application = await prisma.jobApplication.findUnique({
       where: {
         userId_jobId: {
