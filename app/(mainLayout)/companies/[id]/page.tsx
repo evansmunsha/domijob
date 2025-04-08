@@ -33,7 +33,13 @@ type Company = {
   }>
 }
 
-export default function CompanyProfile({ params }: { params: { id: string } }) {
+type PageProps = {
+  params: {
+    id: string
+  }
+}
+
+export default function CompanyProfile({ params }: PageProps) {
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
   const { data: session } = useSession()
