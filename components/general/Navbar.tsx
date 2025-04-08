@@ -33,9 +33,9 @@ export function Navbar() {
               Find Jobs
             </Link>
 
-            <Link href="/messages" className="text-gray-300 hover:text-white">
+            <Link href="/messages" className="text-gray-300 hover:text-green-500">
             Messages <UnreadMessagesIndicator />
-            </Link>
+          </Link>
           </>
           
         )}
