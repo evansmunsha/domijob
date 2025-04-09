@@ -51,13 +51,15 @@ export function NotificationList({ initialNotifications, companyId }: Notificati
   }
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-2 sm:gap-0">
+    <div className="grid grid-cols-1 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">Notifications</h1>
-        <NotificationActions 
-          onMarkAllRead={handleMarkAllRead}
-          onClearAll={handleClearAll}
-        />
+        <div className="flex justify-end">
+          <NotificationActions 
+            onMarkAllRead={handleMarkAllRead}
+            onClearAll={handleClearAll}
+          />
+        </div>
       </div>
 
       <Card className="w-full">

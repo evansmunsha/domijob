@@ -67,9 +67,13 @@ export function ProfileViewsChart({ companyId }: { companyId: string }) {
   return (
     <Card className="w-full h-full">
       <CardHeader className="p-4 pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base md:text-lg lg:text-xl">Profile Views</CardTitle>
-          {!loading && viewsData && <div className="text-xs md:text-sm font-medium">Total: {viewsData.totalViews}</div>}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <CardTitle className="text-base md:text-lg">Profile Views</CardTitle>
+          {!loading && viewsData && (
+            <div className="flex justify-end">
+              <div className="text-xs md:text-sm font-medium">Total: {viewsData.totalViews}</div>
+            </div>
+          )}
         </div>
         <Tabs value={period} onValueChange={(v) => setPeriod(v as "day" | "week" | "month")} className="mt-2">
           <TabsList className="grid w-full grid-cols-3">
@@ -81,35 +85,35 @@ export function ProfileViewsChart({ companyId }: { companyId: string }) {
       </CardHeader>
       <CardContent className="p-4 pt-0">
         {loading ? (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
             <Skeleton className="h-[200px] md:h-[250px] lg:h-[300px] w-full" />
           </div>
         ) : error ? (
-          <div className="py-4 md:py-6 text-center text-muted-foreground">
+          <div className="grid grid-cols-1 gap-2 py-4 md:py-6 text-center text-muted-foreground">
             <p className="text-sm">Error: {error}</p>
-            <p className="mt-2 text-xs md:text-sm">Please try again later</p>
+            <p className="text-xs md:text-sm">Please try again later</p>
           </div>
         ) : viewsData ? (
-          <div className="space-y-4 md:space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:gap-6">
             <div className="w-full h-[200px] md:h-[250px] lg:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={viewsData.data}>
+              <BarChart data={viewsData.data}>
                   <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip contentStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="views" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
+                <Bar dataKey="views" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
             </div>
 
-            <div>
-              <h4 className="text-xs md:text-sm font-medium mb-2">Top Locations</h4>
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-2">
+              <h4 className="text-xs md:text-sm font-medium">Top Locations</h4>
+              <div className="grid grid-cols-1 gap-2">
                 {viewsData.locations.length > 0 ? (
                   viewsData.locations.slice(0, 5).map((loc) => (
-                    <div key={loc.location} className="flex justify-between items-center">
+                    <div key={loc.location} className="grid grid-cols-2 items-center">
                       <span className="text-xs md:text-sm">{loc.location}</span>
-                      <div className="flex items-center">
+                      <div className="flex items-center justify-end">
                         <div className="w-24 md:w-32 bg-muted rounded-full h-1.5 md:h-2 mr-2">
                           <div
                             className="bg-primary h-1.5 md:h-2 rounded-full"
@@ -129,7 +133,9 @@ export function ProfileViewsChart({ companyId }: { companyId: string }) {
             </div>
           </div>
         ) : (
-          <div className="py-4 md:py-6 text-center text-muted-foreground text-sm">No profile views data available</div>
+          <div className="grid grid-cols-1 gap-2 py-4 md:py-6 text-center text-muted-foreground text-sm">
+            No profile views data available
+          </div>
         )}
       </CardContent>
     </Card>
