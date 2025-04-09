@@ -25,16 +25,16 @@ import { ArrowUpRight, ArrowDownRight } from "lucide-react"
 
 interface ProfileViewsData {
   data: Array<{
-    date: string
+    label: string
     views: number
   }>
   locations: Array<{
-    country: string
+    location: string
     views: number
   }>
   period: string
   totalViews: number
-  trend: number // Percentage change from previous period
+  trend?: number // Optional since the existing API might not provide this
 }
 
 interface ProfileViewsChartProps {
@@ -62,9 +62,14 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
           return
         }
 
-        // Update the API endpoint to match the one we created
-        const res = await fetch(`/api/companies/${companyId}/analytics/views?period=${period}&range=${dateRange}`)
+        // Use the existing API endpoint
+        const apiUrl = `/api/company/analytics/profile-views?period=${period}&companyId=${companyId}`
+        console.log(`API URL: ${apiUrl}`)
+        
+        const res = await fetch(apiUrl)
 
+        console.log(`Response status: ${res.status}`)
+        
         if (!res.ok) {
           const errorText = await res.text()
           console.error(`Error response (${res.status}):`, errorText)
@@ -73,6 +78,23 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
 
         const json = await res.json()
         console.log("Profile views data:", json)
+        
+        // Calculate trend if not provided by the API
+        if (json.trend === undefined && json.data && json.data.length > 0) {
+          const midPoint = Math.floor(json.data.length / 2)
+          const firstHalf = json.data.slice(0, midPoint)
+          const secondHalf = json.data.slice(midPoint)
+          
+          const firstHalfTotal = firstHalf.reduce((sum: number, item: { views: number }) => sum + item.views, 0)
+          const secondHalfTotal = secondHalf.reduce((sum: number, item: { views: number }) => sum + item.views, 0)
+          
+          if (firstHalfTotal > 0) {
+            json.trend = Math.round(((secondHalfTotal - firstHalfTotal) / firstHalfTotal) * 100)
+          } else {
+            json.trend = 0
+          }
+        }
+        
         setViewsData(json)
       } catch (error) {
         console.error("Error fetching profile views data:", error)
@@ -92,7 +114,7 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
     
     // Create CSV content
     const headers = ["Date", "Views"]
-    const rows = viewsData.data.map(item => [item.date, item.views])
+    const rows = viewsData.data.map(item => [item.label, item.views])
     
     const csvContent = [
       headers.join(","),
@@ -137,7 +159,8 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
     const recommendations = []
     const { trend, totalViews } = viewsData
 
-    if (trend < 0) {
+    // Only add trend-based recommendation if trend is available
+    if (trend !== undefined && trend < 0) {
       recommendations.push({
         icon: <AlertCircle className="h-4 w-4 text-red-500" />,
         text: "Profile views are declining. Consider updating your company profile with recent achievements and news.",
@@ -231,7 +254,7 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
               <BarChart data={viewsData.data}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
-                    dataKey="date" 
+                    dataKey="label" 
                     tick={{ fontSize: 12 }} 
                     tickLine={false}
                     axisLine={{ stroke: '#e0e0e0' }}
@@ -266,8 +289,8 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
               <div className="space-y-2">
                 {viewsData.locations.length > 0 ? (
                   viewsData.locations.slice(0, 5).map((loc) => (
-                    <div key={loc.country} className="flex justify-between items-center">
-                      <span className="text-xs md:text-sm">{loc.country}</span>
+                    <div key={loc.location} className="flex justify-between items-center">
+                      <span className="text-xs md:text-sm">{loc.location}</span>
                       <div className="flex items-center">
                         <div className="w-24 md:w-32 bg-muted rounded-full h-1.5 md:h-2 mr-2">
                           <div
@@ -285,7 +308,7 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
                               </span>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>{loc.views} views from {loc.country}</p>
+                              <p>{loc.views} views from {loc.location}</p>
                             </TooltipContent>
                           </UITooltip>
                         </TooltipProvider>
