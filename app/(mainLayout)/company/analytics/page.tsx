@@ -30,7 +30,7 @@ export default async function CompanyAnalyticsPage() {
     <div className="w-full max-w-full px-4 py-4 md:px-6 md:py-6">
       <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4">Company Analytics</h1>
 
-      <Tabs defaultValue="profile-views" className="w-full">
+      <Tabs defaultValue="profile-views" className="w-full grid gap-4 grid-cols-1 md:grid-cols-2">
         <TabsList className="w-full flex flex-wrap mb-4">
           <TabsTrigger value="profile-views" className="flex-1 min-w-[100px] text-sm md:text-base">Profile Views</TabsTrigger>
           <TabsTrigger value="job-performance" className="flex-1 min-w-[100px] text-sm md:text-base">Job Performance</TabsTrigger>
