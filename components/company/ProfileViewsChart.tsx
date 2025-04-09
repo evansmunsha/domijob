@@ -77,9 +77,15 @@ export function ProfileViewsChart({ companyId }: { companyId: string }) {
         </div>
         <Tabs value={period} onValueChange={(v) => setPeriod(v as "day" | "week" | "month")} className="mt-2">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="day" className="text-xs md:text-sm">Today</TabsTrigger>
-            <TabsTrigger value="week" className="text-xs md:text-sm">This Week</TabsTrigger>
-            <TabsTrigger value="month" className="text-xs md:text-sm">This Month</TabsTrigger>
+            <TabsTrigger value="day" className="text-xs md:text-sm">
+              Today
+            </TabsTrigger>
+            <TabsTrigger value="week" className="text-xs md:text-sm">
+              This Week
+            </TabsTrigger>
+            <TabsTrigger value="month" className="text-xs md:text-sm">
+              This Month
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>
@@ -97,13 +103,13 @@ export function ProfileViewsChart({ companyId }: { companyId: string }) {
           <div className="grid grid-cols-1 gap-4 md:gap-6">
             <div className="w-full h-[200px] md:h-[250px] lg:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={viewsData.data}>
+                <BarChart data={viewsData.data}>
                   <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip contentStyle={{ fontSize: 12 }} />
-                <Bar dataKey="views" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
+                  <Bar dataKey="views" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
 
             <div className="grid grid-cols-1 gap-2">
@@ -141,4 +147,3 @@ export function ProfileViewsChart({ companyId }: { companyId: string }) {
     </Card>
   )
 }
-
