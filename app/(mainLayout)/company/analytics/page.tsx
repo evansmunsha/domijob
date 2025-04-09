@@ -62,7 +62,7 @@ export default async function CompanyAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Visitor Insights</CardTitle>
-                <CardDescription>Learn more about who's viewing your profile</CardDescription>
+                <CardDescription>Learn more about who&apos;s viewing your profile</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
