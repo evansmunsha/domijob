@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { Download, Calendar, TrendingUp, AlertCircle, Info } from "lucide-react"
+import { Download, Calendar, TrendingUp, AlertCircle } from "lucide-react"
 import { 
   Select, 
   SelectContent, 
@@ -228,7 +228,7 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
             
             <div className="w-full h-[200px] md:h-[250px] lg:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={viewsData.data}>
+              <BarChart data={viewsData.data}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
                     dataKey="date" 
@@ -257,8 +257,8 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
                     radius={[4, 4, 0, 0]}
                     maxBarSize={50}
                   />
-                </BarChart>
-              </ResponsiveContainer>
+              </BarChart>
+            </ResponsiveContainer>
             </div>
 
             <div>
