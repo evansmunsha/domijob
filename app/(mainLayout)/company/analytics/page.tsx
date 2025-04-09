@@ -27,12 +27,12 @@ export default async function CompanyAnalyticsPage() {
   }
 
   return (
-    <div className="container py-6">
+    <div className="container py-1">
       <h1 className="text-2xl font-bold mb-6">Company Analytics</h1>
 
       <Tabs defaultValue="profile-views" className="w-full space-y-6">
         {/* Use grid for tabs on mobile, flex for larger screens */}
-        <div className="overflow-x-auto pb-2">
+        <div className="overflow-x-auto pb-1">
           <TabsList className="w-full min-w-[400px]">
             <TabsTrigger value="profile-views" className="flex-1">
               Profile Views
@@ -46,9 +46,9 @@ export default async function CompanyAnalyticsPage() {
           </TabsList>
         </div>
 
-        <TabsContent value="profile-views" className="space-y-6">
+        <TabsContent value="profile-views" className="space-y-2">
           {/* Full width chart on mobile, grid on larger screens */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle>Profile Views Over Time</CardTitle>
@@ -83,7 +83,7 @@ export default async function CompanyAnalyticsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="job-performance" className="space-y-6">
+        <TabsContent value="job-performance" className="space-y-2">
           <Card>
             <CardHeader>
               <CardTitle>Job Performance</CardTitle>
@@ -99,7 +99,7 @@ export default async function CompanyAnalyticsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="candidate-matches" className="space-y-6">
+        <TabsContent value="candidate-matches" className="space-y-2">
           <Card>
             <CardHeader>
               <CardTitle>Candidate Matches</CardTitle>
