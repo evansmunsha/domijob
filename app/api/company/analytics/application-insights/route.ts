@@ -70,8 +70,8 @@ export async function GET(request: Request) {
     }, {} as Record<string, number>)
 
     // Calculate application trends over time
-    const applicationTrends = applications.reduce((acc, app) => {
-      const date = app.createdAt.toISOString().split("T")[0]
+    const applicationTrends = applications.reduce((acc, _) => {
+      const date = new Date().toISOString().split("T")[0]
       acc[date] = (acc[date] || 0) + 1
       return acc
     }, {} as Record<string, number>)
