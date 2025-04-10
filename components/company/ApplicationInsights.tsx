@@ -14,9 +14,10 @@ interface ApplicationData {
   totalApplications: number
   statusDistribution: Array<{ status: string; count: number }>
   applicationsByJob: Array<{ job: string; count: number }>
-  candidateDemographics: Array<{ experience: string; count: number }>
+  candidateDemographics: Array<{ userType: string; count: number }>
   applicationTrends: Array<{ date: string; count: number }>
   period: string
+  unknownUserTypeCount?: number
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
@@ -54,7 +55,14 @@ export function ApplicationInsights({ companyId }: ApplicationInsightsProps) {
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg font-medium">Application Insights</CardTitle>
+        <div className="space-y-1">
+          <CardTitle className="text-lg font-medium">Application Insights</CardTitle>
+          {data.unknownUserTypeCount && data.unknownUserTypeCount > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Note: {data.unknownUserTypeCount} applications have unknown user types
+            </p>
+          )}
+        </div>
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select period" />
@@ -118,7 +126,7 @@ export function ApplicationInsights({ companyId }: ApplicationInsightsProps) {
                   <Pie
                     data={data.candidateDemographics}
                     dataKey="count"
-                    nameKey="experience"
+                    nameKey="userType"
                     cx="50%"
                     cy="50%"
                     outerRadius={100}

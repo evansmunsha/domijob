@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     const days = parseInt(period.replace("d", ""))
     const startDate = new Date(now.setDate(now.getDate() - days))
 
-    // Get applications data
+    // Get applications data with user and job details
     const applications = await prisma.jobApplication.findMany({
       where: {
         job: {
@@ -45,9 +45,33 @@ export async function GET(request: Request) {
         },
       },
       include: {
-        job: true,
+        job: {
+          select: {
+            jobTitle: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            userType: true,
+          },
+        },
       },
     })
+
+    // Log applications with unknown user type
+    const unknownUserTypeApps = applications.filter(app => !app.user?.userType)
+    if (unknownUserTypeApps.length > 0) {
+      console.warn(`Found ${unknownUserTypeApps.length} applications with unknown user type:`, 
+        unknownUserTypeApps.map(app => ({
+          applicationId: app.id,
+          userId: app.userId,
+          userEmail: app.user?.email,
+          createdAt: app.createdAt
+        }))
+      )
+    }
 
     // Calculate application status distribution
     const statusDistribution = applications.reduce((acc, app) => {
@@ -57,15 +81,15 @@ export async function GET(request: Request) {
 
     // Calculate applications by job
     const applicationsByJob = applications.reduce((acc, app) => {
-      const jobTitle = app.job.jobTitle
+      const jobTitle = app.job?.jobTitle || "Unknown Job"
       acc[jobTitle] = (acc[jobTitle] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
-    // Calculate candidate demographics - using userId instead of candidate
-    const candidateDemographics = applications.reduce((acc) => {
-      const experience = "Unknown" // Replace with actual experience if available
-      acc[experience] = (acc[experience] || 0) + 1
+    // Calculate candidate demographics based on user type
+    const candidateDemographics = applications.reduce((acc, app) => {
+      const userType = app.user?.userType || "UNKNOWN"
+      acc[userType] = (acc[userType] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
@@ -86,8 +110,8 @@ export async function GET(request: Request) {
         job,
         count,
       })),
-      candidateDemographics: Object.entries(candidateDemographics).map(([experience, count]) => ({
-        experience,
+      candidateDemographics: Object.entries(candidateDemographics).map(([userType, count]) => ({
+        userType,
         count,
       })),
       applicationTrends: Object.entries(applicationTrends).map(([date, count]) => ({
@@ -95,6 +119,7 @@ export async function GET(request: Request) {
         count,
       })),
       period,
+      unknownUserTypeCount: unknownUserTypeApps.length
     })
   } catch (error) {
     console.error("[APPLICATION_INSIGHTS]", error)
