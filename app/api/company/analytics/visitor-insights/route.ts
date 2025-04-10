@@ -65,11 +65,39 @@ export async function GET(req: Request) {
       include: {
         user: {
           select: {
+            id: true,
             userType: true,
+            email: true,
           },
         },
       },
     })
+
+    // Log unknown users for debugging
+    const unknownUsers = profileViews.filter(view => !view.user?.userType)
+    if (unknownUsers.length > 0) {
+      console.warn(`Found ${unknownUsers.length} profile views with unknown user types:`, 
+        unknownUsers.map(view => ({
+          viewId: view.id,
+          userId: view.userId,
+          timestamp: view.timestamp,
+          userEmail: view.user?.email
+        }))
+      )
+    }
+
+    // Cleanup orphaned profile views
+    const orphanedViews = profileViews.filter(view => !view.user)
+    if (orphanedViews.length > 0) {
+      console.warn(`Found ${orphanedViews.length} orphaned profile views. Cleaning up...`)
+      await prisma.companyProfileView.deleteMany({
+        where: {
+          id: {
+            in: orphanedViews.map(view => view.id)
+          }
+        }
+      })
+    }
 
     // Calculate demographics based on user type
     const userTypeCounts = profileViews.reduce((acc, view) => {

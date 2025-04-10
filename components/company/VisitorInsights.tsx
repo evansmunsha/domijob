@@ -16,6 +16,7 @@ interface VisitorData {
   trafficSources: Array<{ source: string; percentage: number }>
   timePatterns: Array<{ hour: string; views: number }>
   period: string
+  unknownUsersCount?: number
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
@@ -53,7 +54,14 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg font-medium">Visitor Insights</CardTitle>
+        <div className="space-y-1">
+          <CardTitle className="text-lg font-medium">Visitor Insights</CardTitle>
+          {data.unknownUsersCount && data.unknownUsersCount > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Note: {data.unknownUsersCount} visitors could not be categorized
+            </p>
+          )}
+        </div>
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select period" />
