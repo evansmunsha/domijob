@@ -1,3 +1,5 @@
+import { VisitorInsights } from "@/components/company/VisitorInsights"
+import { ApplicationInsights } from "@/components/company/ApplicationInsights"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 import { redirect } from "next/navigation"
@@ -82,17 +84,7 @@ export default async function CompanyAnalyticsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <div className="bg-muted/30 p-4 rounded-full mb-4">
-                    <Users className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Coming soon: Detailed visitor demographics and behavior analytics
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    You&apos;ll be able to see where your visitors are coming from, their job titles, and more
-                  </p>
-                </div>
+                <VisitorInsights companyId={company.id} />
               </CardContent>
             </Card>
 
@@ -107,17 +99,7 @@ export default async function CompanyAnalyticsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <div className="bg-muted/30 p-4 rounded-full mb-4">
-                    <BarChart className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Coming soon: Profile engagement metrics and conversion rates
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Track how long visitors spend on your profile and what actions they take
-                  </p>
-                </div>
+                <ApplicationInsights companyId={company.id} />
               </CardContent>
             </Card>
           </div>
