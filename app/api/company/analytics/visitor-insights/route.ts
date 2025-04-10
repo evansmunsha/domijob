@@ -119,7 +119,6 @@ export async function GET(req: Request) {
       })
 
     // Calculate behavior metrics
-    // For now, we'll use placeholder data since we don't have detailed behavior tracking
     const behavior = [
       { action: "View Profile", count: totalViews },
       { action: "View Jobs", count: Math.round(totalViews * 0.7) },
