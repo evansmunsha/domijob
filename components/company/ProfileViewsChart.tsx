@@ -69,7 +69,7 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
         const res = await fetch(apiUrl)
 
         console.log(`Response status: ${res.status}`)
-        
+
         if (!res.ok) {
           const errorText = await res.text()
           console.error(`Error response (${res.status}):`, errorText)
