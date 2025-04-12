@@ -1,12 +1,14 @@
 import { VisitorInsights } from "@/components/company/VisitorInsights"
 import { ApplicationInsights } from "@/components/company/ApplicationInsights"
+import { JobPerformance } from "@/components/company/JobPerformance"
+import { ApplicationFunnel } from "@/components/company/ApplicationFunnel"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 import { redirect } from "next/navigation"
 import { ProfileViewsChart } from "@/components/company/ProfileViewsChart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart, LineChart, PieChart, TrendingUp, Users, Eye, Briefcase, Target } from "lucide-react"
+import { BarChart, TrendingUp, Users, Eye, Briefcase, Target } from "lucide-react"
 
 export default async function CompanyAnalyticsPage() {
   const session = await auth()
@@ -118,17 +120,7 @@ export default async function CompanyAnalyticsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <div className="bg-muted/30 p-4 rounded-full mb-4">
-                    <LineChart className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Coming soon: Job views, application rates, and conversion metrics
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Track which job postings get the most attention and convert the best
-                  </p>
-                </div>
+                <JobPerformance companyId={company.id} />
               </CardContent>
             </Card>
 
@@ -143,17 +135,7 @@ export default async function CompanyAnalyticsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <div className="bg-muted/30 p-4 rounded-full mb-4">
-                    <PieChart className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Coming soon: Application funnel analytics and optimization insights
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    See where candidates drop off in your application process
-                  </p>
-                </div>
+                <ApplicationFunnel companyId={company.id} />
               </CardContent>
             </Card>
           </div>
