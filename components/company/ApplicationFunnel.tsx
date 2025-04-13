@@ -1,4 +1,7 @@
+
 "use client"
+
+
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -190,22 +193,50 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="totalApplications" 
-                    stroke="#8884d8" 
-                    name="Total Applications"
-                    onClick={(e: any) => handleDateClick(e.date)}
-                    cursor="pointer"
-                  />
+                  
+
                   <Line 
                     type="monotone" 
                     dataKey="completedApplications" 
                     stroke="#82ca9d" 
                     name="Completed Applications"
-                    onClick={(e: any) => handleDateClick(e.date)}
-                    cursor="pointer"
+                    dot={({ payload, cx, cy }) => (
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={4}
+                        fill="#82ca9d"
+                        stroke="#fff"
+                        strokeWidth={1}
+                        cursor="pointer"
+                        onClick={() => handleDateClick(payload.date)}
+                      />
+                    )}
                   />
+
+
+                  <Line 
+                    type="monotone" 
+                    dataKey="completedApplications" 
+                    stroke="#82ca9d" 
+                    name="Completed Applications"
+                    dot={({ payload, cx, cy }) => (
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={4}
+                        fill="#82ca9d"
+                        stroke="#fff"
+                        strokeWidth={1}
+                        cursor="pointer"
+                        onClick={() => handleDateClick(payload.date)}
+                      />
+                    )}
+                  />
+
+
+
+
                 </RechartsLineChart>
               </ResponsiveContainer>
             </div>
