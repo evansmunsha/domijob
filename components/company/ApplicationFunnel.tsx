@@ -1,4 +1,3 @@
-
 "use client"
 
 
@@ -65,12 +64,15 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
       try {
         setLoading(true)
         const response = await fetch(`/api/company/analytics/application-funnel?companyId=${companyId}&period=${period}`)
-        if (!response.ok) throw new Error("Failed to fetch data")
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to fetch application funnel data")
+        }
         const data = await response.json()
         setData(data)
         setError(null)
       } catch (err) {
-        setError("Failed to load application funnel data")
+        setError(err instanceof Error ? err.message : "Failed to load application funnel data")
         console.error(err)
       } finally {
         setLoading(false)
@@ -108,8 +110,13 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
     link.click()
   }
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error}</div>
+  if (loading) return <div className="flex items-center justify-center h-64">Loading...</div>
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-64 space-y-2">
+      <p className="text-red-500">{error}</p>
+      <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>
+    </div>
+  )
   if (!data) return null
 
   return (

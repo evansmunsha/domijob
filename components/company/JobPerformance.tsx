@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts"
+import { Button } from "@/components/ui/button"
 
 interface JobPerformanceProps {
   companyId: string
@@ -61,12 +62,15 @@ export function JobPerformance({ companyId }: JobPerformanceProps) {
       try {
         setLoading(true)
         const response = await fetch(`/api/company/analytics/job-performance?companyId=${companyId}&period=${period}`)
-        if (!response.ok) throw new Error("Failed to fetch data")
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to fetch job performance data")
+        }
         const data = await response.json()
         setData(data)
         setError(null)
       } catch (err) {
-        setError("Failed to load job performance data")
+        setError(err instanceof Error ? err.message : "Failed to load job performance data")
         console.error(err)
       } finally {
         setLoading(false)
@@ -76,8 +80,13 @@ export function JobPerformance({ companyId }: JobPerformanceProps) {
     fetchData()
   }, [companyId, period])
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error}</div>
+  if (loading) return <div className="flex items-center justify-center h-64">Loading...</div>
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-64 space-y-2">
+      <p className="text-red-500">{error}</p>
+      <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>
+    </div>
+  )
   if (!data) return null
 
   return (
