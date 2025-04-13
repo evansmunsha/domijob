@@ -210,6 +210,6 @@ export async function GET(request: Request) {
     return NextResponse.json(responseData)
   } catch (error) {
     console.error("[JOB_PERFORMANCE]", error)
-    return new NextResponse("Internal error", { status: 500 })
+    return NextResponse.json({ error: "Failed to fetch job performance data" }, { status: 500 })
   }
 } 

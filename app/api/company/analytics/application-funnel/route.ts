@@ -240,6 +240,6 @@ export async function GET(request: Request) {
     return NextResponse.json(responseData)
   } catch (error) {
     console.error("[APPLICATION_FUNNEL]", error)
-    return new NextResponse("Internal error", { status: 500 })
+    return NextResponse.json({ error: "Failed to fetch application funnel data" }, { status: 500 })
   }
 } 
