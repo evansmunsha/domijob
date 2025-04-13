@@ -195,7 +195,7 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
                     dataKey="totalApplications" 
                     stroke="#8884d8" 
                     name="Total Applications"
-                    onClick={(data) => handleDateClick(data.date)}
+                    onClick={(e: any) => handleDateClick(e.date)}
                     cursor="pointer"
                   />
                   <Line 
@@ -203,7 +203,7 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
                     dataKey="completedApplications" 
                     stroke="#82ca9d" 
                     name="Completed Applications"
-                    onClick={(data) => handleDateClick(data.date)}
+                    onClick={(e: any) => handleDateClick(e.date)}
                     cursor="pointer"
                   />
                 </RechartsLineChart>
