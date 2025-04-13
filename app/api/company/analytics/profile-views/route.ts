@@ -221,7 +221,7 @@ export async function GET(req: Request) {
         .sort((a, b) => Number(a.label) - Number(b.label))
     }
 
-    // Get location data
+    // Get location 
     const locations = await prisma.companyProfileView.groupBy({
       by: ["location"],
       where: {
