@@ -23,7 +23,14 @@ export async function GET(request: Request) {
 
     // Check cache first
     const cacheKey = `application-funnel:${companyId}:${period}`
-    const cachedData = await redis.get(cacheKey)
+    let cachedData = null
+    try {
+      cachedData = await redis.get(cacheKey)
+    } catch (redisError) {
+      console.error("[APPLICATION_FUNNEL] Redis error:", redisError)
+      // Continue without cache if Redis fails
+    }
+
     if (cachedData) {
       return NextResponse.json(JSON.parse(cachedData as string))
     }
@@ -235,7 +242,12 @@ export async function GET(request: Request) {
     }
 
     // Cache the response
-    await redis.set(cacheKey, JSON.stringify(responseData), { ex: CACHE_TTL })
+    try {
+      await redis.set(cacheKey, JSON.stringify(responseData), { ex: CACHE_TTL })
+    } catch (redisError) {
+      console.error("[APPLICATION_FUNNEL] Redis error:", redisError)
+      // Continue without caching if Redis fails
+    }
 
     return NextResponse.json(responseData)
   } catch (error) {
