@@ -76,7 +76,7 @@ export function ApplicationInsights({ companyId }: ApplicationInsightsProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="status" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="overflow-x-auto grid w-full grid-cols-4">
             <TabsTrigger value="status">Status</TabsTrigger>
             <TabsTrigger value="jobs">Jobs</TabsTrigger>
             <TabsTrigger value="demographics">Demographics</TabsTrigger>
