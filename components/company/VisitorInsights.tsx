@@ -81,7 +81,7 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
             <TabsTrigger value="sources">Traffic Sources</TabsTrigger>
             <TabsTrigger value="time">Time Patterns</TabsTrigger>
           </TabsList>
-          <TabsContent value="demographics" className="space-y-4">
+          <TabsContent value="demographics">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -104,7 +104,7 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
               </ResponsiveContainer>
             </div>
           </TabsContent>
-          <TabsContent value="behavior" className="space-y-4">
+          <TabsContent value="behavior">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.behavior}>
@@ -118,7 +118,7 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
               </ResponsiveContainer>
             </div>
           </TabsContent>
-          <TabsContent value="sources" className="space-y-4">
+          <TabsContent value="sources">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -141,7 +141,7 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
               </ResponsiveContainer>
             </div>
           </TabsContent>
-          <TabsContent value="time" className="space-y-4">
+          <TabsContent value="time">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.timePatterns}>
