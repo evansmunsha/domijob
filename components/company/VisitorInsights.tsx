@@ -75,7 +75,7 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="demographics" className="w-full">
-          <TabsList className="overflow-x-auto items-center flex w-full gap-1 px-1">
+          <TabsList className="overflow-x-auto items-center inline-flex w-full gap-1 px-1">
             <TabsTrigger value="demographics">Demographics</TabsTrigger>
             <TabsTrigger value="behavior">Behavior</TabsTrigger>
             <TabsTrigger value="sources">Traffic Sources</TabsTrigger>
