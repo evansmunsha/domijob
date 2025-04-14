@@ -1,7 +1,5 @@
 import { VisitorInsights } from "@/components/company/VisitorInsights"
 import { ApplicationInsights } from "@/components/company/ApplicationInsights"
-import { JobPerformance } from "@/components/company/JobPerformance"
-import { ApplicationFunnel } from "@/components/company/ApplicationFunnel"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 import { redirect } from "next/navigation"
@@ -37,23 +35,18 @@ export default async function CompanyAnalyticsPage() {
 
       <Tabs defaultValue="profile-views" className="w-full">
         <div className="overflow-x-auto pb-2 mb-4">
-          <TabsList className="w-full grid grid-cols-3 min-w-[300px]">
+          <TabsList className="w-full grid grid-cols-2 min-w-[300px]">
             <TabsTrigger value="profile-views" className="text-xs md:text-sm">
               <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1" />
               <span className="hidden sm:inline">Profile Views</span>
               <span className="sm:hidden">Views</span>
-            </TabsTrigger>
-            <TabsTrigger value="job-performance" className="text-xs md:text-sm">
-              <Briefcase className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-              <span className="hidden sm:inline">Job Performance</span>
-              <span className="sm:hidden">Jobs</span>
             </TabsTrigger>
             <TabsTrigger value="candidate-matches" className="text-xs md:text-sm">
               <Users className="h-3 w-3 md:h-4 md:w-4 mr-1" />
               <span className="hidden sm:inline">Candidate Matches</span>
               <span className="sm:hidden">Matches</span>
             </TabsTrigger>
-        </TabsList>
+          </TabsList>
         </div>
 
         <TabsContent value="profile-views" className="mt-0">
@@ -70,7 +63,7 @@ export default async function CompanyAnalyticsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-            <ProfileViewsChart companyId={company.id} />
+                  <ProfileViewsChart companyId={company.id} />
                 </CardContent>
               </Card>
             </div>
@@ -107,42 +100,8 @@ export default async function CompanyAnalyticsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="job-performance" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="w-full h-full">
-              <CardHeader className="p-4">
-                <CardTitle className="text-base md:text-lg lg:text-xl flex items-center">
-                  <Briefcase className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                  Job Performance
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  See how your job postings are performing
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <JobPerformance companyId={company.id} />
-              </CardContent>
-            </Card>
-
-            <Card className="w-full h-full">
-              <CardHeader className="p-4">
-                <CardTitle className="text-base md:text-lg lg:text-xl flex items-center">
-                  <Target className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                  Application Funnel
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  Analyze your application conversion funnel
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <ApplicationFunnel companyId={company.id} />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
         <TabsContent value="candidate-matches" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <Card className="w-full h-full">
               <CardHeader className="p-4">
                 <CardTitle className="text-base md:text-lg lg:text-xl flex items-center">
@@ -150,46 +109,11 @@ export default async function CompanyAnalyticsPage() {
                   Candidate Matches
                 </CardTitle>
                 <CardDescription className="text-xs md:text-sm">
-                  Analyze your candidate matching metrics
+                  View potential candidates that match your job requirements
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <div className="bg-muted/30 p-4 rounded-full mb-4">
-                    <Target className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Coming soon: Skill match rates, candidate quality scores, and hiring funnel analytics
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Find the best candidates for your open positions with AI-powered matching
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="w-full h-full">
-              <CardHeader className="p-4">
-                <CardTitle className="text-base md:text-lg lg:text-xl flex items-center">
-                  <TrendingUp className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                  Hiring Success
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  Measure your hiring success metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <div className="bg-muted/30 p-4 rounded-full mb-4">
-                    <BarChart className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Coming soon: Time-to-hire, cost-per-hire, and quality-of-hire metrics
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Optimize your hiring process with data-driven insights
-                  </p>
-                </div>
+                {/* Add candidate matches component here */}
               </CardContent>
             </Card>
           </div>
