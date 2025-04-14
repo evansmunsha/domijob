@@ -49,7 +49,7 @@ export default async function CompanyAnalyticsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <Card className="w-full h-full">
-                <CardHeader className="p-4">
+                <CardHeader>
                   <CardTitle className="text-base md:text-lg lg:text-xl flex items-center">
                     <TrendingUp className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                     Profile Views Over Time
@@ -65,7 +65,7 @@ export default async function CompanyAnalyticsPage() {
             </div>
 
             <Card className="w-full h-full">
-              <CardHeader className="p-4">
+              <CardHeader>
                 <CardTitle className="text-base md:text-lg lg:text-xl flex items-center">
                   <Users className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                   Visitor Insights
@@ -89,7 +89,7 @@ export default async function CompanyAnalyticsPage() {
                   Understand how visitors interact with your profile
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent>
                 <ApplicationInsights companyId={company.id} />
               </CardContent>
             </Card>

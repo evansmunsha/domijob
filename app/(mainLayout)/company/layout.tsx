@@ -158,8 +158,8 @@ export default function CompanyLayout({ children }: Props) {
           </h2>
         </header>
         
-        <main className="flex-1 overflow-auto p-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 h-full">
+        <main className="flex-1 overflow-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full">
             {children}
           </div>
         </main>
