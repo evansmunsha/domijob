@@ -93,9 +93,9 @@ export function JobPerformance({ companyId }: JobPerformanceProps) {
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="space-y-1">
-          <CardTitle className="text-lg font-medium">Job Performance</CardTitle>
+          <CardTitle className="text-lg font-medium">Job Performance Overview</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {data.totalJobs} jobs • {data.totalViews} views • {data.totalApplications} applications • {data.averageConversionRate}% avg. conversion
+            Track how your job postings are performing over time
           </p>
         </div>
         <Select value={period} onValueChange={setPeriod}>
@@ -110,6 +110,29 @@ export function JobPerformance({ companyId }: JobPerformanceProps) {
         </Select>
       </CardHeader>
       <CardContent>
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="bg-muted p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Total Jobs</h3>
+            <p className="text-2xl font-bold">{data.totalJobs}</p>
+            <p className="text-xs text-muted-foreground">Active job postings</p>
+          </div>
+          <div className="bg-muted p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Total Views</h3>
+            <p className="text-2xl font-bold">{data.totalViews}</p>
+            <p className="text-xs text-muted-foreground">Profile views</p>
+          </div>
+          <div className="bg-muted p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Applications</h3>
+            <p className="text-2xl font-bold">{data.totalApplications}</p>
+            <p className="text-xs text-muted-foreground">Total applications received</p>
+          </div>
+          <div className="bg-muted p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Conversion Rate</h3>
+            <p className="text-2xl font-bold">{data.averageConversionRate}%</p>
+            <p className="text-xs text-muted-foreground">Views to applications</p>
+          </div>
+        </div>
+
         <Tabs defaultValue="metrics" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="metrics">Job Metrics</TabsTrigger>
@@ -117,6 +140,12 @@ export function JobPerformance({ companyId }: JobPerformanceProps) {
             <TabsTrigger value="breakdown">User Type Breakdown</TabsTrigger>
           </TabsList>
           <TabsContent value="metrics" className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Job Performance Comparison</h3>
+              <p className="text-sm text-muted-foreground">
+                Compare views and applications across your job postings
+              </p>
+            </div>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.jobMetrics}>
@@ -133,6 +162,12 @@ export function JobPerformance({ companyId }: JobPerformanceProps) {
             </div>
           </TabsContent>
           <TabsContent value="trends" className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Performance Over Time</h3>
+              <p className="text-sm text-muted-foreground">
+                Track how views and applications change over the selected period
+              </p>
+            </div>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.performanceTrends}>
@@ -148,6 +183,12 @@ export function JobPerformance({ companyId }: JobPerformanceProps) {
             </div>
           </TabsContent>
           <TabsContent value="breakdown" className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">User Type Analysis</h3>
+              <p className="text-sm text-muted-foreground">
+                See how different user types interact with your job postings
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="text-sm font-medium mb-2">Views by User Type</h3>

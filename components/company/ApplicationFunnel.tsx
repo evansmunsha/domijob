@@ -123,9 +123,9 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="space-y-1">
-          <CardTitle className="text-lg font-medium">Application Funnel</CardTitle>
+          <CardTitle className="text-lg font-medium">Application Funnel Analysis</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {data.totalApplications} total • {data.hiredApplications} hired • {data.overallConversionRate}% conversion rate
+            Track how candidates progress through your hiring process
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -146,6 +146,29 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
         </div>
       </CardHeader>
       <CardContent>
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="bg-muted p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Total Applications</h3>
+            <p className="text-2xl font-bold">{data.totalApplications}</p>
+            <p className="text-xs text-muted-foreground">Applications started</p>
+          </div>
+          <div className="bg-muted p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Completed</h3>
+            <p className="text-2xl font-bold">{data.completedApplications}</p>
+            <p className="text-xs text-muted-foreground">Applications completed</p>
+          </div>
+          <div className="bg-muted p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Shortlisted</h3>
+            <p className="text-2xl font-bold">{data.shortlistedApplications}</p>
+            <p className="text-xs text-muted-foreground">Candidates shortlisted</p>
+          </div>
+          <div className="bg-muted p-4 rounded-lg">
+            <h3 className="text-sm font-medium">Conversion Rate</h3>
+            <p className="text-2xl font-bold">{data.overallConversionRate}%</p>
+            <p className="text-xs text-muted-foreground">Overall success rate</p>
+          </div>
+        </div>
+
         <Tabs defaultValue="funnel" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="funnel">
@@ -162,6 +185,12 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="funnel" className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Application Funnel</h3>
+              <p className="text-sm text-muted-foreground">
+                See how many candidates progress through each stage of your hiring process
+              </p>
+            </div>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.funnelMetrics}>
@@ -192,6 +221,12 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
             </div>
           </TabsContent>
           <TabsContent value="trends" className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Conversion Trends</h3>
+              <p className="text-sm text-muted-foreground">
+                Track how application completion rates change over time
+              </p>
+            </div>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsLineChart data={data.conversionTrends}>
@@ -200,8 +235,24 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  
-
+                  <Line 
+                    type="monotone" 
+                    dataKey="totalApplications" 
+                    stroke="#8884d8" 
+                    name="Total Applications"
+                    dot={({ payload, cx, cy }) => (
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={4}
+                        fill="#8884d8"
+                        stroke="#fff"
+                        strokeWidth={1}
+                        cursor="pointer"
+                        onClick={() => handleDateClick(payload.date)}
+                      />
+                    )}
+                  />
                   <Line 
                     type="monotone" 
                     dataKey="completedApplications" 
@@ -220,35 +271,17 @@ export function ApplicationFunnel({ companyId }: ApplicationFunnelProps) {
                       />
                     )}
                   />
-
-
-                  <Line 
-                    type="monotone" 
-                    dataKey="completedApplications" 
-                    stroke="#82ca9d" 
-                    name="Completed Applications"
-                    dot={({ payload, cx, cy }) => (
-                      <circle
-                        cx={cx}
-                        cy={cy}
-                        r={4}
-                        fill="#82ca9d"
-                        stroke="#fff"
-                        strokeWidth={1}
-                        cursor="pointer"
-                        onClick={() => handleDateClick(payload.date)}
-                      />
-                    )}
-                  />
-
-
-
-
                 </RechartsLineChart>
               </ResponsiveContainer>
             </div>
           </TabsContent>
           <TabsContent value="breakdown" className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">User Type Analysis</h3>
+              <p className="text-sm text-muted-foreground">
+                Compare application rates and completion rates across different user types
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="text-sm font-medium mb-2">Applications by User Type</h3>
