@@ -35,16 +35,11 @@ export default async function CompanyAnalyticsPage() {
 
       <Tabs defaultValue="profile-views" className="w-full">
         <div className="overflow-x-auto pb-2 mb-4">
-          <TabsList className="w-full grid grid-cols-2 min-w-[300px]">
+          <TabsList className="w-full grid grid-cols-1 min-w-[300px]">
             <TabsTrigger value="profile-views" className="text-xs md:text-sm">
               <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1" />
               <span className="hidden sm:inline">Profile Views</span>
               <span className="sm:hidden">Views</span>
-            </TabsTrigger>
-            <TabsTrigger value="candidate-matches" className="text-xs md:text-sm">
-              <Users className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-              <span className="hidden sm:inline">Candidate Matches</span>
-              <span className="sm:hidden">Matches</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -95,25 +90,6 @@ export default async function CompanyAnalyticsPage() {
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <ApplicationInsights companyId={company.id} />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="candidate-matches" className="mt-0">
-          <div className="grid grid-cols-1 gap-4">
-            <Card className="w-full h-full">
-              <CardHeader className="p-4">
-                <CardTitle className="text-base md:text-lg lg:text-xl flex items-center">
-                  <Users className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                  Candidate Matches
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  View potential candidates that match your job requirements
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                {/* Add candidate matches component here */}
               </CardContent>
             </Card>
           </div>
