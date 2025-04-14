@@ -92,7 +92,21 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
                     cx="50%"
                     cy="50%"
                     outerRadius={60}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => (
+                      <text
+                        x={0}
+                        y={0}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        style={{
+                          fontSize: '10px',
+                          fill: '#333',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {`${name}: ${(percent * 100).toFixed(0)}%`}
+                      </text>
+                    )}
                     labelLine={false}
                   >
                     {data.demographics.map((_, index) => (
