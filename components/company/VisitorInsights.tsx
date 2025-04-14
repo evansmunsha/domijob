@@ -54,7 +54,7 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="space-y-1">
+        <div>
           <CardTitle className="text-lg font-medium">Visitor Insights</CardTitle>
           {data.unknownUsersCount && data.unknownUsersCount > 0 && (
             <p className="text-xs text-muted-foreground">
