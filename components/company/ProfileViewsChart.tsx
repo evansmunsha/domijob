@@ -181,7 +181,7 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
 
   return (
     <Card className="w-full h-full">
-      <CardHeader className="p-4 pb-2">
+      <CardHeader className="pb-2">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <CardTitle className="text-base md:text-lg lg:text-xl">Profile Views</CardTitle>
           <div className="flex items-center gap-2">
@@ -223,13 +223,13 @@ export function ProfileViewsChart({ companyId }: ProfileViewsChartProps) {
           </TabsList>
         </Tabs>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
+      <CardContent className=" pt-0">
         {loading ? (
           <div className="space-y-4">
             <Skeleton className="h-[200px] md:h-[250px] lg:h-[300px] w-full" />
           </div>
         ) : error ? (
-          <div className="py-4 md:py-6 text-center text-muted-foreground">
+          <div className=" md:py-6 text-center text-muted-foreground">
             <p className="text-sm">Error: {error}</p>
             <p className="mt-2 text-xs md:text-sm">Please try again later</p>
           </div>

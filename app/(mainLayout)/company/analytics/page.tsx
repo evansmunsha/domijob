@@ -29,8 +29,9 @@ export default async function CompanyAnalyticsPage() {
     redirect("/onboarding")
   }
 
+  
   return (
-    <div className="w-full max-w-full px-4 py-4 md:px-6 md:py-6">
+    <div className="w-full max-w-full   md:px-6 md:py-6">
       <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4">Company Analytics</h1>
 
       <Tabs defaultValue="profile-views" className="w-full">
@@ -57,7 +58,7 @@ export default async function CompanyAnalyticsPage() {
                     Track how many people are viewing your company profile
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-4 pt-0">
+                <CardContent className="pt-0">
                   <ProfileViewsChart companyId={company.id} />
                 </CardContent>
               </Card>
@@ -73,13 +74,13 @@ export default async function CompanyAnalyticsPage() {
                   Learn more about who&apos;s viewing your profile
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 pt-0">
+              <CardContent className="pt-0">
                 <VisitorInsights companyId={company.id} />
               </CardContent>
             </Card>
 
             <Card className="w-full h-full">
-              <CardHeader className="p-4">
+              <CardHeader>
                 <CardTitle className="text-base md:text-lg lg:text-xl flex items-center">
                   <Target className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                   Engagement Metrics
@@ -88,7 +89,7 @@ export default async function CompanyAnalyticsPage() {
                   Understand how visitors interact with your profile
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 pt-0">
+              <CardContent className="pt-0">
                 <ApplicationInsights companyId={company.id} />
               </CardContent>
             </Card>
