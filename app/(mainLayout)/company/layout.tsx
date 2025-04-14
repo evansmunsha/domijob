@@ -45,7 +45,7 @@ export default function CompanyLayout({ children }: Props) {
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className=" border-b border-gray-200 dark:border-gray-700">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Company Dashboard</h1>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -124,7 +124,7 @@ export default function CompanyLayout({ children }: Props) {
             }`}
             onClick={() => setSidebarOpen(false)}
           >
-            <span className="ml-2">Notifications</span>
+            
             <NotificationBadge />
           </Link>
         </nav>
@@ -146,7 +146,7 @@ export default function CompanyLayout({ children }: Props) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white dark:bg-gray-800 shadow-sm h-16 flex items-center px-6">
+        <header className="bg-white dark:bg-gray-800 shadow-sm h-16 flex items-center ">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
             {pathname === "/company-dashboard" ? "Dashboard" : 
              pathname === "/my-jobs" ? "Manage Listings" :

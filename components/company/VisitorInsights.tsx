@@ -52,7 +52,7 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
   if (!data) return null
 
   return (
-    <Card className="w-full p-0">
+    <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
           <CardTitle className="text-lg font-medium">Visitor Insights</CardTitle>

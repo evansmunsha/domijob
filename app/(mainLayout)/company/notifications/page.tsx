@@ -32,7 +32,7 @@ export default async function NotificationsPage() {
   })
 
   return (
-    <div className="container py-8">
+    <div className="container">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <NotificationSummary companyId={company.id} />
