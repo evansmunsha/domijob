@@ -84,26 +84,38 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
           <TabsContent value="demographics">
             <div className="h-[300px] flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                   <Pie
                     data={data.demographics}
                     dataKey="percentage"
                     nameKey="category"
                     cx="50%"
                     cy="50%"
-                    outerRadius={100}
+                    outerRadius={80}
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
                   >
                     {data.demographics.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                  <Tooltip 
+                    formatter={(value) => [`${value}%`, 'Percentage']}
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: '1px solid #ccc',
+                      borderRadius: '4px',
+                      padding: '8px'
+                    }}
+                  />
                   <Legend 
                     layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"
-                    wrapperStyle={{ paddingTop: '20px' }}
+                    wrapperStyle={{ 
+                      paddingTop: '20px',
+                      fontSize: '12px'
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
