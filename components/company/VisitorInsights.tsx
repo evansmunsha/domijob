@@ -53,9 +53,9 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
 
   return (
     <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-2">
         <div>
-          <CardTitle className="text-lg font-medium">Visitor Insights</CardTitle>
+          <CardTitle className="text-base sm:text-lg font-medium">Visitor Insights</CardTitle>
           {data.unknownUsersCount && data.unknownUsersCount > 0 && (
             <p className="text-xs text-muted-foreground">
               Note: {data.unknownUsersCount} visitors could not be categorized
@@ -63,7 +63,7 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
           )}
         </div>
         <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[120px] sm:w-[180px]">
             <SelectValue placeholder="Select period" />
           </SelectTrigger>
           <SelectContent>
@@ -75,23 +75,23 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="demographics" className="w-full">
-          <TabsList className="w-full flex overflow-x-auto">
+          <TabsList className="w-full flex overflow-x-auto text-xs sm:text-sm">
             <TabsTrigger value="demographics" className="whitespace-nowrap">Demographics</TabsTrigger>
             <TabsTrigger value="behavior" className="whitespace-nowrap">Behavior</TabsTrigger>
             <TabsTrigger value="sources" className="whitespace-nowrap">Traffic Sources</TabsTrigger>
             <TabsTrigger value="time" className="whitespace-nowrap">Time Patterns</TabsTrigger>
           </TabsList>
           <TabsContent value="demographics">
-            <div className="h-[300px] flex items-center justify-center">
+            <div className="h-[250px] sm:h-[300px] flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                   <Pie
                     data={data.demographics}
                     dataKey="percentage"
                     nameKey="category"
                     cx="50%"
                     cy="50%"
-                    outerRadius={80}
+                    outerRadius={60}
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     labelLine={false}
                   >
@@ -105,7 +105,8 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
                       backgroundColor: 'white',
                       border: '1px solid #ccc',
                       borderRadius: '4px',
-                      padding: '8px'
+                      padding: '8px',
+                      fontSize: '12px'
                     }}
                   />
                   <Legend 
@@ -113,8 +114,8 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
                     verticalAlign="bottom" 
                     align="center"
                     wrapperStyle={{ 
-                      paddingTop: '20px',
-                      fontSize: '12px'
+                      paddingTop: '10px',
+                      fontSize: '10px'
                     }}
                   />
                 </PieChart>
@@ -122,51 +123,85 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
             </div>
           </TabsContent>
           <TabsContent value="behavior">
-            <div className="h-[300px]">
+            <div className="h-[250px] sm:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.behavior}>
+                <BarChart data={data.behavior} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="action" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
+                  <XAxis dataKey="action" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: '1px solid #ccc',
+                      borderRadius: '4px',
+                      padding: '8px',
+                      fontSize: '12px'
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '10px' }} />
                   <Bar dataKey="count" fill="#8884d8" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </TabsContent>
           <TabsContent value="sources">
-            <div className="h-[300px]">
+            <div className="h-[250px] sm:h-[300px] flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                   <Pie
                     data={data.trafficSources}
                     dataKey="percentage"
                     nameKey="source"
                     cx="50%"
                     cy="50%"
-                    outerRadius={100}
-                    label
+                    outerRadius={60}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
                   >
                     {data.trafficSources.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
-                  <Legend />
+                  <Tooltip 
+                    formatter={(value) => [`${value}%`, 'Percentage']}
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: '1px solid #ccc',
+                      borderRadius: '4px',
+                      padding: '8px',
+                      fontSize: '12px'
+                    }}
+                  />
+                  <Legend 
+                    layout="horizontal" 
+                    verticalAlign="bottom" 
+                    align="center"
+                    wrapperStyle={{ 
+                      paddingTop: '10px',
+                      fontSize: '10px'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </TabsContent>
           <TabsContent value="time">
-            <div className="h-[300px]">
+            <div className="h-[250px] sm:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.timePatterns}>
+                <LineChart data={data.timePatterns} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="hour" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
+                  <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white',
+                      border: '1px solid #ccc',
+                      borderRadius: '4px',
+                      padding: '8px',
+                      fontSize: '12px'
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '10px' }} />
                   <Line type="monotone" dataKey="views" stroke="#8884d8" />
                 </LineChart>
               </ResponsiveContainer>
