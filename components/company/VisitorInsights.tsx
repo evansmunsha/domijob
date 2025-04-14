@@ -75,11 +75,11 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="demographics" className="w-full">
-          <TabsList className="overflow-x-auto items-start inline-flex w-full gap-1 px-1">
-            <TabsTrigger value="demographics">Demographics</TabsTrigger>
-            <TabsTrigger value="behavior">Behavior</TabsTrigger>
-            <TabsTrigger value="sources">Traffic Sources</TabsTrigger>
-            <TabsTrigger value="time">Time Patterns</TabsTrigger>
+          <TabsList className="w-full flex overflow-x-auto pb-2">
+            <TabsTrigger value="demographics" className="whitespace-nowrap">Demographics</TabsTrigger>
+            <TabsTrigger value="behavior" className="whitespace-nowrap">Behavior</TabsTrigger>
+            <TabsTrigger value="sources" className="whitespace-nowrap">Traffic Sources</TabsTrigger>
+            <TabsTrigger value="time" className="whitespace-nowrap">Time Patterns</TabsTrigger>
           </TabsList>
           <TabsContent value="demographics">
             <div className="h-[300px]">
