@@ -186,13 +186,13 @@ export default function JobIdPage({ params }: { params: Promise<{ jobId: string 
         <div className="space-y-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold">{jobData.jobTitle}</h1>
+              <h1 className="text-xl md:text-3xl font-bold">{jobData.jobTitle}</h1>
               <div className="flex items-center gap-2 mt-2">
                 <span className="font-medium">{jobData.company.name}</span>
-                <Badge className="rounded-full" variant="secondary">
+                <Badge className="text-sm rounded-full" variant="secondary">
                   {jobData.employmentType}
                 </Badge>
-                <Badge className="rounded-full">
+                <Badge className="text-sm rounded-full">
                   {locationFlag && <span className="mr-1">{locationFlag}</span>}
                   {jobData.location} Only
                 </Badge>
