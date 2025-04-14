@@ -82,7 +82,7 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
             <TabsTrigger value="time" className="whitespace-nowrap">Time Patterns</TabsTrigger>
           </TabsList>
           <TabsContent value="demographics">
-            <div className="h-[300px]">
+            <div className="h-[300px] flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -92,14 +92,19 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
                     cx="50%"
                     cy="50%"
                     outerRadius={100}
-                    label
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   >
                     {data.demographics.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
-                  <Legend />
+                  <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                  <Legend 
+                    layout="horizontal" 
+                    verticalAlign="bottom" 
+                    align="center"
+                    wrapperStyle={{ paddingTop: '20px' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
