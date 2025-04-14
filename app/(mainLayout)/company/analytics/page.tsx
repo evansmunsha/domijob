@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 import { ProfileViewsChart } from "@/components/company/ProfileViewsChart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart, TrendingUp, Users, Eye, Briefcase, Target } from "lucide-react"
+import { TrendingUp, Users, Eye, Target } from "lucide-react"
 
 export default async function CompanyAnalyticsPage() {
   const session = await auth()
