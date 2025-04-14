@@ -92,7 +92,20 @@ export function VisitorInsights({ companyId }: VisitorInsightsProps) {
                     cx="50%"
                     cy="50%"
                     outerRadius={100}
-                    label
+                    label={({ name, percent }) => (
+                      <text
+                        x={0}
+                        y={0}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        style={{
+                          fontSize: '10px',
+                          fill: '#333'
+                        }}
+                      >
+                        {`${name}: ${(percent * 100).toFixed(0)}%`}
+                      </text>
+                    )}
                   >
                     {data.demographics.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
