@@ -187,7 +187,7 @@ export default function JobIdPage({ params }: { params: Promise<{ jobId: string 
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-xl md:text-3xl font-bold">{jobData.jobTitle}</h1>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex w-full items-center gap-2 mt-2">
                 <span className="font-medium">{jobData.company.name}</span>
                 <Badge className="text-sm rounded-full" variant="secondary">
                   {jobData.employmentType}

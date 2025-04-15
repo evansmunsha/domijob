@@ -48,6 +48,12 @@ model User {
   CompanyProfileView CompanyProfileView[]
 
   chatThreads ChatThread[]
+  
+  // Affiliate relations
+  Affiliate Affiliate?
+  ReferredBy AffiliateReferral[] @relation("ReferredUser")
+
+  AffiliateReferral AffiliateReferral[]
 }
 
 model SkillGapAnalysis {
@@ -358,4 +364,57 @@ enum ApplicationStatus {
   REVIEWING
   SHORTLISTED
   REJECTED
+}
+
+model Affiliate {
+  id              String              @id @default(cuid())
+  userId          String              @unique
+  code            String              @unique
+  commissionRate  Float               @default(10.00)
+  status          String              @default("ACTIVE")
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  totalEarnings   Float               @default(0.00)
+  pendingEarnings Float               @default(0.00)
+  paidEarnings    Float               @default(0.00)
+  
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referrals       AffiliateReferral[]
+  payments        AffiliatePayment[]
+
+  @@index([userId])
+  @@index([code])
+}
+
+model AffiliateReferral {
+  id              String    @id @default(cuid())
+  affiliateId     String
+  referredUserId  String
+  status          String    @default("PENDING")
+  commissionAmount Float     @default(0.00)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  convertedAt     DateTime?
+
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referredUser    User      @relation(fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
+  @@index([referredUserId])
+  User User[] @relation("ReferredUser")
+}
+
+model AffiliatePayment {
+  id              String    @id @default(cuid())
+  affiliateId     String
+  amount          Float
+  status          String    @default("PENDING")
+  paymentMethod   String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  paidAt          DateTime?
+
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
 }
