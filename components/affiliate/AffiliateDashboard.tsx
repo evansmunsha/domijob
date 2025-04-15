@@ -6,6 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ReferralList } from "./ReferralList"
 import { PaymentHistory } from "./PaymentHistory"
 import { ClickAnalytics } from "./ClickAnalytics"
+import { Button } from "@/components/ui/button"
+import { Share2, BarChart, DollarSign, Users } from "lucide-react"
+import { toast } from "sonner"
 
 interface AffiliateStats {
   code: string
@@ -15,8 +18,17 @@ interface AffiliateStats {
   paidEarnings: number
   conversionCount: number
   clickCount: number
-  referrals: any[]
-  clicks: any[]
+  referrals: Array<{
+    id: string
+    createdAt: string
+    status: string
+    commissionAmount: number
+  }>
+  clicks: Array<{
+    id: string
+    timestamp: string
+    source: string
+  }>
 }
 
 export function AffiliateDashboard() {

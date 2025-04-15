@@ -3,7 +3,7 @@ import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 import { cookies } from "next/headers"
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
     const session = await auth()
     if (!session?.user?.id) {

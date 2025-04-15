@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
     const session = await auth()
     if (!session?.user?.id) {
