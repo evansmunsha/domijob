@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button, buttonVariants } from "@/components/ui/button"
 import Image from "next/image"
 import Logo from "@/public/logo.png"
-import { Menu, BarChart, Users, MessageSquare } from "lucide-react"
+import { Menu, BarChart, Users, MessageSquare, Share2 } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "./ThemeToggle"
 import { useSession, signOut } from "next-auth/react"
@@ -34,10 +34,14 @@ export function Navbar() {
             </Link>
 
             <Link href="/messages" className="text-gray-300 hover:text-green-500">
-            Messages <UnreadMessagesIndicator />
-          </Link>
+              Messages <UnreadMessagesIndicator />
+            </Link>
+
+            <Link href="/affiliate" className={buttonVariants({ variant: "ghost" })}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Affiliate
+            </Link>
           </>
-          
         )}
 
         {isCompanyUser && (
@@ -52,8 +56,8 @@ export function Navbar() {
             </Link>
 
             <Link href="/messages" className="text-gray-300 hover:text-green-500">
-            Messages <UnreadMessagesIndicator />
-          </Link>
+              Messages <UnreadMessagesIndicator />
+            </Link>
           </>
         )}
 

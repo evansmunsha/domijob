@@ -14,17 +14,12 @@ export async function GET() {
       where: { userId: session.user.id },
       include: {
         referrals: {
-          include: {
-            referredUser: {
-              select: {
-                email: true
-              }
-            }
-          },
-          orderBy: {
-            createdAt: 'desc'
-          },
-          take: 10
+          orderBy: { createdAt: 'desc' },
+          take: 100
+        },
+        clicks: {
+          orderBy: { timestamp: 'desc' },
+          take: 100
         }
       }
     })
@@ -33,42 +28,16 @@ export async function GET() {
       return NextResponse.json({ error: "Affiliate not found" }, { status: 404 })
     }
 
-    // Calculate stats
-    const totalReferrals = await prisma.affiliateReferral.count({
-      where: { affiliateId: affiliate.id }
-    })
-
-    const activeReferrals = await prisma.affiliateReferral.count({
-      where: {
-        affiliateId: affiliate.id,
-        status: "PENDING"
-      }
-    })
-
-    const convertedReferrals = await prisma.affiliateReferral.count({
-      where: {
-        affiliateId: affiliate.id,
-        status: "CONVERTED"
-      }
-    })
-
-    const conversionRate = totalReferrals > 0
-      ? Math.round((convertedReferrals / totalReferrals) * 100)
-      : 0
-
-    const stats = {
+    return NextResponse.json({
+      code: affiliate.code,
+      commissionRate: affiliate.commissionRate,
       totalEarnings: affiliate.totalEarnings,
       pendingEarnings: affiliate.pendingEarnings,
       paidEarnings: affiliate.paidEarnings,
-      totalReferrals,
-      activeReferrals,
-      conversionRate
-    }
-
-    return NextResponse.json({
-      stats,
+      conversionCount: affiliate.conversionCount,
+      clickCount: affiliate.clickCount,
       referrals: affiliate.referrals,
-      affiliateCode: affiliate.code
+      clicks: affiliate.clicks
     })
   } catch (error) {
     console.error("[AFFILIATE_STATS]", error)

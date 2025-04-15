@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
-import { prisma } from "@/app/utils/db"
 import { nanoid } from "nanoid"
+import { prisma } from "@/app/utils/db"
 
 export async function POST() {
   try {
@@ -30,7 +30,9 @@ export async function POST() {
         commissionRate: 0.1, // 10% commission rate
         totalEarnings: 0,
         pendingEarnings: 0,
-        paidEarnings: 0
+        paidEarnings: 0,
+        conversionCount: 0,
+        clickCount: 0
       }
     })
 

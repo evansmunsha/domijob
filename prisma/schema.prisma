@@ -48,12 +48,10 @@ model User {
   CompanyProfileView CompanyProfileView[]
 
   chatThreads ChatThread[]
-  
-  // Affiliate relations
-  Affiliate Affiliate?
-  ReferredBy AffiliateReferral[] @relation("ReferredUser")
 
-  AffiliateReferral AffiliateReferral[]
+  affiliate Affiliate?
+  referredByCode String?
+  affiliateReferrals AffiliateReferral[]
 }
 
 model SkillGapAnalysis {
@@ -366,42 +364,62 @@ enum ApplicationStatus {
   REJECTED
 }
 
+// Affiliate Models
 model Affiliate {
-  id              String              @id @default(cuid())
-  userId          String              @unique
-  code            String              @unique
-  commissionRate  Float               @default(10.00)
-  status          String              @default("ACTIVE")
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  totalEarnings   Float               @default(0.00)
-  pendingEarnings Float               @default(0.00)
-  paidEarnings    Float               @default(0.00)
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  code            String           @unique
+  commissionRate  Float            @default(10.00)
+  status          String           @default("ACTIVE")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  totalEarnings   Float            @default(0.00)
+  pendingEarnings Float            @default(0.00)
+  paidEarnings    Float            @default(0.00)
+  conversionCount Int              @default(0)
+  clickCount      Int              @default(0)
   
-  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  referrals       AffiliateReferral[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clicks          AffiliateClick[]
   payments        AffiliatePayment[]
+  referrals       AffiliateReferral[]
 
   @@index([userId])
   @@index([code])
 }
-
 model AffiliateReferral {
   id              String    @id @default(cuid())
   affiliateId     String
   referredUserId  String
+  commissionAmount Float
   status          String    @default("PENDING")
-  commissionAmount Float     @default(0.00)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   convertedAt     DateTime?
 
   affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
-  referredUser    User      @relation(fields: [referredUserId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [referredUserId], references: [id], onDelete: Cascade)
 
   @@index([affiliateId])
   @@index([referredUserId])
-  User User[] @relation("ReferredUser")
+}
+model AffiliateClick {
+  id              String    @id @default(cuid())
+  affiliateId     String
+  timestamp       DateTime  @default(now())
+  ipAddress       String?
+  userAgent       String?
+  referrer        String?
+  landingPage     String
+  source          String?
+  campaign        String?
+  converted       Boolean   @default(false)
+  convertedAt     DateTime?
+
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
+  @@index([timestamp])
 }
 
 model AffiliatePayment {
@@ -413,6 +431,7 @@ model AffiliatePayment {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   paidAt          DateTime?
+  transactionId   String?
 
   affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
 
