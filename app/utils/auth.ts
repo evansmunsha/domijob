@@ -3,6 +3,7 @@ import GitHub from "next-auth/providers/github";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./db";
 import Google from "next-auth/providers/google";
+import { cookies } from "next/headers"
 
 
  
@@ -11,7 +12,16 @@ import Google from "next-auth/providers/google";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  providers: [GitHub, Google],
+  providers: [
+    GitHub({
+      clientId: process.env.GITHUB_ID as string,
+      clientSecret: process.env.GITHUB_SECRET as string,
+    }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    }),
+  ],
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
@@ -29,6 +39,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
       return session
+    },
+    async signIn({ user, account, profile }) {
+      // Store the affiliate referral code if present
+      try {
+        const cookieStore = cookies()
+        const affiliateCode = (await cookieStore).get('affiliate_code')?.value
+        
+        if (affiliateCode && user.id) {
+          // Check if user already exists first
+          const existingUser = await prisma.user.findUnique({
+            where: { id: user.id }
+          })
+          
+          // Only set referral code for new users
+          if (!existingUser && affiliateCode) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { referredByCode: affiliateCode }
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Error storing affiliate code:", error)
+        // Continue with sign in even if storing affiliate code fails
+      }
+      
+      return true
     },
   },
   // ... other NextAuth options

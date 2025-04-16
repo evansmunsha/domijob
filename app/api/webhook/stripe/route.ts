@@ -2,6 +2,7 @@ import { prisma } from "@/app/utils/db";
 import { stripe } from "@/app/utils/stripe";
 import { headers } from "next/headers";
 import Stripe from "stripe";
+import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -50,6 +51,66 @@ export async function POST(req: Request) {
         status: "ACTIVE",
       },
     });
+
+    // Check for affiliate code in user's cookies
+    try {
+      // Get the referral code from the user record if it exists
+      if (user.referredByCode) {
+        const affiliate = await prisma.affiliate.findUnique({
+          where: { code: user.referredByCode }
+        });
+
+        if (affiliate) {
+          // Get job price details to calculate commission
+          const job = await prisma.jobPost.findUnique({
+            where: { id: jobId }
+          });
+
+          if (job) {
+            // Find pricing tier for this job
+            const jobDuration = job.listingDuration || 30; // Default to 30 days if not specified
+            
+            // Get the amount from session or fallback to our pricing tiers
+            const amount = session.amount_total ? session.amount_total / 100 : 0; // Convert from cents
+            
+            // Calculate commission (10% of job listing price)
+            const commissionAmount = amount * affiliate.commissionRate;
+
+            if (commissionAmount > 0) {
+              // Create referral record
+              await prisma.affiliateReferral.create({
+                data: {
+                  affiliateId: affiliate.id,
+                  referredUserId: user.id,
+                  commissionAmount,
+                  status: "CONVERTED",
+                  convertedAt: new Date()
+                }
+              });
+
+              // Update affiliate stats
+              await prisma.affiliate.update({
+                where: { id: affiliate.id },
+                data: {
+                  totalEarnings: {
+                    increment: commissionAmount
+                  },
+                  pendingEarnings: {
+                    increment: commissionAmount
+                  },
+                  conversionCount: {
+                    increment: 1
+                  }
+                }
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Log but don't fail the whole webhook
+      console.error("Error processing affiliate commission:", error);
+    }
   }
 
   return new Response(null, { status: 200 });
