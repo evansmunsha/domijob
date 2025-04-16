@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Share2, Copy, CheckCircle2 } from "lucide-react"
+import { Copy, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface AffiliateLinkProps {

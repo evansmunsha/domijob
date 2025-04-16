@@ -163,7 +163,7 @@ export function ClickAnalytics({ clicks }: ClickAnalyticsProps) {
                       <td className="py-3">{formatDate(click.timestamp)}</td>
                       <td className="py-3 capitalize">{click.source || "direct"}</td>
                       <td className="py-3">
-                        <Badge variant={click.converted ? "success" : "secondary"}>
+                        <Badge variant={click.converted ? "default" : "secondary"}>
                           {click.converted ? "Converted" : "Clicked"}
                         </Badge>
                       </td>

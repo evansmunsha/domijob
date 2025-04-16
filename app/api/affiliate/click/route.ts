@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/app/utils/db"
-import { cookies } from "next/headers"
 
 export async function POST(request: Request) {
   try {

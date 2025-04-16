@@ -66,7 +66,7 @@ export function PaymentRequest({ pendingAmount, onSuccess }: PaymentRequestProps
           {pendingAmount <= 0 ? (
             <div className="flex items-center text-yellow-500 dark:text-yellow-400">
               <AlertCircle className="h-4 w-4 mr-2" />
-              You don't have any pending earnings to withdraw.
+              You don&apos;t have any pending earnings to withdraw.
             </div>
           ) : (
             <div className="space-y-2">
