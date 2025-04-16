@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ReferralList } from "./ReferralList"
 import { PaymentHistory } from "./PaymentHistory"
 import { ClickAnalytics } from "./ClickAnalytics"
+import { AffiliateLink } from "./AffiliateLink"
+import { PaymentRequest } from "./PaymentRequest"
 
 interface AffiliateStats {
   code: string
@@ -150,6 +152,8 @@ export function AffiliateDashboard() {
 
   return (
     <div className="space-y-6">
+      <AffiliateLink code={stats.code} />
+      
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -184,6 +188,11 @@ export function AffiliateDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <PaymentRequest 
+        pendingAmount={stats.pendingEarnings} 
+        onSuccess={fetchStats} 
+      />
 
       <Tabs defaultValue="referrals" className="space-y-4">
         <TabsList>
