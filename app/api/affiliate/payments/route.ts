@@ -60,20 +60,21 @@ export async function GET() {
 
     // Get affiliate
     const affiliate = await prisma.affiliate.findUnique({
-      where: { userId: session.user.id },
-      include: {
-        payments: {
-          orderBy: { createdAt: 'desc' }
-        }
-      }
+      where: { userId: session.user.id }
     })
 
     if (!affiliate) {
       return NextResponse.json({ error: "Affiliate not found" }, { status: 404 })
     }
 
+    // Get payments separately
+    const payments = await prisma.affiliatePayment.findMany({
+      where: { affiliateId: affiliate.id },
+      orderBy: { createdAt: 'desc' }
+    })
+
     return NextResponse.json({
-      payments: affiliate.payments
+      payments
     })
   } catch (error) {
     console.error("[AFFILIATE_PAYMENTS]", error)
