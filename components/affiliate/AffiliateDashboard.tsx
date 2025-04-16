@@ -61,8 +61,14 @@ export function AffiliateDashboard() {
     try {
       setLoading(true)
       const response = await fetch("/api/affiliate/stats")
+      
       if (!response.ok) {
         const data = await response.json()
+        // Handle different error cases
+        if (response.status === 401) {
+          setError("unauthorized")
+          return
+        }
         if (response.status === 404) {
           // Not registered yet - show registration option
           setStats(null)
@@ -71,6 +77,7 @@ export function AffiliateDashboard() {
         }
         throw new Error(data.error || "Failed to fetch stats")
       }
+      
       const data = await response.json()
       setStats(data)
       setError(null)
@@ -91,6 +98,26 @@ export function AffiliateDashboard() {
   }, [])
 
   if (loading) return <div>Loading...</div>
+  
+  // Show login prompt
+  if (error === "unauthorized") {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Login Required</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p>You need to be logged in to access the affiliate dashboard.</p>
+          <a 
+            href="/login" 
+            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded inline-block"
+          >
+            Sign In
+          </a>
+        </CardContent>
+      </Card>
+    )
+  }
   
   // Show registration option
   if (error === "not_registered") {
