@@ -39,6 +39,12 @@ export async function GET() {
       paidEarnings: affiliate.paidEarnings,
       conversionCount: affiliate.conversionCount,
       clickCount: affiliate.clickCount,
+      paymentMethod: affiliate.paymentMethod,
+      paypalEmail: affiliate.paypalEmail || "",
+      bankName: affiliate.bankName || "",
+      accountNumber: affiliate.accountNumber || "",
+      accountName: affiliate.accountName || "",
+      routingNumber: affiliate.routingNumber || "",
       referrals,
       clicks
     })

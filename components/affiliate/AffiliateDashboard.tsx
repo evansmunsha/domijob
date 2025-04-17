@@ -17,6 +17,12 @@ interface AffiliateStats {
   paidEarnings: number
   conversionCount: number
   clickCount: number
+  paymentMethod?: string
+  paypalEmail?: string
+  bankName?: string
+  accountNumber?: string
+  accountName?: string
+  routingNumber?: string
   referrals: Array<{
     id: string
     createdAt: string

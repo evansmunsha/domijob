@@ -25,18 +25,9 @@ export async function POST(request: Request) {
       )
     }
 
-    // Get affiliate with payment settings
+    // Get affiliate with payment settings - using a direct query to ensure type safety
     const affiliate = await prisma.affiliate.findUnique({
-      where: { userId: session.user.id },
-      select: {
-        id: true,
-        pendingEarnings: true,
-        paymentMethod: true,
-        paypalEmail: true,
-        bankName: true,
-        accountNumber: true,
-        accountName: true
-      }
+      where: { userId: session.user.id }
     })
 
     if (!affiliate) {

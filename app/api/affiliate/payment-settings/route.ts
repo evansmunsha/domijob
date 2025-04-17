@@ -26,16 +26,7 @@ export async function GET() {
 
     // Check if user has an affiliate account
     const affiliate = await prisma.affiliate.findUnique({
-      where: { userId },
-      select: { 
-        id: true,
-        paymentMethod: true,
-        paypalEmail: true,
-        bankName: true,
-        accountNumber: true,
-        accountName: true,
-        routingNumber: true 
-      },
+      where: { userId }
     })
 
     if (!affiliate) {
