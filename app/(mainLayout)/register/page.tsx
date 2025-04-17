@@ -7,12 +7,10 @@ export const metadata: Metadata = {
   description: "Create a new account on DoMiJob",
 }
 
-type SearchParams = {
-  ref?: string;
-}
-
-type PageProps = {
-  searchParams: SearchParams
+interface PageProps {
+  searchParams?: {
+    ref?: string
+  }
 }
 
 export default async function RegisterPage({ searchParams }: PageProps) {
@@ -22,8 +20,9 @@ export default async function RegisterPage({ searchParams }: PageProps) {
     redirect("/onboarding")
   }
 
-  const redirectUrl = searchParams.ref 
-    ? `/login?register=true&ref=${searchParams.ref}`
+  const ref = searchParams?.ref
+  const redirectUrl = ref
+    ? `/login?register=true&ref=${ref}`
     : "/login?register=true"
 
   redirect(redirectUrl)
