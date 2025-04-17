@@ -11,9 +11,12 @@ export const metadata = {
 }
 
 // @ts-ignore - Next.js 15 PageProps compatibility issue
-export default async function ProcessPayment({ params }: { params: { id: string } }) {
+export default async function ProcessPayment({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params
+  const id = resolvedParams.id
+  
   const payment = await prisma.affiliatePayment.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       affiliate: {
         include: {

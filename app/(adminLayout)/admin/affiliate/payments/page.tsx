@@ -10,12 +10,13 @@ export const metadata = {
   description: "Manage affiliate payment requests and transactions",
 }
 
-type Props = {
-  searchParams: { status?: string; startDate?: string; endDate?: string }
-}
-
-export default async function AffiliatePayments({ searchParams }: Props) {
-  const status = searchParams.status || "PENDING"
+export default async function AffiliatePayments({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ status?: string; startDate?: string; endDate?: string }> 
+}) {
+  const resolvedParams = await searchParams
+  const status = resolvedParams.status || "PENDING"
   
   // Create where object conditionally to avoid using delete
   const where: any = {
@@ -23,15 +24,15 @@ export default async function AffiliatePayments({ searchParams }: Props) {
   }
   
   // Only add createdAt if date filters are present
-  if (searchParams.startDate || searchParams.endDate) {
+  if (resolvedParams.startDate || resolvedParams.endDate) {
     where.createdAt = {}
     
-    if (searchParams.startDate) {
-      where.createdAt.gte = new Date(searchParams.startDate)
+    if (resolvedParams.startDate) {
+      where.createdAt.gte = new Date(resolvedParams.startDate)
     }
     
-    if (searchParams.endDate) {
-      where.createdAt.lte = new Date(searchParams.endDate)
+    if (resolvedParams.endDate) {
+      where.createdAt.lte = new Date(resolvedParams.endDate)
     }
   }
 
