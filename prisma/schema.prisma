@@ -125,6 +125,7 @@ model Authenticator {
 enum UserType {
   COMPANY
   JOB_SEEKER
+  ADMIN
 }
 
 model Company {
