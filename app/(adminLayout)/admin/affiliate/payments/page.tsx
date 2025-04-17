@@ -10,11 +10,11 @@ export const metadata = {
   description: "Manage affiliate payment requests and transactions",
 }
 
-export default async function AffiliatePayments({
-  searchParams,
-}: {
+type Props = {
   searchParams: { status?: string; startDate?: string; endDate?: string }
-}) {
+}
+
+export default async function AffiliatePayments({ searchParams }: Props) {
   const status = searchParams.status || "PENDING"
   
   // Create where object conditionally to avoid using delete
