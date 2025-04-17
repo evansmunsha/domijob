@@ -12,17 +12,18 @@ const paymentUpdateSchema = z.object({
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Resolve params promise
+    const resolvedParams = await params
+    const paymentId = resolvedParams.id
+
     // Check if user is authenticated and is admin
     const session = await auth()
     if (!session?.user || session.user.userType !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    // Get payment ID from params
-    const paymentId = params.id
 
     // Parse request body
     const body = await request.json()
