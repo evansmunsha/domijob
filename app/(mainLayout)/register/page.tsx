@@ -7,7 +7,15 @@ export const metadata: Metadata = {
   description: "Create a new account on DoMiJob",
 }
 
-export default async function RegisterPage({ searchParams }: { searchParams: { ref?: string } }) {
+type SearchParams = {
+  ref?: string;
+};
+
+export default async function RegisterPage({ 
+  searchParams 
+}: { 
+  searchParams: SearchParams 
+}) {
   // Check if user is already logged in
   const session = await auth()
   if (session?.user) {
