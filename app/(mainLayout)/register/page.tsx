@@ -7,21 +7,24 @@ export const metadata: Metadata = {
   description: "Create a new account on DoMiJob",
 }
 
-export const dynamic = "force-dynamic"; // ✅ Important!
+export const dynamic = "force-dynamic"; // This is important!
 
-export default async function RegisterPage({
-  searchParams,
-}: {
-  searchParams?: { ref?: string }
-}) {
+type Props = {
+  params: Record<string, string>;
+  searchParams: Record<string, string | string[] | undefined>;
+}
+
+export default async function RegisterPage({ searchParams }: Props) {
   const session = await auth()
 
   if (session?.user) {
     redirect("/onboarding")
   }
 
-  const redirectUrl = searchParams?.ref
-    ? `/login?register=true&ref=${searchParams.ref}`
+  const refCode = typeof searchParams.ref === 'string' ? searchParams.ref : undefined;
+  
+  const redirectUrl = refCode
+    ? `/login?register=true&ref=${refCode}`
     : "/login?register=true"
 
   redirect(redirectUrl)
