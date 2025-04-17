@@ -1,25 +1,29 @@
-// @ts-nocheck
-import { Metadata } from "next"
+
 import { redirect } from "next/navigation"
 import { auth } from "@/app/utils/auth"
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Register | DoMiJob",
   description: "Create a new account on DoMiJob",
 }
 
-export const dynamic = "force-dynamic"; // This is important!
+export const dynamic = "force-dynamic"
 
-export default async function RegisterPage(props) {
+// A simple function to handle redirection
+export default async function RegisterPage(props: { searchParams?: { ref?: string } }) {
   // Check if user is already logged in
   const session = await auth()
   if (session?.user) {
     redirect("/onboarding")
   }
 
-  // Get ref parameter and redirect
-  const ref = props.searchParams?.ref
-  const redirectUrl = ref ? `/login?register=true&ref=${ref}` : "/login?register=true"
+  // Build redirect URL with ref parameter if it exists
+  let redirectUrl = "/login?register=true"
+  
+  // Safely access searchParams
+  if (props?.searchParams?.ref) {
+    redirectUrl += `&ref=${props.searchParams.ref}`
+  }
   
   redirect(redirectUrl)
 }
