@@ -40,7 +40,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session
     },
-    async signIn({ user, account, profile }) {
+    async signIn({ user }) {
       // Store the affiliate referral code if present
       try {
         const cookieStore = cookies()

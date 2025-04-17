@@ -2,7 +2,6 @@ import { prisma } from "@/app/utils/db";
 import { stripe } from "@/app/utils/stripe";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -67,9 +66,6 @@ export async function POST(req: Request) {
           });
 
           if (job) {
-            // Find pricing tier for this job
-            const jobDuration = job.listingDuration || 30; // Default to 30 days if not specified
-            
             // Get the amount from session or fallback to our pricing tiers
             const amount = session.amount_total ? session.amount_total / 100 : 0; // Convert from cents
             
