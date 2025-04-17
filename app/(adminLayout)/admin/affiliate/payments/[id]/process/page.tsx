@@ -10,11 +10,13 @@ export const metadata = {
   description: "Process affiliate payment requests",
 }
 
+interface ProcessPaymentProps {
+  params: { id: string }
+}
+
 export default async function ProcessPayment({
   params,
-}: {
-  params: { id: string }
-}) {
+}: ProcessPaymentProps) {
   const payment = await prisma.affiliatePayment.findUnique({
     where: { id: params.id },
     include: {
