@@ -376,6 +376,12 @@ model Affiliate {
   paidEarnings    Float     @default(0)
   conversionCount Int       @default(0)
   clickCount      Int       @default(0)
+  paymentMethod   String    @default("paypal")
+  paypalEmail     String?
+  bankName        String?
+  accountNumber   String?
+  accountName     String?
+  routingNumber   String?
   referrals       AffiliateReferral[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

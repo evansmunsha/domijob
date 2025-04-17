@@ -1,17 +1,42 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
 import { prisma } from "@/app/utils/db"
+import { z } from "zod"
 
-export async function POST() {
+// Schema for payment request validation
+const paymentRequestSchema = z.object({
+  paymentMethod: z.enum(["paypal", "bank"]).optional(),
+})
+
+export async function POST(request: Request) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get affiliate
+    // Parse and validate request body
+    const body = await request.json()
+    const validationResult = paymentRequestSchema.safeParse(body)
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: validationResult.error },
+        { status: 400 }
+      )
+    }
+
+    // Get affiliate with payment settings
     const affiliate = await prisma.affiliate.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
+      select: {
+        id: true,
+        pendingEarnings: true,
+        paymentMethod: true,
+        paypalEmail: true,
+        bankName: true,
+        accountNumber: true,
+        accountName: true
+      }
     })
 
     if (!affiliate) {
@@ -23,12 +48,24 @@ export async function POST() {
       return NextResponse.json({ error: "No pending earnings to withdraw" }, { status: 400 })
     }
 
+    // Set payment method (use request value or fall back to saved value)
+    const paymentMethod = body.paymentMethod || affiliate.paymentMethod || "paypal"
+    
+    // Verify payment details are set
+    if (paymentMethod === "paypal" && !affiliate.paypalEmail) {
+      return NextResponse.json({ error: "PayPal email is not set" }, { status: 400 })
+    }
+    
+    if (paymentMethod === "bank" && (!affiliate.bankName || !affiliate.accountNumber || !affiliate.accountName)) {
+      return NextResponse.json({ error: "Bank details are incomplete" }, { status: 400 })
+    }
+
     // Create payment request
     const payment = await prisma.affiliatePayment.create({
       data: {
         affiliateId: affiliate.id,
         amount: affiliate.pendingEarnings,
-        paymentMethod: "BANK_TRANSFER", // Default payment method
+        paymentMethod: paymentMethod.toUpperCase(),
         status: "PENDING"
       }
     })
