@@ -9,23 +9,22 @@ export const metadata: Metadata = {
 
 type SearchParams = {
   ref?: string;
-};
+}
 
-export default async function RegisterPage({ 
-  searchParams 
-}: { 
-  searchParams: SearchParams 
-}) {
-  // Check if user is already logged in
+type PageProps = {
+  searchParams: SearchParams
+}
+
+export default async function RegisterPage({ searchParams }: PageProps) {
   const session = await auth()
+
   if (session?.user) {
     redirect("/onboarding")
   }
 
-  // Redirect to login page with register flag, preserving the ref parameter
   const redirectUrl = searchParams.ref 
     ? `/login?register=true&ref=${searchParams.ref}`
     : "/login?register=true"
-    
+
   redirect(redirectUrl)
-} 
+}
