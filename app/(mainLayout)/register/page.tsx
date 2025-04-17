@@ -1,27 +1,19 @@
-import { Metadata } from "next"
-import { redirect } from "next/navigation"
-import { auth } from "@/app/utils/auth"
+"use client"
 
-export const metadata: Metadata = {
-  title: "Register | DoMiJob",
-  description: "Create a new account on DoMiJob",
-}
+import { useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 
-// ✅ Use built-in Next.js types
-export default async function RegisterPage({
-  searchParams,
-}: {
-  searchParams?: { ref?: string }
-}) {
-  const session = await auth()
+export default function RegisterPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const ref = searchParams.get("ref")
 
-  if (session?.user) {
-    redirect("/onboarding")
-  }
+  useEffect(() => {
+    const redirectUrl = ref
+      ? `/login?register=true&ref=${ref}`
+      : "/login?register=true"
+    router.replace(redirectUrl)
+  }, [ref, router])
 
-  const redirectUrl = searchParams?.ref
-    ? `/login?register=true&ref=${searchParams.ref}`
-    : "/login?register=true"
-
-  redirect(redirectUrl)
+  return null
 }
