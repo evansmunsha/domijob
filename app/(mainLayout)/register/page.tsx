@@ -7,22 +7,20 @@ export const metadata: Metadata = {
   description: "Create a new account on DoMiJob",
 }
 
-interface PageProps {
-  searchParams?: {
-    ref?: string
-  }
-}
-
-export default async function RegisterPage({ searchParams }: PageProps) {
+// ✅ Use built-in Next.js types
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams?: { ref?: string }
+}) {
   const session = await auth()
 
   if (session?.user) {
     redirect("/onboarding")
   }
 
-  const ref = searchParams?.ref
-  const redirectUrl = ref
-    ? `/login?register=true&ref=${ref}`
+  const redirectUrl = searchParams?.ref
+    ? `/login?register=true&ref=${searchParams.ref}`
     : "/login?register=true"
 
   redirect(redirectUrl)
