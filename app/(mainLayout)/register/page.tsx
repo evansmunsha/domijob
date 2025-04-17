@@ -9,19 +9,20 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic"; // This is important!
 
-type Props = {
-  params: Record<string, string>;
-  searchParams: Record<string, string | string[] | undefined>;
-}
+type SearchParams = { ref?: string };
 
-export default async function RegisterPage({ searchParams }: Props) {
+export default async function RegisterPage({
+  searchParams = {}
+}: {
+  searchParams?: SearchParams
+}) {
   const session = await auth()
 
   if (session?.user) {
     redirect("/onboarding")
   }
 
-  const refCode = typeof searchParams.ref === 'string' ? searchParams.ref : undefined;
+  const refCode = searchParams.ref;
   
   const redirectUrl = refCode
     ? `/login?register=true&ref=${refCode}`
