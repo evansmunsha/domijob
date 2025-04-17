@@ -1,19 +1,28 @@
-"use client"
+import { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { auth } from "@/app/utils/auth"
 
-import { useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+export const metadata: Metadata = {
+  title: "Register | DoMiJob",
+  description: "Create a new account on DoMiJob",
+}
 
-export default function RegisterPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const ref = searchParams.get("ref")
+export const dynamic = "force-dynamic"; // ✅ Important!
 
-  useEffect(() => {
-    const redirectUrl = ref
-      ? `/login?register=true&ref=${ref}`
-      : "/login?register=true"
-    router.replace(redirectUrl)
-  }, [ref, router])
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams?: { ref?: string }
+}) {
+  const session = await auth()
 
-  return null
+  if (session?.user) {
+    redirect("/onboarding")
+  }
+
+  const redirectUrl = searchParams?.ref
+    ? `/login?register=true&ref=${searchParams.ref}`
+    : "/login?register=true"
+
+  redirect(redirectUrl)
 }
