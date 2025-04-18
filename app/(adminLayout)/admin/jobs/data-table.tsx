@@ -1,4 +1,4 @@
-"use client"
+ "use client"
 
 import {
   ColumnDef,
@@ -71,16 +71,16 @@ export function DataTable<TData, TValue>({
         />
         <div className="flex items-center gap-2">
           <Select
-            value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn("status")?.getFilterValue() as string) ?? "all"}
             onValueChange={(value) => {
-              table.getColumn("status")?.setFilterValue(value || undefined)
+              table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value)
             }}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="ACTIVE">Active</SelectItem>
               <SelectItem value="DRAFT">Draft</SelectItem>
               <SelectItem value="CLOSED">Closed</SelectItem>
@@ -88,9 +88,9 @@ export function DataTable<TData, TValue>({
             </SelectContent>
           </Select>
           <Select
-            value={(table.getColumn("featured")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn("featured")?.getFilterValue() as string) ?? "all"}
             onValueChange={(value) => {
-              if (value === "") {
+              if (value === "all") {
                 table.getColumn("featured")?.setFilterValue(undefined)
               } else {
                 table.getColumn("featured")?.setFilterValue(value === "true")
@@ -101,7 +101,7 @@ export function DataTable<TData, TValue>({
               <SelectValue placeholder="Featured Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Jobs</SelectItem>
+              <SelectItem value="all">All Jobs</SelectItem>
               <SelectItem value="true">Featured Only</SelectItem>
               <SelectItem value="false">Non-Featured Only</SelectItem>
             </SelectContent>
@@ -183,4 +183,4 @@ export function DataTable<TData, TValue>({
       </div>
     </div>
   )
-} 
+}
