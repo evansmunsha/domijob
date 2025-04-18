@@ -35,7 +35,7 @@ export async function GET() {
     // Get aggregate statistics
     const totalAffiliates = await prisma.affiliate.count()
     const activeAffiliates = await prisma.affiliate.count({
-      where: { conversions: { gt: 0 } }
+      where: { conversionCount: { gt: 0 } }
     })
     const totalPayments = await prisma.affiliatePayment.aggregate({
       where: { status: "PAID" },
