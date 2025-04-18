@@ -14,17 +14,23 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { Loader2, Save } from "lucide-react"
 import Head from "next/head"
+import { EmailConfigModal } from "@/components/admin/EmailConfigModal"
+import { StripeConfigModal } from "@/components/admin/StripeConfigModal"
+import { AffiliateSettingsTab } from "@/components/admin/AffiliateSettingsTab"
 
 export default function SettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  
+  // Modal states
+  const [stripeModalOpen, setStripeModalOpen] = useState(false)
+  const [emailModalOpen, setEmailModalOpen] = useState(false)
   
   // Site settings
   const [siteName, setSiteName] = useState("MiJob")
@@ -37,28 +43,149 @@ export default function SettingsPage() {
   const [allowFeaturedJobs, setAllowFeaturedJobs] = useState(true)
   const [featuredJobPrice, setFeaturedJobPrice] = useState(99.99)
   
+  // Integration settings
+  const [apiKey, setApiKey] = useState("sk_live_•••••••••••••••••••••••••••")
+  const [stripeConnected, setStripeConnected] = useState(false)
+  const [stripeKey, setStripeKey] = useState("")
+  const [emailProvider, setEmailProvider] = useState("resend")
+  const [emailConnected, setEmailConnected] = useState(false)
+  const [emailFromAddress, setEmailFromAddress] = useState("noreply@yourdomain.com")
+  const [analyticsConnected, setAnalyticsConnected] = useState(false)
+  const [analyticsId, setAnalyticsId] = useState("")
+  
   // Affiliate settings
-  const [affiliateEnabled, setAffiliateEnabled] = useState(true)
-  const [defaultCommissionRate, setDefaultCommissionRate] = useState(10)
-  const [minPayoutAmount, setMinPayoutAmount] = useState(50)
+  const [affiliateSettings, setAffiliateSettings] = useState({
+    enabled: false,
+    commissionRate: 10,
+    minPayout: 50,
+    payoutMethods: ["paypal", "bank_transfer"],
+    stats: {
+      totalAffiliates: 0,
+      totalCommissionPaid: 0,
+      activeAffiliates: 0
+    }
+  })
   
   // Simulate fetching settings
   useEffect(() => {
-    // In a real app, fetch settings from API
-    setTimeout(() => {
-      setLoading(false)
-    }, 1000)
+    const fetchSettings = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch integration settings
+        const integrationsResponse = await fetch('/api/admin/settings/integrations')
+        
+        if (integrationsResponse.ok) {
+          const data = await integrationsResponse.json()
+          
+          // Update integration settings
+          setApiKey(data.api_key)
+          setStripeConnected(data.stripe.connected)
+          setStripeKey(data.stripe.publishable_key)
+          setEmailProvider(data.email.provider)
+          setEmailConnected(data.email.connected)
+          setEmailFromAddress(data.email.from_email)
+          setAnalyticsConnected(data.analytics.connected)
+          setAnalyticsId(data.analytics.tracking_id)
+        }
+        
+        // Fetch affiliate settings
+        try {
+          const affiliateResponse = await fetch('/api/admin/settings/affiliate')
+          if (affiliateResponse.ok) {
+            const data = await affiliateResponse.json()
+            setAffiliateSettings(data)
+          }
+        } catch (error) {
+          console.error("Failed to fetch affiliate settings:", error)
+        }
+        
+      } catch (error) {
+        console.error("Failed to fetch settings:", error)
+        toast.error("Failed to load settings")
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchSettings()
   }, [])
   
   const handleSaveSettings = async () => {
     setSaving(true)
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // In a real app, save settings via API
-    toast.success("Settings saved successfully")
-    setSaving(false)
+    try {
+      // In a real app, save settings via API
+      await fetch('/api/admin/settings/integrations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          site: {
+            name: siteName,
+            description: siteDescription,
+            logoUrl: logoUrl,
+            primaryColor: primaryColor
+          },
+          jobs: {
+            expireDays: jobExpireDays,
+            allowFeatured: allowFeaturedJobs,
+            featuredPrice: featuredJobPrice
+          }
+        })
+      })
+      
+      toast.success("Settings saved successfully")
+    } catch (error) {
+      console.error("Failed to save settings:", error)
+      toast.error("Failed to save settings")
+    } finally {
+      setSaving(false)
+    }
+  }
+  
+  const handleRegenerateApiKey = async () => {
+    try {
+      setSaving(true)
+      const response = await fetch('/api/admin/settings/integrations', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'regenerate_api_key'
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setApiKey(data.api_key)
+        toast.success("API key regenerated successfully")
+      } else {
+        toast.error("Failed to regenerate API key")
+      }
+    } catch (error) {
+      console.error("Failed to regenerate API key:", error)
+      toast.error("Failed to regenerate API key")
+    } finally {
+      setSaving(false)
+    }
+  }
+  
+  const handleConfigureStripe = () => {
+    // Open Stripe configuration modal
+    setStripeModalOpen(true)
+  }
+  
+  const handleConfigureEmail = () => {
+    // Open email configuration modal
+    setEmailModalOpen(true)
+  }
+  
+  const handleConfigureAnalytics = () => {
+    // Open analytics configuration modal - for now just show toast
+    toast.info("Google Analytics configuration coming soon")
   }
   
   if (loading) {
@@ -200,57 +327,7 @@ export default function SettingsPage() {
         </TabsContent>
         
         <TabsContent value="affiliates" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Affiliate Settings</CardTitle>
-              <CardDescription>
-                Configure the affiliate program settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Affiliate Program</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Allow users to join the affiliate program
-                  </p>
-                </div>
-                <Switch 
-                  checked={affiliateEnabled}
-                  onCheckedChange={setAffiliateEnabled}
-                />
-              </div>
-              
-              {affiliateEnabled && (
-                <>
-                  <Separator />
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="commission-rate">Default Commission Rate (%)</Label>
-                    <Input 
-                      id="commission-rate" 
-                      type="number"
-                      value={defaultCommissionRate} 
-                      onChange={(e) => setDefaultCommissionRate(parseInt(e.target.value))} 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="min-payout">Minimum Payout Amount ($)</Label>
-                    <Input 
-                      id="min-payout" 
-                      type="number"
-                      value={minPayoutAmount} 
-                      onChange={(e) => setMinPayoutAmount(parseInt(e.target.value))} 
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Minimum amount required for affiliates to request payment
-                    </p>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <AffiliateSettingsTab initialSettings={affiliateSettings} />
         </TabsContent>
         
         <TabsContent value="integrations" className="space-y-6">
@@ -266,12 +343,12 @@ export default function SettingsPage() {
                 <Label htmlFor="api-key">API Key</Label>
                 <Input 
                   id="api-key" 
-                  value="sk_live_•••••••••••••••••••••••••••"
+                  value={apiKey}
                   type="password"
                   readOnly
                 />
                 <div className="flex justify-end">
-                  <Button variant="outline" size="sm">Regenerate</Button>
+                  <Button variant="outline" size="sm" onClick={handleRegenerateApiKey}>Regenerate</Button>
                 </div>
               </div>
               
@@ -283,15 +360,25 @@ export default function SettingsPage() {
                     <h3 className="font-medium">Payment Provider</h3>
                     <p className="text-sm text-muted-foreground">Stripe</p>
                   </div>
-                  <Button variant="outline" size="sm">Configure</Button>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 text-xs rounded-full ${stripeConnected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
+                      {stripeConnected ? 'Connected' : 'Not Connected'}
+                    </span>
+                    <Button variant="outline" size="sm" onClick={handleConfigureStripe}>Configure</Button>
+                  </div>
                 </div>
                 
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium">Email Provider</h3>
-                    <p className="text-sm text-muted-foreground">SendGrid</p>
+                    <p className="text-sm text-muted-foreground">{emailProvider === 'resend' ? 'Resend' : 'Injust'}</p>
                   </div>
-                  <Button variant="outline" size="sm">Configure</Button>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 text-xs rounded-full ${emailConnected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
+                      {emailConnected ? 'Connected' : 'Not Connected'}
+                    </span>
+                    <Button variant="outline" size="sm" onClick={handleConfigureEmail}>Configure</Button>
+                  </div>
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -299,7 +386,12 @@ export default function SettingsPage() {
                     <h3 className="font-medium">Analytics</h3>
                     <p className="text-sm text-muted-foreground">Google Analytics</p>
                   </div>
-                  <Button variant="outline" size="sm">Configure</Button>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 text-xs rounded-full ${analyticsConnected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
+                      {analyticsConnected ? 'Connected' : 'Not Connected'}
+                    </span>
+                    <Button variant="outline" size="sm" onClick={handleConfigureAnalytics}>Configure</Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -317,6 +409,22 @@ export default function SettingsPage() {
           Save Settings
         </Button>
       </div>
+      
+      {/* Configuration Modals */}
+      <StripeConfigModal
+        open={stripeModalOpen}
+        onOpenChange={setStripeModalOpen}
+        publishableKey={stripeKey}
+        isConnected={stripeConnected}
+      />
+      
+      <EmailConfigModal
+        open={emailModalOpen}
+        onOpenChange={setEmailModalOpen}
+        currentProvider={emailProvider}
+        fromEmail={emailFromAddress}
+        isConnected={emailConnected}
+      />
     </div>
   )
 } 
