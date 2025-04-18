@@ -19,11 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Loader2, Save } from "lucide-react"
-
-export const metadata = {
-  title: "Settings | Admin Dashboard",
-  description: "Manage system settings and configurations",
-}
+import Head from "next/head"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -75,6 +71,11 @@ export default function SettingsPage() {
   
   return (
     <div className="space-y-6">
+      <Head>
+        <title>Settings | Admin Dashboard</title>
+        <meta name="description" content="Manage system settings and configurations" />
+      </Head>
+      
       <div>
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground mt-1">
