@@ -442,3 +442,6 @@ model AffiliatePayment {
 
   @@index([affiliateId])
 }
+
+
+

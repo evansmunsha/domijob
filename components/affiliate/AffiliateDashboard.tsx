@@ -219,3 +219,21 @@ export function AffiliateDashboard() {
     </div>
   )
 } 
+          <ClickAnalytics clicks={stats.clicks} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+} 
+          <ClickAnalytics clicks={stats.clicks} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+} 
+          <ClickAnalytics clicks={stats.clicks} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+} 
