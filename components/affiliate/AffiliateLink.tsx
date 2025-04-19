@@ -18,7 +18,7 @@ export function AffiliateLink({ code }: AffiliateLinkProps) {
   
   const links = {
     simple: `${baseUrl}/?ref=${code}`,
-    signup: `${baseUrl}/register?ref=${code}`,
+    signup: `${baseUrl}/login?ref=${code}`,
     jobs: `${baseUrl}/jobs?ref=${code}`,
   }
 
