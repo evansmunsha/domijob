@@ -1,23 +1,23 @@
- "use client"
+"use client"
 
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select"
 
 export function PaymentFilterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
   const [status, setStatus] = useState(
-    searchParams.get("status") || "PENDING"
+    searchParams.get("status") || "ALL"
   )
   
   const [startDate, setStartDate] = useState(
@@ -37,16 +37,16 @@ export function PaymentFilterForm() {
     if (startDate) params.set("startDate", startDate)
     if (endDate) params.set("endDate", endDate)
     
-    router.push(`/admin/affiliate/payments?${params.toString()}`)
+    router.push(`?${params.toString()}`)
   }
-
+  
   const clearFilters = () => {
-    setStatus("PENDING")
+    setStatus("ALL")
     setStartDate("")
     setEndDate("")
-    router.push("/admin/affiliate/payments")
+    router.push("")
   }
-
+  
   return (
     <form onSubmit={handleSubmit} className="flex flex-wrap gap-4 items-end">
       <div className="space-y-2">
@@ -66,7 +66,7 @@ export function PaymentFilterForm() {
           </SelectContent>
         </Select>
       </div>
-
+      
       <div className="space-y-2">
         <label htmlFor="startDate" className="text-sm font-medium">Start Date</label>
         <Input
@@ -88,7 +88,7 @@ export function PaymentFilterForm() {
           className="w-[180px]"
         />
       </div>
-
+      
       <div className="flex gap-2">
         <Button type="submit">Apply Filters</Button>
         <Button type="button" variant="outline" onClick={clearFilters}>

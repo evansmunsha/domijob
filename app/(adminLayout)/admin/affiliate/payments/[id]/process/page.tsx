@@ -1,19 +1,17 @@
 import { prisma } from "@/app/utils/db"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react"
-import { PaymentProcessSteps } from "@/components/admin/PaymentProcessSteps"
+import { PaymentProcessForm } from "@/components/admin/PaymentProcessForm"
 
 export const metadata = {
   title: "Process Payment | Admin Dashboard",
   description: "Process affiliate payment requests",
 }
 
-// @ts-ignore - Next.js 15 PageProps compatibility issue
-export default async function ProcessPayment({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params
-  const id = resolvedParams.id
+export default async function ProcessPayment({ params }: { params: { id: string } }) {
+  const id = params.id
   
   const payment = await prisma.affiliatePayment.findUnique({
     where: { id },
@@ -36,51 +34,14 @@ export default async function ProcessPayment({ params }: { params: Promise<{ id:
     notFound()
   }
 
-  // Get payment method details
-  let paymentDetails = null
-  if (payment.paymentMethod === "PAYPAL" && payment.affiliate.paypalEmail) {
-    paymentDetails = {
-      type: "PayPal",
-      recipient: payment.affiliate.paypalEmail,
-    }
-  } else if (payment.paymentMethod === "BANK" && payment.affiliate.bankName) {
-    paymentDetails = {
-      type: "Bank Transfer",
-      bankName: payment.affiliate.bankName,
-      accountName: payment.affiliate.accountName,
-      accountNumber: payment.affiliate.accountNumber,
-      routingNumber: payment.affiliate.routingNumber,
-    }
-  }
-
   // Check if payment can be processed
   const canProcess = payment.status === "PENDING" || payment.status === "PROCESSING"
-  
-  // Create a properly formatted payment object that matches the expected interface
-  const formattedPayment = {
-    id: payment.id,
-    amount: payment.amount,
-    status: payment.status,
-    paymentMethod: payment.paymentMethod,
-    createdAt: payment.createdAt.toISOString(),
-    affiliate: {
-      user: {
-        name: payment.affiliate.user.name || "Unknown User",
-        email: payment.affiliate.user.email
-      },
-      paypalEmail: payment.affiliate.paypalEmail || undefined,
-      bankName: payment.affiliate.bankName || undefined,
-      accountNumber: payment.affiliate.accountNumber || undefined,
-      accountName: payment.affiliate.accountName || undefined,
-      routingNumber: payment.affiliate.routingNumber || undefined
-    }
-  }
   
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Link
-          href={`/admin/affiliate/payments/${payment.id}`}
+          href="/admin/affiliate/payments"
           className="hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -127,9 +88,20 @@ export default async function ProcessPayment({ params }: { params: Promise<{ id:
           </CardContent>
         </Card>
       ) : (
-        <PaymentProcessSteps
-          payment={formattedPayment}
-          paymentDetails={paymentDetails}
+        <PaymentProcessForm 
+          payment={{
+            id: payment.id,
+            amount: payment.amount,
+            status: payment.status,
+            paymentMethod: payment.paymentMethod,
+            transactionId: payment.transactionId,
+            affiliate: {
+              user: {
+                name: payment.affiliate.user.name || "Unknown User",
+                email: payment.affiliate.user.email
+              }
+            }
+          }} 
         />
       )}
     </div>

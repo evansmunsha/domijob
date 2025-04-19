@@ -11,6 +11,8 @@ const paymentSettingsSchema = z.object({
   accountNumber: z.string().optional(),
   accountName: z.string().optional(),
   routingNumber: z.string().optional(),
+  country: z.string().optional(),
+  swiftCode: z.string().optional(),
 })
 
 export async function GET() {
@@ -42,6 +44,8 @@ export async function GET() {
         accountNumber: affiliate.accountNumber || "",
         accountName: affiliate.accountName || "",
         routingNumber: affiliate.routingNumber || "",
+        country: affiliate.country || "",
+        swiftCode: affiliate.swiftCode || ""
       } 
     })
   } catch (error) {
@@ -98,6 +102,8 @@ export async function POST(request: Request) {
         accountNumber: settings.accountNumber,
         accountName: settings.accountName,
         routingNumber: settings.routingNumber,
+        country: settings.country,
+        swiftCode: settings.swiftCode
       },
     })
 

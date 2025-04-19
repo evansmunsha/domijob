@@ -383,6 +383,8 @@ model Affiliate {
   accountNumber   String?
   accountName     String?
   routingNumber   String?
+  swiftCode       String?
+  country         String?
   referrals       AffiliateReferral[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

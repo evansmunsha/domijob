@@ -1,47 +1,89 @@
 import { prisma } from "@/app/utils/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { format } from "date-fns"
-import Link from "next/link"
-import { PaymentStatusSelect } from "@/components/admin/PaymentStatusSelect"
+import { AffiliatePaymentTable } from "@/components/admin/AffiliatePaymentTable"
 import { PaymentFilterForm } from "@/components/admin/PaymentFilterForm"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { revalidatePath } from "next/cache"
 
 export const metadata = {
   title: "Affiliate Payments | Admin Dashboard",
   description: "Manage affiliate payment requests and transactions",
 }
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
+// Define a function to map database payment to the expected type
+const mapPaymentToTableFormat = (payment: any) => {
+  return {
+    id: payment.id,
+    amount: payment.amount,
+    status: payment.status as "PENDING" | "PROCESSING" | "PAID" | "REJECTED",
+    paymentMethod: payment.paymentMethod,
+    createdAt: payment.createdAt.toISOString(),
+    updatedAt: payment.updatedAt.toISOString(),
+    paidAt: payment.paidAt ? payment.paidAt.toISOString() : null,
+    transactionId: payment.transactionId,
+    affiliate: {
+      id: payment.affiliate.id,
+      user: {
+        id: payment.affiliate.user.id,
+        name: payment.affiliate.user.name || "Unknown User",
+        email: payment.affiliate.user.email,
+        image: payment.affiliate.user.image
+      },
+      code: payment.affiliate.code,
+      paymentMethod: payment.affiliate.paymentMethod,
+      paypalEmail: payment.affiliate.paypalEmail,
+      bankName: payment.affiliate.bankName,
+      accountNumber: payment.affiliate.accountNumber,
+      accountName: payment.affiliate.accountName
+    }
+  }
+}
+
 export default async function AffiliatePayments({ 
   searchParams 
 }: { 
-  searchParams: Promise<{ status?: string; startDate?: string; endDate?: string }> 
+  searchParams: { status?: string; startDate?: string; endDate?: string } 
 }) {
-  const resolvedParams = await searchParams
-  const status = resolvedParams.status || "PENDING"
+  const status = searchParams.status || "ALL"
+  const startDate = searchParams.startDate
+  const endDate = searchParams.endDate
   
   // Create where object conditionally to avoid using delete
-  const where: any = {
-    status: status === "ALL" ? undefined : status,
+  const where: any = {}
+  
+  if (status !== "ALL") {
+    where.status = status
   }
   
   // Only add createdAt if date filters are present
-  if (resolvedParams.startDate || resolvedParams.endDate) {
+  if (startDate || endDate) {
     where.createdAt = {}
     
-    if (resolvedParams.startDate) {
-      where.createdAt.gte = new Date(resolvedParams.startDate)
+    if (startDate) {
+      where.createdAt.gte = new Date(startDate)
     }
     
-    if (resolvedParams.endDate) {
-      where.createdAt.lte = new Date(resolvedParams.endDate)
+    if (endDate) {
+      const endDateObj = new Date(endDate)
+      endDateObj.setHours(23, 59, 59, 999)
+      where.createdAt.lte = endDateObj
     }
   }
 
-  const [payments, pendingPaymentsTotal, paidPaymentsTotal] = await Promise.all([
+  // Get stats
+  const [
+    pendingPaymentsDb,
+    pendingPaymentsTotal, 
+    processingPaymentsTotal,
+    paidPaymentsTotal,
+    rejectedPaymentsTotal
+  ] = await Promise.all([
     prisma.affiliatePayment.findMany({
-      where,
-      orderBy: {
-        createdAt: "desc",
-      },
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "desc" },
       include: {
         affiliate: {
           include: {
@@ -50,6 +92,7 @@ export default async function AffiliatePayments({
                 id: true,
                 name: true,
                 email: true,
+                image: true,
               },
             },
           },
@@ -58,17 +101,54 @@ export default async function AffiliatePayments({
     }),
     prisma.affiliatePayment.aggregate({
       where: { status: "PENDING" },
-      _sum: {
-        amount: true,
-      },
+      _sum: { amount: true },
+      _count: true,
+    }),
+    prisma.affiliatePayment.aggregate({
+      where: { status: "PROCESSING" },
+      _sum: { amount: true },
+      _count: true,
     }),
     prisma.affiliatePayment.aggregate({
       where: { status: "PAID" },
-      _sum: {
-        amount: true,
-      },
+      _sum: { amount: true },
+      _count: true,
+    }),
+    prisma.affiliatePayment.aggregate({
+      where: { status: "REJECTED" },
+      _sum: { amount: true },
+      _count: true,
     }),
   ])
+
+  // Get filtered payments
+  const paymentsDb = await prisma.affiliatePayment.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    include: {
+      affiliate: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  // Map the database results to the expected format
+  const pendingPayments = pendingPaymentsDb.map(mapPaymentToTableFormat)
+  const payments = paymentsDb.map(mapPaymentToTableFormat)
+
+  const handleProcessed = async () => {
+    "use server"
+    revalidatePath("/admin/affiliate/payments")
+  }
 
   return (
     <div className="space-y-6">
@@ -79,7 +159,7 @@ export default async function AffiliatePayments({
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-1">
             <CardTitle className="text-sm font-medium">Pending Amount</CardTitle>
@@ -87,6 +167,23 @@ export default async function AffiliatePayments({
           <CardContent>
             <div className="text-2xl font-bold">
               ${pendingPaymentsTotal._sum.amount?.toFixed(2) || "0.00"}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {pendingPaymentsTotal._count} pending requests
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-sm font-medium">Processing Amount</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${processingPaymentsTotal._sum.amount?.toFixed(2) || "0.00"}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {processingPaymentsTotal._count} processing
             </div>
           </CardContent>
         </Card>
@@ -99,15 +196,23 @@ export default async function AffiliatePayments({
             <div className="text-2xl font-bold">
               ${paidPaymentsTotal._sum.amount?.toFixed(2) || "0.00"}
             </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {paidPaymentsTotal._count} completed payments
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-1">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <CardTitle className="text-sm font-medium">Rejected Amount</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{payments.length}</div>
+            <div className="text-2xl font-bold">
+              ${rejectedPaymentsTotal._sum.amount?.toFixed(2) || "0.00"}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {rejectedPaymentsTotal._count} rejected requests
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -121,71 +226,42 @@ export default async function AffiliatePayments({
             <PaymentFilterForm />
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="py-3 text-left font-medium">Request Date</th>
-                  <th className="py-3 text-left font-medium">Affiliate</th>
-                  <th className="py-3 text-left font-medium">Amount</th>
-                  <th className="py-3 text-left font-medium">Method</th>
-                  <th className="py-3 text-left font-medium">Status</th>
-                  <th className="py-3 text-left font-medium">Payout Details</th>
-                  <th className="py-3 text-left font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((payment) => (
-                  <tr key={payment.id} className="border-b">
-                    <td className="py-3">
-                      {format(new Date(payment.createdAt), "MMM dd, yyyy")}
-                    </td>
-                    <td className="py-3">
-                      <div>
-                        <div className="font-medium">
-                          {payment.affiliate.user.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {payment.affiliate.user.email}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3">${payment.amount.toFixed(2)}</td>
-                    <td className="py-3">{payment.paymentMethod}</td>
-                    <td className="py-3">
-                      <PaymentStatusSelect
-                        paymentId={payment.id}
-                        initialStatus={payment.status}
-                      />
-                    </td>
-                    <td className="py-3">
-                      <Link
-                        href={`/admin/affiliate/payments/${payment.id}`}
-                        className="text-primary hover:underline"
-                      >
-                        View Details
-                      </Link>
-                    </td>
-                    <td className="py-3">
-                      <Link
-                        href={`/admin/affiliate/payments/${payment.id}/process`}
-                        className="text-primary hover:underline"
-                      >
-                        Process Payment
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-                {payments.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="py-6 text-center text-muted-foreground">
-                      No payment requests found with the selected filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Tabs defaultValue={status === "ALL" ? "pending" : status.toLowerCase()} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="pending">Pending</TabsTrigger>
+              <TabsTrigger value="processing">Processing</TabsTrigger>
+              <TabsTrigger value="paid">Paid</TabsTrigger>
+              <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="pending" className="mt-6">
+              <AffiliatePaymentTable 
+                payments={pendingPayments.length > 0 ? pendingPayments : payments.filter(p => p.status === "PENDING")} 
+                onProcessed={handleProcessed}
+              />
+            </TabsContent>
+            
+            <TabsContent value="processing" className="mt-6">
+              <AffiliatePaymentTable 
+                payments={payments.filter(p => p.status === "PROCESSING")} 
+                onProcessed={handleProcessed}
+              />
+            </TabsContent>
+            
+            <TabsContent value="paid" className="mt-6">
+              <AffiliatePaymentTable 
+                payments={payments.filter(p => p.status === "PAID")} 
+                onProcessed={handleProcessed}
+              />
+            </TabsContent>
+            
+            <TabsContent value="rejected" className="mt-6">
+              <AffiliatePaymentTable 
+                payments={payments.filter(p => p.status === "REJECTED")} 
+                onProcessed={handleProcessed}
+              />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

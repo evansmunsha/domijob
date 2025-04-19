@@ -23,6 +23,8 @@ interface PaymentSettings {
   accountNumber?: string
   accountName?: string
   routingNumber?: string
+  country?: string
+  swiftCode?: string
 }
 
 export function PaymentRequest({ pendingAmount, onSuccess, minPayout = 50 }: PaymentRequestProps) {
@@ -34,7 +36,9 @@ export function PaymentRequest({ pendingAmount, onSuccess, minPayout = 50 }: Pay
     bankName: "",
     accountNumber: "",
     accountName: "",
-    routingNumber: ""
+    routingNumber: "",
+    country: "",
+    swiftCode: ""
   })
 
   // Fetch existing payment settings on component mount
@@ -276,6 +280,28 @@ export function PaymentRequest({ pendingAmount, onSuccess, minPayout = 50 }: Pay
                       name="routingNumber"
                       placeholder="Enter routing number"
                       value={paymentSettings.routingNumber || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      name="country"
+                      placeholder="Enter country"
+                      value={paymentSettings.country || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="swiftCode">Swift Code</Label>
+                    <Input
+                      id="swiftCode"
+                      name="swiftCode"
+                      placeholder="Enter SWIFT code (if applicable)"
+                      value={paymentSettings.swiftCode || ""}
                       onChange={handleInputChange}
                     />
                   </div>
