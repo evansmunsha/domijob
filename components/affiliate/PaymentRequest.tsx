@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 interface PaymentRequestProps {
   pendingAmount: number
   onSuccess: () => void
+  minPayout?: number
 }
 
 interface PaymentSettings {
@@ -24,7 +25,7 @@ interface PaymentSettings {
   routingNumber?: string
 }
 
-export function PaymentRequest({ pendingAmount, onSuccess }: PaymentRequestProps) {
+export function PaymentRequest({ pendingAmount, onSuccess, minPayout = 50 }: PaymentRequestProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSavingSettings, setIsSavingSettings] = useState(false)
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
@@ -146,6 +147,15 @@ export function PaymentRequest({ pendingAmount, onSuccess }: PaymentRequestProps
         <CardDescription>Manage your payment methods and request payouts</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4 rounded-md mb-4">
+          <h4 className="font-medium text-amber-800 dark:text-amber-400">Payment Guidelines</h4>
+          <ul className="mt-2 space-y-1 text-sm text-amber-700 dark:text-amber-300">
+            <li>• Your balance must reach ${minPayout || 50} before you can request a withdrawal</li>
+            <li>• Submit payment requests before 5PM UK time on Fridays for processing</li>
+            <li>• Approved payments will be processed during the following week</li>
+            <li>• Earnings have a 30-day holding period before becoming eligible for withdrawal</li>
+          </ul>
+        </div>
         <Tabs defaultValue="request" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="request">Request Payment</TabsTrigger>

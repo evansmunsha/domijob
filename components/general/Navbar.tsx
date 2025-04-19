@@ -54,6 +54,10 @@ export function Navbar() {
               <Users className="h-4 w-4 mr-2" />
               Candidates
             </Link>
+            <Link href="/affiliate" className={buttonVariants({ variant: "ghost" })}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Affiliate
+            </Link>
 
             <Link href="/messages" className="text-gray-300 hover:text-green-500">
               Messages <UnreadMessagesIndicator />
@@ -143,6 +147,13 @@ export function Navbar() {
                   >
                     <Users className="h-4 w-4 mr-2 inline-block" />
                     Potential Candidates
+                  </Link>
+                  <Link
+                    href="/affiliate"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200"
+                  >
+                    <Share2 className="h-4 w-4 mr-2 inline-block" />
+                    Affiliate Program
                   </Link>
                 </>
               )}
