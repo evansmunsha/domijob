@@ -8,6 +8,7 @@ import { PaymentHistory } from "./PaymentHistory"
 import { ClickAnalytics } from "./ClickAnalytics"
 import { AffiliateLink } from "./AffiliateLink"
 import { PaymentRequest } from "./PaymentRequest"
+import { MarketingMaterials } from "./MarketingMaterials"
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
 import Link from "next/link"
@@ -212,12 +213,13 @@ export function AffiliateDashboard() {
       </div>
 
       <Tabs defaultValue="link">
-        <TabsList className="grid grid-cols-5 mb-8">
+        <TabsList className="grid grid-cols-6 mb-8">
           <TabsTrigger value="link">Your Link</TabsTrigger>
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="request">Request Payout</TabsTrigger>
+          <TabsTrigger value="marketing">Marketing Materials</TabsTrigger>
         </TabsList>
 
         <TabsContent value="link">
@@ -241,6 +243,10 @@ export function AffiliateDashboard() {
             pendingAmount={stats.pendingEarnings} 
             onSuccess={refreshData} 
           />
+        </TabsContent>
+        
+        <TabsContent value="marketing">
+          <MarketingMaterials affiliateCode={stats.code} />
         </TabsContent>
       </Tabs>
     </div>

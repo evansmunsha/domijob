@@ -1,0 +1,23 @@
+ <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#f0f4f9" />
+  <rect width="100%" height="100%" fill="none" stroke="#4f46e5" stroke-width="3" />
+  <rect x="50" y="50" width="700" height="80" fill="#4f46e5" />
+  <text x="100" y="100" font-family="Arial, sans-serif" font-size="32" font-weight="bold" text-anchor="start" dominant-baseline="middle" fill="white">Mijob</text>
+  
+  <rect x="50" y="150" width="700" height="200" fill="white" stroke="#ddd" />
+  <text x="400" y="200" font-family="Arial, sans-serif" font-size="36" font-weight="bold" text-anchor="middle" fill="#333">Find Your Dream Job</text>
+  <text x="400" y="250" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#666">AI-powered job matching for job seekers</text>
+  <rect x="300" y="290" width="200" height="40" rx="5" fill="#4f46e5" />
+  <text x="400" y="310" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" fill="white">Sign Up Now</text>
+  
+  <rect x="50" y="380" width="220" height="180" fill="white" stroke="#ddd" />
+  <text x="160" y="420" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">AI Matching</text>
+  
+  <rect x="290" y="380" width="220" height="180" fill="white" stroke="#ddd" />
+  <text x="400" y="420" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Job Alerts</text>
+  
+  <rect x="530" y="380" width="220" height="180" fill="white" stroke="#ddd" />
+  <text x="640" y="420" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Resume Builder</text>
+  
+  <text x="400" y="580" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#999">Job Seekers Landing Page Preview</text>
+</svg>
