@@ -73,12 +73,12 @@ export function MarketingMaterials({ affiliateCode = "YOUR_CODE" }: MarketingMat
     {
       id: 'link-3',
       title: 'For Employers Link',
-      url: `${baseUrl}/employers?ref=${affiliateCode}`
+      url: `${baseUrl}/login?ref=${affiliateCode}`
     },
     {
       id: 'link-4',
       title: 'Sign Up Link',
-      url: `${baseUrl}/signup?ref=${affiliateCode}`
+      url: `${baseUrl}/login?ref=${affiliateCode}`
     }
   ]
 
