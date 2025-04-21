@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mijob - Find Your Dream Job</title>
+    <title>Domijob - Find Your Dream Job</title>
     <style>
         * {
             margin: 0;
@@ -128,9 +128,9 @@
     <header>
         <div class="container">
             <nav>
-                <div class="logo">Mijob</div>
+                <div class="logo">Domijob</div>
                 <div>
-                    <a href="https://mijob.com?ref=YOUR_CODE" class="cta-button">Sign In</a>
+                    <a href="https://domijob.com?ref=YOUR_CODE" class="cta-button">Sign In</a>
                 </div>
             </nav>
         </div>
@@ -139,8 +139,8 @@
     <section class="hero">
         <div class="container">
             <h1>Find Your Dream Job</h1>
-            <p>Mijob uses AI to match you with job opportunities that align with your skills, experience, and career goals.</p>
-            <a href="https://mijob.com?ref=YOUR_CODE" class="cta-button">Get Started</a>
+            <p>Domijob uses AI to match you with job opportunities that align with your skills, experience, and career goals.</p>
+            <a href="https://domijob.com?ref=YOUR_CODE" class="cta-button">Get Started</a>
         </div>
     </section>
 
@@ -170,7 +170,7 @@
         <div class="container">
             <div class="testimonial">
                 <blockquote>
-                    "Mijob completely transformed my job search. I found a position that perfectly matched my skills in just two weeks!"
+                    "Domijob completely transformed my job search. I found a position that perfectly matched my skills in just two weeks!"
                 </blockquote>
                 <cite>- Sarah J., Software Developer</cite>
             </div>
@@ -180,7 +180,7 @@
     <footer>
         <div class="container">
             <div class="footer-content">
-                <p>© 2023 Mijob. All rights reserved.</p>
+                <p>© 2023 Domijob. All rights reserved.</p>
                 <p>Referred by: YOUR_CODE</p>
             </div>
         </div>
@@ -196,8 +196,8 @@
                 // Replace all instances of YOUR_CODE with the actual ref code
                 document.body.innerHTML = document.body.innerHTML.replace(/YOUR_CODE/g, refCode);
                 
-                // Add ref code to all links that go to mijob.com
-                const links = document.querySelectorAll('a[href^="https://mijob.com"]');
+                // Add ref code to all links that go to domijob.com
+                const links = document.querySelectorAll('a[href^="https://domijob.com"]');
                 links.forEach(link => {
                     if (!link.href.includes('ref=')) {
                         link.href += (link.href.includes('?') ? '&' : '?') + `ref=${refCode}`;

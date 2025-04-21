@@ -23,7 +23,7 @@ export function MarketingMaterials({ affiliateCode = "YOUR_CODE" }: MarketingMat
       imageUrl: '/assets/affiliate/banner-728x90.png',
       imageWidth: 728,
       imageHeight: 90,
-      htmlCode: `<a href="https://mijob.com?ref=${affiliateCode}"><img src="https://mijob.com/assets/affiliate/banner-728x90.png" alt="Mijob - Find your next job" width="728" height="90" /></a>`
+      htmlCode: `<a href="https://domijob.com?ref=${affiliateCode}"><img src="https://domijob.com/assets/affiliate/banner-728x90.png" alt="Domijob - Find your next job" width="728" height="90" /></a>`
     },
     {
       id: 'banner-2',
@@ -32,7 +32,7 @@ export function MarketingMaterials({ affiliateCode = "YOUR_CODE" }: MarketingMat
       imageUrl: '/assets/affiliate/banner-300x250.png',
       imageWidth: 300,
       imageHeight: 250,
-      htmlCode: `<a href="https://mijob.com?ref=${affiliateCode}"><img src="https://mijob.com/assets/affiliate/banner-300x250.png" alt="Mijob - Find your next job" width="300" height="250" /></a>`
+      htmlCode: `<a href="https://domijob.com?ref=${affiliateCode}"><img src="https://domijob.com/assets/affiliate/banner-300x250.png" alt="Domijob - Find your next job" width="300" height="250" /></a>`
     },
     {
       id: 'banner-3',
@@ -41,7 +41,7 @@ export function MarketingMaterials({ affiliateCode = "YOUR_CODE" }: MarketingMat
       imageUrl: '/assets/affiliate/banner-160x600.png',
       imageWidth: 160,
       imageHeight: 600,
-      htmlCode: `<a href="https://mijob.com?ref=${affiliateCode}"><img src="https://mijob.com/assets/affiliate/banner-160x600.png" alt="Mijob - Find your next job" width="160" height="600" /></a>`
+      htmlCode: `<a href="https://domijob.com?ref=${affiliateCode}"><img src="https://domijob.com/assets/affiliate/banner-160x600.png" alt="Domijob - Find your next job" width="160" height="600" /></a>`
     }
   ]
 
@@ -49,20 +49,20 @@ export function MarketingMaterials({ affiliateCode = "YOUR_CODE" }: MarketingMat
     {
       id: 'email-1',
       title: 'Job Search Introduction',
-      description: 'Introduce Mijob to job seekers',
+      description: 'Introduce Domijob to job seekers',
       htmlCode: `<p>Looking for your next career opportunity?</p>
-<p>I've been using <a href="https://mijob.com?ref=${affiliateCode}">Mijob</a> to find quality job opportunities, and I think you might find it helpful too.</p>
+<p>I've been using <a href="https://domijob.com?ref=${affiliateCode}">Domijob</a> to find quality job opportunities, and I think you might find it helpful too.</p>
 <p>Their AI-powered platform matches you with jobs that fit your skills and experience, saving you time in your job search.</p>
-<p>Check it out: <a href="https://mijob.com?ref=${affiliateCode}">https://mijob.com</a></p>`
+<p>Check it out: <a href="https://domijob.com?ref=${affiliateCode}">https://domijob.com</a></p>`
     },
     {
       id: 'email-2',
       title: 'Recruiter Introduction',
-      description: 'Introduce Mijob to recruiters and hiring managers',
+      description: 'Introduce Domijob to recruiters and hiring managers',
       htmlCode: `<p>Looking to streamline your hiring process?</p>
-<p>I wanted to recommend <a href="https://mijob.com?ref=${affiliateCode}">Mijob</a> as a solution for your recruitment needs.</p>
+<p>I wanted to recommend <a href="https://domijob.com?ref=${affiliateCode}">Domijob</a> as a solution for your recruitment needs.</p>
 <p>Their platform uses AI to match you with qualified candidates, reducing time-to-hire and improving quality of matches.</p>
-<p>Check it out: <a href="https://mijob.com?ref=${affiliateCode}">https://mijob.com</a></p>`
+<p>Check it out: <a href="https://domijob.com?ref=${affiliateCode}">https://domijob.com</a></p>`
     }
   ]
 
