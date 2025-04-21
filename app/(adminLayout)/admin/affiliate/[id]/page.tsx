@@ -4,10 +4,12 @@ import { Badge } from "@/components/ui/badge"
 import { prisma } from "@/app/utils/db"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AffiliateEditForm from "@/components/admin/AffiliateEditForm"
-import PaymentHistoryTable from "@/components/admin/PaymentHistoryTable"
 import AffiliatePaymentHistory from "@/components/admin/AffiliatePaymentHistory"
 import { auth } from "@/app/utils/auth"
 import { formatDistanceToNow } from "date-fns"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { ArrowLeft, Download, RefreshCw } from "lucide-react"
 
 export default async function AffiliateDetailsPage({
   params,
@@ -89,7 +91,26 @@ export default async function AffiliateDetailsPage({
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Affiliate Details</h1>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/admin/affiliate">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-3xl font-bold tracking-tight">Affiliate Details</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-9 gap-1" asChild>
+            <Link href={`/admin/affiliate/${affiliate.id}`}>
+              <RefreshCw className="h-4 w-4" />
+              <span className="hidden sm:inline">Refresh</span>
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" className="h-9 gap-1">
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Export Data</span>
+          </Button>
+        </div>
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">

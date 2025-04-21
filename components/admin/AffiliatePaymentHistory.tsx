@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, CheckCircle, XCircle } from "lucide-react"
 
 interface AffiliatePayment {
   id: string
@@ -34,6 +34,7 @@ export default function AffiliatePaymentHistory({
   onPaymentProcessed 
 }: AffiliatePaymentHistoryProps) {
   const [isProcessing, setIsProcessing] = useState(false)
+  const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<AffiliatePayment | null>(null)
 
@@ -54,6 +55,7 @@ export default function AffiliatePaymentHistory({
     
     try {
       setIsProcessing(true)
+      setProcessingPaymentId(paymentId)
       
       const response = await fetch(`/api/admin/affiliate/payments/${paymentId}`, {
         method: "PATCH",
@@ -68,7 +70,8 @@ export default function AffiliatePaymentHistory({
       })
       
       if (!response.ok) {
-        throw new Error("Failed to process payment")
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to process payment")
       }
       
       toast.success("Payment processed successfully")
@@ -81,23 +84,66 @@ export default function AffiliatePaymentHistory({
         window.location.reload()
       }
     } catch (error) {
-      toast.error("Failed to process payment")
+      toast.error(`Failed to process payment: ${error instanceof Error ? error.message : "Unknown error"}`)
       console.error(error)
     } finally {
       setIsProcessing(false)
+      setProcessingPaymentId(null)
+    }
+  }
+
+  const handleRejectPayment = async (paymentId?: string) => {
+    if (!paymentId) return
+    
+    try {
+      setIsProcessing(true)
+      setProcessingPaymentId(paymentId)
+      
+      const response = await fetch(`/api/admin/affiliate/payments/${paymentId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "REJECTED",
+          paidAt: null,
+          transactionId: null
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to reject payment")
+      }
+      
+      toast.success("Payment rejected successfully")
+      setIsDialogOpen(false)
+      
+      if (onPaymentProcessed) {
+        onPaymentProcessed()
+      } else {
+        // Refresh the page if no callback provided
+        window.location.reload()
+      }
+    } catch (error) {
+      toast.error(`Failed to reject payment: ${error instanceof Error ? error.message : "Unknown error"}`)
+      console.error(error)
+    } finally {
+      setIsProcessing(false)
+      setProcessingPaymentId(null)
     }
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "PENDING":
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>
+        return <Badge variant="outline">Pending</Badge>
       case "PAID":
-        return <Badge variant="outline" className="bg-green-100 text-green-800">Paid</Badge>
+        return <Badge variant="default">Paid</Badge>
       case "REJECTED":
-        return <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
+        return <Badge variant="destructive">Rejected</Badge>
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge variant="secondary">{status}</Badge>
     }
   }
 
@@ -109,7 +155,7 @@ export default function AffiliatePaymentHistory({
           <CardDescription>No payment history available</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center p-8 text-gray-500">
+          <div className="flex items-center justify-center p-8 text-muted-foreground">
             No payment requests have been made by this affiliate yet.
           </div>
         </CardContent>
@@ -141,18 +187,46 @@ export default function AffiliatePaymentHistory({
                   <TableRow key={payment.id}>
                     <TableCell>{format(new Date(payment.createdAt), "MMM dd, yyyy")}</TableCell>
                     <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                    <TableCell>{payment.paymentMethod}</TableCell>
+                    <TableCell className="capitalize">{payment.paymentMethod}</TableCell>
                     <TableCell>{getStatusBadge(payment.status)}</TableCell>
                     <TableCell>
-                      {payment.status === "PENDING" && (
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => openProcessDialog(payment)}
-                          disabled={isProcessing}
-                        >
-                          Process
-                        </Button>
+                      {payment.status === "PENDING" ? (
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            className="flex items-center gap-1" 
+                            onClick={() => openProcessDialog(payment)}
+                            disabled={isProcessing && processingPaymentId === payment.id}
+                          >
+                            {isProcessing && processingPaymentId === payment.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <CheckCircle className="h-3 w-3" />
+                            )}
+                            <span>Approve</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
+                            onClick={() => handleRejectPayment(payment.id)}
+                            disabled={isProcessing && processingPaymentId === payment.id}
+                          >
+                            <XCircle className="h-3 w-3" />
+                            <span>Reject</span>
+                          </Button>
+                        </div>
+                      ) : payment.status === "PAID" && payment.paidAt ? (
+                        <span className="text-sm text-muted-foreground">
+                          Paid on {format(new Date(payment.paidAt), "MMM dd, yyyy")}
+                          {payment.transactionId && (
+                            <div className="text-xs font-mono">ID: {payment.transactionId}</div>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          Rejected
+                        </span>
                       )}
                     </TableCell>
                   </TableRow>
@@ -164,7 +238,7 @@ export default function AffiliatePaymentHistory({
       </Card>
 
       {/* Process Payment Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => !isProcessing && setIsDialogOpen(open)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Process Payment</DialogTitle>
@@ -182,21 +256,22 @@ export default function AffiliatePaymentHistory({
                 </div>
                 <div>
                   <p className="text-sm font-medium">Method:</p>
-                  <p>{selectedPayment.paymentMethod}</p>
+                  <p className="capitalize">{selectedPayment.paymentMethod}</p>
                 </div>
               </div>
             </div>
           )}
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isProcessing}>
               Cancel
             </Button>
             <Button 
               onClick={() => handleProcessPayment(selectedPayment?.id)} 
               disabled={isProcessing}
+              className="flex items-center gap-2"
             >
-              {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
               Confirm Payment
             </Button>
           </DialogFooter>
