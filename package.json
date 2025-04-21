@@ -16,6 +16,7 @@
     "@hookform/resolvers": "^3.10.0",
     "@nextui-org/react": "^2.6.11",
     "@prisma/client": "^6.5.0",
+    "@radix-ui/react-accordion": "^1.2.7",
     "@radix-ui/react-alert-dialog": "^1.1.7",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-checkbox": "^1.1.3",

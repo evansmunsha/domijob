@@ -8,6 +8,9 @@ import { PaymentHistory } from "./PaymentHistory"
 import { ClickAnalytics } from "./ClickAnalytics"
 import { AffiliateLink } from "./AffiliateLink"
 import { PaymentRequest } from "./PaymentRequest"
+import { Button } from "@/components/ui/button"
+import { HelpCircle } from "lucide-react"
+import Link from "next/link"
 
 interface AffiliateStats {
   code: string
@@ -43,6 +46,7 @@ export function AffiliateDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [registering, setRegistering] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const registerAsAffiliate = async () => {
     try {
@@ -99,6 +103,10 @@ export function AffiliateDashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const refreshData = () => {
+    setRefreshKey(prev => prev + 1)
   }
 
   useEffect(() => {
@@ -158,8 +166,16 @@ export function AffiliateDashboard() {
 
   return (
     <div className="space-y-6">
-      <AffiliateLink code={stats.code} />
-      
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight">Affiliate Dashboard</h1>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/affiliate/faq" className="flex items-center gap-2">
+            <HelpCircle size={16} />
+            <span>FAQ</span>
+          </Link>
+        </Button>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -195,25 +211,36 @@ export function AffiliateDashboard() {
         </Card>
       </div>
 
-      <PaymentRequest 
-        pendingAmount={stats.pendingEarnings} 
-        onSuccess={fetchStats} 
-      />
-
-      <Tabs defaultValue="referrals" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="link">
+        <TabsList className="grid grid-cols-5 mb-8">
+          <TabsTrigger value="link">Your Link</TabsTrigger>
           <TabsTrigger value="referrals">Referrals</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="request">Request Payout</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="link">
+          <AffiliateLink code={stats.code} />
+        </TabsContent>
+
         <TabsContent value="referrals">
           <ReferralList referrals={stats.referrals} />
         </TabsContent>
+
+        <TabsContent value="analytics">
+          <ClickAnalytics clicks={stats.clicks} />
+        </TabsContent>
+
         <TabsContent value="payments">
           <PaymentHistory />
         </TabsContent>
-        <TabsContent value="analytics">
-          <ClickAnalytics clicks={stats.clicks} />
+
+        <TabsContent value="request">
+          <PaymentRequest 
+            pendingAmount={stats.pendingEarnings} 
+            onSuccess={refreshData} 
+          />
         </TabsContent>
       </Tabs>
     </div>
