@@ -14,7 +14,7 @@ interface MarketingMaterialsProps {
 export function MarketingMaterials({ affiliateCode = "YOUR_CODE" }: MarketingMaterialsProps) {
   const [copied, setCopied] = useState<string | null>(null)
   
-  const baseUrl = "https://domijob.com"
+  const baseUrl = "https://domijob.vercel.app"
   const affiliateUrl = `${baseUrl}?ref=${affiliateCode}`
 
   const emailTemplates = [
