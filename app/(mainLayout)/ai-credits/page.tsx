@@ -1,4 +1,3 @@
-"use client"
 
 
 import { auth } from "@/app/utils/auth"
@@ -81,7 +80,7 @@ export default function AICreditsPage() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <form action={() => purchaseAICredits(id)}>
+                <form action={purchaseAICredits.bind(null, id)}>
                   <Button type="submit" className="w-full" variant={id === "premium" ? "default" : "outline"}>
                     Purchase
                   </Button>
