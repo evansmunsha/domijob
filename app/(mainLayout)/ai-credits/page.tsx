@@ -1,6 +1,6 @@
 "use client"
 
-import { Metadata } from "next"
+
 import { auth } from "@/app/utils/auth"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,10 +11,7 @@ import { getUserCreditBalance, purchaseAICredits } from "@/app/actions/aiCredits
 import { CREDIT_PACKAGES } from "@/app/utils/credits"
 import { use } from "react"
 
-export const metadata: Metadata = {
-  title: "AI Credits",
-  description: "Purchase AI credits to use premium AI features in Domijob"
-}
+
 
 export default function AICreditsPage() {
   const session = use(auth())
