@@ -4,7 +4,7 @@ import { useContext } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
-import { SuccessCreditBalanceContext } from "./layout";
+import { SuccessCreditBalanceContext } from "./credit-context";
 
 export default function AICreditsSuccessPage() {
   const creditsBalance = useContext(SuccessCreditBalanceContext);

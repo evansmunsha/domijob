@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, CreditCard, Check } from "lucide-react";
 import { CREDIT_PACKAGES } from "@/app/utils/credits";
 import { purchaseAICredits } from "@/app/actions/aiCredits";
-import { CreditBalanceContext } from "./layout";
+import { CreditBalanceContext } from "./credit-context";
 
 export default function AICreditsPage() {
   const router = useRouter();
