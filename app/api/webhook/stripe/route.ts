@@ -2,6 +2,7 @@ import { prisma } from "@/app/utils/db";
 import { stripe } from "@/app/utils/stripe";
 import { headers } from "next/headers";
 import Stripe from "stripe";
+import { addCredits } from "@/app/utils/credits";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -26,8 +27,43 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const customerId = session.customer as string;
-    const jobId = session.metadata?.jobId;
-
+    const metadata = session.metadata || {};
+    
+    // AI Credits Purchase
+    if (metadata.type === "ai_credits") {
+      try {
+        const userId = metadata.userId;
+        const credits = parseInt(metadata.credits, 10);
+        
+        if (!userId || isNaN(credits)) {
+          console.error("Invalid AI credits metadata:", metadata);
+          return new Response("Invalid metadata for AI credits", { status: 400 });
+        }
+        
+        // Add credits to user's account
+        await addCredits(userId, credits);
+        
+        // Log the transaction
+        await prisma.aIUsageLog.create({
+          data: {
+            userId,
+            endpoint: "credits_purchase",
+            tokenCount: 0,
+            cost: (session.amount_total || 0) / 100, // Convert from cents to dollars
+          }
+        });
+        
+        console.log(`Added ${credits} credits to user ${userId}`);
+      } catch (error) {
+        console.error("Error processing AI credits purchase:", error);
+        // Continue processing to avoid blocking webhook
+      }
+      
+      return new Response(null, { status: 200 });
+    }
+    
+    // Job Post Payment
+    const jobId = metadata.jobId;
     if (!jobId) {
       console.error("No job ID found in session metadata");
       return new Response("No job ID found", { status: 400 });

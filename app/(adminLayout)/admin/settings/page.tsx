@@ -22,6 +22,7 @@ import Head from "next/head"
 import { EmailConfigModal } from "@/components/admin/EmailConfigModal"
 import { StripeConfigModal } from "@/components/admin/StripeConfigModal"
 import { AffiliateSettingsTab } from "@/components/admin/AffiliateSettingsTab"
+import { AISettings } from "@/components/admin/AISettings"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -210,15 +211,17 @@ export default function SettingsPage() {
         </p>
       </div>
       
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
+      <Tabs defaultValue="site">
+        <TabsList className="grid grid-cols-5 md:w-1/2 mb-8">
+          <TabsTrigger value="site">Site</TabsTrigger>
           <TabsTrigger value="jobs">Jobs</TabsTrigger>
-          <TabsTrigger value="affiliates">Affiliates</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="affiliate">Affiliate</TabsTrigger>
+          <TabsTrigger value="ai">AI</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="general" className="space-y-6">
+        {/* Site Settings */}
+        <TabsContent value="site" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Site Settings</CardTitle>
@@ -273,6 +276,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
         
+        {/* Jobs Settings */}
         <TabsContent value="jobs" className="space-y-6">
           <Card>
             <CardHeader>
@@ -326,10 +330,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="affiliates" className="space-y-6">
-          <AffiliateSettingsTab initialSettings={affiliateSettings} />
-        </TabsContent>
-        
+        {/* Integrations Settings */}
         <TabsContent value="integrations" className="space-y-6">
           <Card>
             <CardHeader>
@@ -397,6 +398,16 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        {/* Affiliate Settings */}
+        <TabsContent value="affiliate" className="space-y-6">
+          <AffiliateSettingsTab settings={affiliateSettings} setSettings={setAffiliateSettings} />
+        </TabsContent>
+        
+        {/* AI Settings */}
+        <TabsContent value="ai" className="space-y-6">
+          <AISettings />
+        </TabsContent>
       </Tabs>
       
       <div className="flex justify-end">
@@ -416,6 +427,11 @@ export default function SettingsPage() {
         onOpenChange={setStripeModalOpen}
         publishableKey={stripeKey}
         isConnected={stripeConnected}
+        onSave={(data) => {
+          setStripeKey(data.publishableKey)
+          setStripeConnected(true)
+          toast.success("Stripe configuration saved successfully")
+        }}
       />
       
       <EmailConfigModal
@@ -424,6 +440,12 @@ export default function SettingsPage() {
         currentProvider={emailProvider}
         fromEmail={emailFromAddress}
         isConnected={emailConnected}
+        onSave={(data) => {
+          setEmailProvider(data.provider)
+          setEmailFromAddress(data.fromEmail)
+          setEmailConnected(true)
+          toast.success("Email configuration saved successfully")
+        }}
       />
     </div>
   )

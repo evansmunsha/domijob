@@ -52,6 +52,10 @@ model User {
   affiliate Affiliate?
   referredByCode String?
   affiliateReferrals AffiliateReferral[]
+  
+  aiCredits UserCredits?
+  AIGeneratedContent AIGeneratedContent[]
+  AIUsageLog AIUsageLog[]
 }
 
 model SkillGapAnalysis {
@@ -455,5 +459,46 @@ model Setting {
   description   String?   @db.Text
 
   @@index([category])
+}
+
+// Store AI generated content for caching and audit
+model AIGeneratedContent {
+  id        String   @id @default(cuid())
+  type      String   // e.g. "job_match", "resume_enhancement", "job_description"
+  prompt    String   @db.Text
+  response  String   @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+}
+
+// Track AI usage for rate limiting and billing
+model AIUsageLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  endpoint   String   // Which AI feature was used
+  tokenCount Int      // How many tokens were consumed
+  cost       Float    // Estimated cost in USD
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([endpoint])
+}
+
+// AI credits system
+model UserCredits {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
