@@ -1,63 +1,62 @@
-"use client";
+import { Metadata } from "next"
+import { auth } from "@/app/utils/auth"
+import { redirect } from "next/navigation"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { CheckCircle, ArrowRight } from "lucide-react"
+import Link from "next/link"
+import { getUserCreditBalance } from "@/app/actions/aiCredits"
+import { use } from "react"
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
+export const metadata: Metadata = {
+  title: "Purchase Successful",
+  description: "Your AI credits have been added to your account"
+}
 
-export default function AICreditsSuccessPage({
-  creditsBalance
-}: {
-  creditsBalance: number
-}) {
+export default function AICreditsSuccessPage() {
+  const session = use(auth())
+  
+  if (!session?.user?.id) {
+    redirect("/login")
+  }
+  
+  const creditsBalance = use(getUserCreditBalance())
+
   return (
-    <div className="container py-10 max-w-lg">
-      <Card className="border-green-200 shadow-lg">
-        <CardHeader className="text-center border-b pb-6">
-          <div className="mx-auto mb-4 bg-green-100 rounded-full p-3 w-fit">
-            <CheckCircle2 className="h-12 w-12 text-green-600" />
+    <div className="container py-10 max-w-md">
+      <Card className="border-2 border-primary/50">
+        <CardHeader className="pb-2 flex flex-col items-center text-center">
+          <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <CheckCircle className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">Purchase Successful!</CardTitle>
-          <CardDescription>
+          <h1 className="text-2xl font-bold">Purchase Successful!</h1>
+          <p className="text-muted-foreground">
             Your AI credits have been added to your account
-          </CardDescription>
+          </p>
         </CardHeader>
-        <CardContent className="pt-6">
-          <div className="text-center mb-6">
-            <div className="text-sm font-medium text-muted-foreground mb-1">Your Current Balance</div>
-            <div className="flex items-center justify-center gap-1">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <span className="text-3xl font-bold">{creditsBalance}</span>
-              <span className="text-lg text-muted-foreground">credits</span>
-            </div>
+        <CardContent className="text-center">
+          <div className="my-6">
+            <div className="text-sm font-medium text-muted-foreground">Your Current Balance</div>
+            <div className="text-4xl font-bold mt-1">{creditsBalance} credits</div>
           </div>
-          
-          <div className="bg-muted/50 p-4 rounded-lg mb-6">
-            <h3 className="font-medium mb-2">What's Next?</h3>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <div className="bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">1</div>
-                <span>Access AI-powered job matching to find perfect roles</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">2</div>
-                <span>Enhance your resume with AI suggestions</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">3</div>
-                <span>Create compelling job descriptions (for recruiters)</span>
-              </li>
-            </ul>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            You can now use these credits to access premium AI features like resume enhancement, job matching, and more.
+          </p>
         </CardContent>
-        <CardFooter className="flex gap-3 pt-0">
-          <Button asChild variant="default" className="w-full">
-            <a href="/ai-tools">
+        <CardFooter className="flex flex-col gap-3">
+          <Button asChild className="w-full">
+            <Link href="/ai-tools">
               Explore AI Tools
               <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/ai-credits">
+              Buy More Credits
+            </Link>
           </Button>
         </CardFooter>
       </Card>
     </div>
-  );
+  )
 } 

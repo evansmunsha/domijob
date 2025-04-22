@@ -1,56 +1,55 @@
-"use client";
+import { Metadata } from "next"
+import { auth } from "@/app/utils/auth"
+import { redirect } from "next/navigation"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { AlertCircle, ArrowLeft } from "lucide-react"
+import Link from "next/link"
+import { use } from "react"
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { XCircle, Sparkles, ArrowLeft } from "lucide-react";
+export const metadata: Metadata = {
+  title: "Purchase Cancelled",
+  description: "Your AI credits purchase was cancelled"
+}
 
 export default function AICreditsCancelPage() {
+  const session = use(auth())
+  
+  if (!session?.user?.id) {
+    redirect("/login")
+  }
+
   return (
-    <div className="container py-10 max-w-lg">
-      <Card className="border-orange-200 shadow-lg">
-        <CardHeader className="text-center border-b pb-6">
-          <div className="mx-auto mb-4 bg-orange-100 rounded-full p-3 w-fit">
-            <XCircle className="h-12 w-12 text-orange-600" />
+    <div className="container py-10 max-w-md">
+      <Card>
+        <CardHeader className="pb-2 flex flex-col items-center text-center">
+          <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-4">
+            <AlertCircle className="h-10 w-10 text-muted-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold">Purchase Cancelled</CardTitle>
-          <CardDescription>
-            Your AI credits purchase was not completed
-          </CardDescription>
+          <h1 className="text-2xl font-bold">Purchase Cancelled</h1>
+          <p className="text-muted-foreground">
+            Your credit purchase was not completed
+          </p>
         </CardHeader>
-        <CardContent className="pt-6">
-          <div className="bg-muted/50 p-4 rounded-lg mb-6">
-            <h3 className="font-medium mb-2">Did you encounter any issues?</h3>
-            <p className="text-sm text-muted-foreground">
-              If you experienced technical difficulties or have questions about our AI credit system, 
-              please contact our support team at munshastripe@gmail.com
-            </p>
-          </div>
-          
-          <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h3 className="font-medium mb-2 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Why AI Credits?
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              AI credits power our premium features like job matching, resume enhancement, and job description optimization. 
-              These tools can significantly improve your chances of finding the perfect job or candidate.
-            </p>
-          </div>
+        <CardContent className="text-center">
+          <p className="text-sm text-muted-foreground my-4">
+            No charges were made to your account. You can try again or explore our AI tools with your existing credits.
+          </p>
         </CardContent>
-        <CardFooter className="flex gap-3 pt-4">
-          <Button asChild variant="outline" className="w-full">
-            <a href="/ai-tools">
+        <CardFooter className="flex flex-col gap-3">
+          <Button asChild className="w-full">
+            <Link href="/ai-credits">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to AI Tools
-            </a>
+              Return to Credits Page
+            </Link>
           </Button>
-          <Button asChild variant="default" className="w-full">
-            <a href="/ai-credits">
-              Try Again
-            </a>
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/ai-tools">
+              Explore AI Tools
+            </Link>
           </Button>
         </CardFooter>
       </Card>
     </div>
-  );
+  )
 } 
