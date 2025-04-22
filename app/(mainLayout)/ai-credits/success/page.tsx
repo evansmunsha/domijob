@@ -1,25 +1,13 @@
-import { Metadata } from "next"
-import { auth } from "@/app/utils/auth"
-import { redirect } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { CheckCircle2, Sparkles, ArrowRight } from "lucide-react"
-import { getUserCreditBalance } from "@/app/actions/aiCredits"
-import { use } from "react"
+"use client";
 
-export const metadata: Metadata = {
-  title: "Purchase Successful",
-  description: "Your AI credits purchase was successful",
-}
+import { useContext } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
+import { SuccessCreditBalanceContext } from "./layout";
 
 export default function AICreditsSuccessPage() {
-  const session = use(auth())
-  
-  if (!session?.user?.id) {
-    redirect("/login")
-  }
-  
-  const creditsBalance = use(getUserCreditBalance())
+  const creditsBalance = useContext(SuccessCreditBalanceContext);
 
   return (
     <div className="container py-10 max-w-lg">
@@ -71,5 +59,5 @@ export default function AICreditsSuccessPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 } 

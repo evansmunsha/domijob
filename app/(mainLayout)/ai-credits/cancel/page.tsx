@@ -1,23 +1,10 @@
-import { Metadata } from "next"
-import { auth } from "@/app/utils/auth"
-import { redirect } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { XCircle, Sparkles, ArrowLeft } from "lucide-react"
-import { use } from "react"
+"use client";
 
-export const metadata: Metadata = {
-  title: "Purchase Cancelled",
-  description: "Your AI credits purchase was cancelled",
-}
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { XCircle, Sparkles, ArrowLeft } from "lucide-react";
 
 export default function AICreditsCancelPage() {
-  const session = use(auth())
-  
-  if (!session?.user?.id) {
-    redirect("/login")
-  }
-
   return (
     <div className="container py-10 max-w-lg">
       <Card className="border-orange-200 shadow-lg">
@@ -65,5 +52,5 @@ export default function AICreditsCancelPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 } 

@@ -1,27 +1,29 @@
-import { Metadata } from "next"
-import { auth } from "@/app/utils/auth"
-import { redirect } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Sparkles, CreditCard, Check, ArrowRight } from "lucide-react"
-import { getUserCreditBalance } from "@/app/actions/aiCredits"
-import { use } from "react"
-import { CREDIT_PACKAGES } from "@/app/utils/credits"
-import { purchaseAICredits } from "@/app/actions/aiCredits"
+"use client";
 
-export const metadata: Metadata = {
-  title: "AI Credits",
-  description: "Purchase AI credits to use premium AI features",
-}
+import { useState, useContext } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Sparkles, CreditCard, Check } from "lucide-react";
+import { CREDIT_PACKAGES } from "@/app/utils/credits";
+import { purchaseAICredits } from "@/app/actions/aiCredits";
+import { CreditBalanceContext } from "./layout";
 
 export default function AICreditsPage() {
-  const session = use(auth())
-  
-  if (!session?.user?.id) {
-    redirect("/login")
-  }
-  
-  const creditsBalance = use(getUserCreditBalance())
+  const router = useRouter();
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const creditsBalance = useContext(CreditBalanceContext);
+
+  const handlePurchase = async (packageId: string) => {
+    try {
+      setIsProcessing(packageId);
+      await purchaseAICredits(packageId);
+      // The purchaseAICredits server action will handle the redirect
+    } catch (error) {
+      console.error("Purchase error:", error);
+      setIsProcessing(null);
+    }
+  };
 
   return (
     <div className="container py-10 max-w-6xl">
@@ -84,12 +86,24 @@ export default function AICreditsPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <form action={() => purchaseAICredits("basic")}>
-              <Button className="w-full group" size="lg">
-                <CreditCard className="mr-2 h-4 w-4 group-hover:animate-pulse" />
-                Purchase
-              </Button>
-            </form>
+            <Button 
+              className="w-full group" 
+              size="lg"
+              onClick={() => handlePurchase("basic")}
+              disabled={isProcessing === "basic"}
+            >
+              {isProcessing === "basic" ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin">⏳</span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="mr-2 h-4 w-4 group-hover:animate-pulse" />
+                  Purchase
+                </>
+              )}
+            </Button>
           </CardFooter>
         </Card>
         
@@ -129,12 +143,24 @@ export default function AICreditsPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <form action={() => purchaseAICredits("standard")}>
-              <Button className="w-full group" size="lg">
-                <CreditCard className="mr-2 h-4 w-4 group-hover:animate-pulse" />
-                Purchase
-              </Button>
-            </form>
+            <Button 
+              className="w-full group" 
+              size="lg"
+              onClick={() => handlePurchase("standard")}
+              disabled={isProcessing === "standard"}
+            >
+              {isProcessing === "standard" ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin">⏳</span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="mr-2 h-4 w-4 group-hover:animate-pulse" />
+                  Purchase
+                </>
+              )}
+            </Button>
           </CardFooter>
         </Card>
         
@@ -171,12 +197,24 @@ export default function AICreditsPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <form action={() => purchaseAICredits("premium")}>
-              <Button className="w-full group" size="lg">
-                <CreditCard className="mr-2 h-4 w-4 group-hover:animate-pulse" />
-                Purchase
-              </Button>
-            </form>
+            <Button 
+              className="w-full group" 
+              size="lg"
+              onClick={() => handlePurchase("premium")}
+              disabled={isProcessing === "premium"}
+            >
+              {isProcessing === "premium" ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin">⏳</span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="mr-2 h-4 w-4 group-hover:animate-pulse" />
+                  Purchase
+                </>
+              )}
+            </Button>
           </CardFooter>
         </Card>
       </div>
