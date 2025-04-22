@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/utils/auth";
 import { prisma } from "@/app/utils/db";
-import pdfParse from "pdf-parse";
-import mammoth from "mammoth";
 
 export async function POST(req: Request) {
   try {
@@ -37,12 +35,18 @@ export async function POST(req: Request) {
     
     try {
       if (fileType === "application/pdf") {
+        // Dynamically import pdf-parse only when needed
+        const pdfParse = (await import('pdf-parse')).default;
+        
         // Parse PDF
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const pdfData = await pdfParse(buffer);
         extractedText = pdfData.text;
       } else {
+        // Dynamically import mammoth only when needed
+        const mammoth = await import('mammoth');
+        
         // Parse Word documents
         const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer });
