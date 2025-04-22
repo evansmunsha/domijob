@@ -1,14 +1,14 @@
 "use client";
 
-import { useContext } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
-import { SuccessCreditBalanceContext } from "./credit-context";
 
-export default function AICreditsSuccessPage() {
-  const creditsBalance = useContext(SuccessCreditBalanceContext);
-
+export default function AICreditsSuccessPage({
+  creditsBalance
+}: {
+  creditsBalance: number
+}) {
   return (
     <div className="container py-10 max-w-lg">
       <Card className="border-green-200 shadow-lg">

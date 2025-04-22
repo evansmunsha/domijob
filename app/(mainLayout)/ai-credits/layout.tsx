@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { auth } from "@/app/utils/auth";
 import { redirect } from "next/navigation";
 import { getUserCreditBalance } from "@/app/actions/aiCredits";
-import { CreditBalanceContext } from "./credit-context";
+import { CreditsPageWrapper } from "./wrapper";
 
 export const metadata: Metadata = {
   title: "AI Credits",
@@ -23,9 +23,9 @@ export default async function AICreditsLayout({
   
   const creditsBalance = await getUserCreditBalance();
 
-  return (
-    <CreditBalanceContext.Provider value={creditsBalance}>
-      {children}
-    </CreditBalanceContext.Provider>
-  );
+  // Define the props object to pass to the page
+  const pageProps = { creditsBalance };
+
+  // Pass the props to the page using a wrapper component
+  return <CreditsPageWrapper pageProps={pageProps}>{children}</CreditsPageWrapper>;
 } 

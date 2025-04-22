@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { auth } from "@/app/utils/auth";
 import { redirect } from "next/navigation";
 import { getUserCreditBalance } from "@/app/actions/aiCredits";
-import { SuccessCreditBalanceContext } from "./credit-context";
+import { SuccessPageWrapper } from "./wrapper";
 
 // Metadata should only be consumed by the Next.js framework
 export const metadata: Metadata = {
@@ -24,9 +24,9 @@ export default async function AICreditsSuccessLayout({
   
   const creditsBalance = await getUserCreditBalance();
 
-  return (
-    <SuccessCreditBalanceContext.Provider value={creditsBalance}>
-      {children}
-    </SuccessCreditBalanceContext.Provider>
-  );
+  // Define the props object to pass to the page
+  const pageProps = { creditsBalance };
+
+  // Pass the props to the page using a wrapper component
+  return <SuccessPageWrapper pageProps={pageProps}>{children}</SuccessPageWrapper>;
 } 
