@@ -1,3 +1,5 @@
+"use client"
+
 import { Metadata } from "next"
 import { auth } from "@/app/utils/auth"
 import { redirect } from "next/navigation"
@@ -21,7 +23,12 @@ export default function AICreditsPage() {
     redirect("/login")
   }
   
-  const creditsBalance = use(getUserCreditBalance())
+  const creditsBalance = use(
+    getUserCreditBalance().catch(error => {
+      console.error("Failed to get credit balance:", error);
+      return 0;
+    })
+  )
 
   return (
     <div className="container py-10 max-w-6xl">
