@@ -73,12 +73,17 @@ export const ourFileRouter = {
     .onUploadComplete(async ({ metadata, file }) => {
       try {
         console.log('Upload complete for userId:', metadata.userId);
-        console.log('File URL:', file.url);
+        console.log('File URL (ufsUrl):', file.ufsUrl);
         console.log('File metadata:', metadata); // Log file metadata
         console.log('File details:', file); // Log file details
 
         // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
-        return { uploadedBy: metadata.userId };
+        return {
+          uploadedBy: metadata.userId,
+          url: file.ufsUrl,
+          name: file.name,
+          size: file.size,
+        };
       } catch (error) {
         console.error('Error during upload completion:', error); // Log errors during upload completion
         throw error;

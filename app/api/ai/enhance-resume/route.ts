@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/app/utils/auth";
+import { NextResponse } from "next/server";
 import { generateAIResponse } from "@/app/utils/openai";
 import { prisma } from "@/app/utils/db";
 

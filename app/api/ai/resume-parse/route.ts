@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/app/utils/auth";
+import { NextResponse } from "next/server";
 import { prisma } from "@/app/utils/db";
 
 export async function POST(req: Request) {
@@ -15,45 +15,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    const { fileUrl } = await req.json();
+    if (!fileUrl) {
+      return NextResponse.json({ error: "File URL is required" }, { status: 400 });
     }
-
-    // Check file type
-    const fileType = file.type;
-    if (!["application/pdf", "application/msword", 
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
-          .includes(fileType)) {
-      return NextResponse.json({ error: "Invalid file type. Only PDF and Word documents are supported" }, { status: 400 });
+    // Fetch the file from UploadThing URL
+    const fetchRes = await fetch(fileUrl);
+    if (!fetchRes.ok) {
+      return NextResponse.json({ error: "Failed to fetch file from URL" }, { status: 400 });
     }
-
-    // Parse the file based on its type
+    const contentType = fetchRes.headers.get("content-type") || "";
+    const arrayBuffer = await fetchRes.arrayBuffer();
     let extractedText = "";
-    
     try {
-      if (fileType === "application/pdf") {
-        // Try-catch specifically for importing the module
-        try {
-          const pdfParse = (await import('pdf-parse')).default;
-          
-          // Parse PDF
-          const arrayBuffer = await file.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          const pdfData = await pdfParse(buffer);
-          extractedText = pdfData.text;
-        } catch (importError) {
-          console.error("Error importing pdf-parse:", importError);
-          return NextResponse.json({ error: "PDF parsing module unavailable" }, { status: 500 });
-        }
+      if (contentType.includes("pdf") || fileUrl.toLowerCase().endsWith(".pdf")) {
+        const pdfParse = (await import('pdf-parse')).default;
+        const buffer = Buffer.from(arrayBuffer);
+        const pdfData = await pdfParse(buffer);
+        extractedText = pdfData.text;
       } else {
-        // Dynamically import mammoth only when needed
         const mammoth = await import('mammoth');
-        
-        // Parse Word documents
-        const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer });
         extractedText = result.value;
       }
@@ -87,8 +68,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       text: extractedText,
-      fileName: file.name,
-      fileSize: file.size,
       parsed: true
     });
   } catch (error) {
