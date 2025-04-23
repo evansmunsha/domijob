@@ -35,14 +35,19 @@ export async function POST(req: Request) {
     
     try {
       if (fileType === "application/pdf") {
-        // Dynamically import pdf-parse only when needed
-        const pdfParse = (await import('pdf-parse')).default;
-        
-        // Parse PDF
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const pdfData = await pdfParse(buffer);
-        extractedText = pdfData.text;
+        // Try-catch specifically for importing the module
+        try {
+          const pdfParse = (await import('pdf-parse')).default;
+          
+          // Parse PDF
+          const arrayBuffer = await file.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const pdfData = await pdfParse(buffer);
+          extractedText = pdfData.text;
+        } catch (importError) {
+          console.error("Error importing pdf-parse:", importError);
+          return NextResponse.json({ error: "PDF parsing module unavailable" }, { status: 500 });
+        }
       } else {
         // Dynamically import mammoth only when needed
         const mammoth = await import('mammoth');

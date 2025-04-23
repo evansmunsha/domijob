@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 const TOAST_TIMEOUT = 5000
 
 type ToastProps = {
+  id: string
   title?: string
   description?: string
   variant?: "default" | "destructive" | "success"
