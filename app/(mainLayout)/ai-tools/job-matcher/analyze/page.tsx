@@ -54,9 +54,10 @@ export default function JobMatcherAnalyzePage() {
         
         if ((data.balance || 0) < CREDIT_COSTS.job_match) {
           toast({
-            title: "Insufficient Credits",
-            description: `You need ${CREDIT_COSTS.job_match} credits to use this feature.`,
-            variant: "destructive"
+              title: "Insufficient Credits",
+              description: `You need ${CREDIT_COSTS.job_match} credits to use this feature.`,
+              variant: "destructive",
+              id: ""
           })
           router.push("/ai-credits")
         }
@@ -64,9 +65,10 @@ export default function JobMatcherAnalyzePage() {
       .catch(err => {
         console.error("Error fetching credits:", err)
         toast({
-          title: "Error",
-          description: "Failed to fetch your credit balance",
-          variant: "destructive"
+            title: "Error",
+            description: "Failed to fetch your credit balance",
+            variant: "destructive",
+            id: ""
         })
       })
   }, [router])
@@ -101,17 +103,19 @@ export default function JobMatcherAnalyzePage() {
       setActiveTab("results")
       
       toast({
-        title: "Analysis Complete",
-        description: `Found ${data.matches?.length || 0} job matches for your profile.`,
+          title: "Analysis Complete",
+          description: `Found ${data.matches?.length || 0} job matches for your profile.`,
+          id: ""
       })
     } catch (error: any) {
       console.error("Error analyzing resume:", error)
       setError(error.message || "An error occurred while analyzing your resume")
       
       toast({
-        title: "Error",
-        description: error.message || "An error occurred while analyzing your resume",
-        variant: "destructive"
+          title: "Error",
+          description: error.message || "An error occurred while analyzing your resume",
+          variant: "destructive",
+          id: ""
       })
     } finally {
       setIsAnalyzing(false)
