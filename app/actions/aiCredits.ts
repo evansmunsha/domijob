@@ -23,20 +23,40 @@ export async function purchaseAICredits(packageId: string) {
   }
   
   // Get or create Stripe customer
-  let stripeCustomerId = session.user.stripeCustomerId
-  
-  if (!stripeCustomerId) {
+  const userRecord = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { stripeCustomerId: true },
+  });
+  let stripeCustomerId = userRecord?.stripeCustomerId;
+
+  // Validate or create Stripe customer
+  if (stripeCustomerId) {
+    try {
+      await stripe.customers.retrieve(stripeCustomerId)
+    } catch (error: any) {
+      if (error.type === 'StripeInvalidRequestError' && error.code === 'resource_missing') {
+        const customer = await stripe.customers.create({
+          email: session.user.email!,
+          name: session.user.name || undefined,
+        })
+        stripeCustomerId = customer.id
+        await prisma.user.update({
+          where: { id: userId },
+          data: { stripeCustomerId: customer.id },
+        })
+      } else {
+        throw error
+      }
+    }
+  } else {
     const customer = await stripe.customers.create({
       email: session.user.email!,
       name: session.user.name || undefined,
     })
-    
     stripeCustomerId = customer.id
-    
-    // Save the Stripe customer ID to the user
     await prisma.user.update({
       where: { id: userId },
-      data: { stripeCustomerId: customer.id }
+      data: { stripeCustomerId: customer.id },
     })
   }
   
