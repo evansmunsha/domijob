@@ -3,14 +3,8 @@ import { UTApi } from "uploadthing/server";
 import mammoth from "mammoth";
 import { prisma } from "@/app/utils/db";
 import { auth } from "@/app/utils/auth";
-import pdfParse from "pdf-parse";
 
 const utapi = new UTApi();
-
-async function extractTextFromPDF(pdfBytes: ArrayBuffer): Promise<string> {
-  const pdfData = await pdfParse(Buffer.from(pdfBytes));
-  return pdfData.text;
-}
 
 export async function POST(req: Request) {
   try {
@@ -48,7 +42,9 @@ export async function POST(req: Request) {
     // Parse based on file type
     if (fileType === "application/pdf") {
       try {
-        parsedText = await extractTextFromPDF(fileBuffer);
+        const { default: pdfParse } = await import("pdf-parse");
+        const pdfData = await pdfParse(Buffer.from(fileBuffer));
+        parsedText = pdfData.text;
       } catch (error) {
         console.error("Error parsing PDF:", error);
         return NextResponse.json(
