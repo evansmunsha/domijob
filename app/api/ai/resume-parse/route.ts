@@ -3,16 +3,21 @@ import { UTApi } from "uploadthing/server";
 import mammoth from "mammoth";
 import { prisma } from "@/app/utils/db";
 import { auth } from "@/app/utils/auth";
-import pdfParse from "pdf-parse";
+import * as pdfjs from 'pdfjs-dist';
 
 const utapi = new UTApi();
 
 async function extractTextFromPDF(pdfBytes: ArrayBuffer): Promise<string> {
-  const pdfData = await pdfParse(Buffer.from(pdfBytes), {
-    max: 0,
-    pagerender: undefined
-  });
-  return pdfData.text;
+  const pdf = await pdfjs.getDocument({ data: pdfBytes }).promise;
+  let text = '';
+  
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map((item: any) => item.str).join(' ') + '\n';
+  }
+  
+  return text;
 }
 
 export async function POST(req: Request) {
