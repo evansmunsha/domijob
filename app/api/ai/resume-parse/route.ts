@@ -7,11 +7,6 @@ import pdfParse from "pdf-parse";
 
 const utapi = new UTApi();
 
-async function extractTextFromPDF(pdfBytes: ArrayBuffer): Promise<string> {
-  const pdfData = await pdfParse(Buffer.from(pdfBytes));
-  return pdfData.text;
-}
-
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -26,63 +21,62 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Check file type
+    // File validation
     const fileType = file.type;
-    if (!["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(fileType)) {
+    const supportedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+    if (!supportedTypes.includes(fileType)) {
       return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
     }
 
-    // Upload file to UploadThing
-    const uploadResponse = await utapi.uploadFiles(file);
-    if (!uploadResponse?.data?.ufsUrl) {
-      return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "File size exceeds 5MB limit" }, { status: 400 });
     }
 
-    // Get file content
-    const fileUrl = uploadResponse.data.ufsUrl;
-    const fileResponse = await fetch(fileUrl);
-    const fileBuffer = await fileResponse.arrayBuffer();
+    // Upload to UploadThing
+    const uploadResponse = await utapi.uploadFiles(file);
+    const fileUrl = uploadResponse?.data?.ufsUrl;
+    if (!fileUrl) {
+      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    }
+
+    const fetchRes = await fetch(fileUrl);
+    const arrayBuffer = await fetchRes.arrayBuffer(); // Native ArrayBuffer
 
     let parsedText: string;
 
-    // Parse based on file type
     if (fileType === "application/pdf") {
-      try {
-        parsedText = await extractTextFromPDF(fileBuffer);
-      } catch (error) {
-        console.error("Error parsing PDF:", error);
-        return NextResponse.json(
-          { error: "Failed to parse PDF. Please ensure it contains extractable text." },
-          { status: 400 }
-        );
-      }
+      const pdfData = await pdfParse(Buffer.from(arrayBuffer)); // pdf-parse needs Node.js Buffer
+      parsedText = pdfData.text;
     } else {
-      const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
+      const result = await mammoth.extractRawText({ arrayBuffer }); // mammoth needs native ArrayBuffer
       parsedText = result.value;
     }
+    
+    
 
-    // Clean up text
     parsedText = parsedText.replace(/\s+/g, " ").trim();
 
-    // Store parsed resume in user's profile
+    if (!parsedText || parsedText.length < 100) {
+      return NextResponse.json({ error: "File appears empty or unparseable" }, { status: 422 });
+    }
+
+    // Store resume text
     try {
       await prisma.jobSeeker.update({
         where: { userId: session.user.id },
-        data: {
-          resume: parsedText
-        }
+        data: { resume: parsedText },
       });
-    } catch (error) {
-      console.error("Error storing resume:", error);
-      // Continue even if storage fails
+    } catch (dbError) {
+      console.error("DB error:", dbError);
+      // Not fatal – continue
     }
 
     return NextResponse.json({ text: parsedText });
-  } catch (error) {
-    console.error("Error parsing resume:", error);
-    return NextResponse.json(
-      { error: "Failed to parse resume" },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
-} 
+}
