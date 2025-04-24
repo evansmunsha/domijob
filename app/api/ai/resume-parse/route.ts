@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { UTApi } from "uploadthing/server";
-import mammoth from "mammoth";
 import { prisma } from "@/app/utils/db";
 import { auth } from "@/app/utils/auth";
 
@@ -28,41 +27,45 @@ export async function POST(req: Request) {
 
     // Upload file to UploadThing
     const uploadResponse = await utapi.uploadFiles(file);
+    console.log("uploadResponse:", uploadResponse);
+    
     if (!uploadResponse?.data?.ufsUrl) {
-      console.error("Upload failed:", uploadResponse);
-      return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
+      console.error("Upload failed - no ufsUrl:", uploadResponse);
+      return NextResponse.json({ error: "Failed to upload file - no URL returned" }, { status: 500 });
     }
 
     // Get file content
     const fileUrl = uploadResponse.data.ufsUrl;
+    console.log("Fetching resume from:", fileUrl);
+    
     const fileResponse = await fetch(fileUrl);
-    const fileBuffer = await fileResponse.arrayBuffer();
+    console.log("Fetch status:", fileResponse.status);
+    
+    const fileBuffer: ArrayBuffer = await fileResponse.arrayBuffer();
+    console.log("fileBuffer byte length:", fileBuffer.byteLength);
 
     let parsedText: string;
 
     // Parse based on file type
     if (fileType === "application/pdf") {
       try {
-        const { default: pdfParse } = await import("pdf-parse");
+        const { default: pdfParse }: { default: typeof import("pdf-parse") } = await import("pdf-parse");
         const pdfData = await pdfParse(Buffer.from(fileBuffer));
         parsedText = pdfData.text;
-      } catch (error) {
-        console.error("Error parsing PDF:", error);
-        return NextResponse.json(
-          { error: "Failed to parse PDF. Please ensure it contains extractable text." },
-          { status: 400 }
-        );
+      } catch (error: unknown) {
+        console.error("PDF parse error:", error);
+        const msg = error instanceof Error ? error.message : String(error);
+        return NextResponse.json({ error: msg }, { status: 500 });
       }
     } else {
       try {
-        const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
+        const { extractRawText } = await import("mammoth");
+        const result = await extractRawText({ arrayBuffer: fileBuffer });
         parsedText = result.value;
-      } catch (error) {
-        console.error("Error parsing DOCX:", error);
-        return NextResponse.json(
-          { error: "Failed to parse DOCX file" },
-          { status: 400 }
-        );
+      } catch (error: unknown) {
+        console.error("DOCX parse error:", error);
+        const msg = error instanceof Error ? error.message : String(error);
+        return NextResponse.json({ error: msg }, { status: 500 });
       }
     }
 
@@ -77,17 +80,15 @@ export async function POST(req: Request) {
           resume: parsedText
         }
       });
-    } catch (error) {
-      console.error("Error storing resume:", error);
+    } catch (error: unknown) {
+      console.error("Prisma update error:", error);
       // Continue even if storage fails
     }
 
     return NextResponse.json({ text: parsedText });
-  } catch (error) {
-    console.error("Error parsing resume:", error);
-    return NextResponse.json(
-      { error: "Failed to parse resume" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    console.error("Top-level error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
