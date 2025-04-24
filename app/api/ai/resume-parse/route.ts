@@ -9,9 +9,7 @@ const utapi = new UTApi();
 
 async function extractTextFromPDF(pdfBytes: ArrayBuffer): Promise<string> {
   const options = {
-    max: 0, // Disable max pages limit
-    pagerender: null, // Disable page rendering
-    version: 'v1.10.100' // Use a specific version
+    max: 0 // Disable max pages limit
   };
   
   const pdfData = await pdfParse(Buffer.from(pdfBytes), options);
