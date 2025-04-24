@@ -42,7 +42,9 @@ export async function POST(req: Request) {
 
     // Parse based on file type
     if (fileType === "application/pdf") {
-      const pdfData = await pdfParse(Buffer.from(fileBuffer));
+      const pdfData = await pdfParse(Buffer.from(fileBuffer), {
+        max: 0 // Disable max pages limit
+      });
       parsedText = pdfData.text;
     } else {
       const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
