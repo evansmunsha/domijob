@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       });
     } catch (dbError) {
       console.error("DB error:", dbError);
-      // Not fatal – continue
+      // Not fatal –
     }
 
     return NextResponse.json({ text: parsedText });
