@@ -3,12 +3,9 @@ import { UTApi } from "uploadthing/server";
 import mammoth from "mammoth";
 import { prisma } from "@/app/utils/db";
 import { auth } from "@/app/utils/auth";
-import * as pdfjsLib from 'pdfjs-dist';
+import pdfParse from "pdf-parse";
 
 const utapi = new UTApi();
-
-// Initialize PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export async function POST(req: Request) {
   try {
@@ -45,14 +42,8 @@ export async function POST(req: Request) {
 
     // Parse based on file type
     if (fileType === "application/pdf") {
-      const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
-      let text = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map((item: any) => item.str).join(' ') + '\n';
-      }
-      parsedText = text;
+      const pdfData = await pdfParse(Buffer.from(fileBuffer));
+      parsedText = pdfData.text;
     } else {
       const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
       parsedText = result.value;
