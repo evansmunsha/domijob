@@ -117,7 +117,7 @@ export function AIResumeEnhancer() {
                               "Content-Type": "application/json",
                             },
                             body: JSON.stringify({
-                              fileUrl: res[0].url
+                              fileUrl: res[0].ufsUrl
                             }),
                           });
                           

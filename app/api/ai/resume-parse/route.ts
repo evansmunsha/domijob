@@ -29,6 +29,7 @@ export async function POST(req: Request) {
     // Upload file to UploadThing
     const uploadResponse = await utapi.uploadFiles(file);
     if (!uploadResponse?.data?.ufsUrl) {
+      console.error("Upload failed:", uploadResponse);
       return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
     }
 
@@ -53,8 +54,16 @@ export async function POST(req: Request) {
         );
       }
     } else {
-      const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
-      parsedText = result.value;
+      try {
+        const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
+        parsedText = result.value;
+      } catch (error) {
+        console.error("Error parsing DOCX:", error);
+        return NextResponse.json(
+          { error: "Failed to parse DOCX file" },
+          { status: 400 }
+        );
+      }
     }
 
     // Clean up text
