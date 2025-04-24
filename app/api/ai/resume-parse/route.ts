@@ -13,7 +13,7 @@ async function extractTextFromPDF(pdfBytes: ArrayBuffer): Promise<string> {
   let text = '';
   
   for (const page of pages) {
-    const content = await page.getTextContent();
+    const content = await page.getText();
     text += content + '\n';
   }
   
