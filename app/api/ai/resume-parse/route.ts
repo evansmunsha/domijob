@@ -3,8 +3,14 @@ import { UTApi } from "uploadthing/server";
 import mammoth from "mammoth";
 import { prisma } from "@/app/utils/db";
 import { auth } from "@/app/utils/auth";
+import pdfParse from "pdf-parse";
 
 const utapi = new UTApi();
+
+async function extractTextFromPDF(pdfBytes: ArrayBuffer): Promise<string> {
+  const pdfData = await pdfParse(Buffer.from(pdfBytes));
+  return pdfData.text;
+}
 
 export async function POST(req: Request) {
   try {
@@ -41,9 +47,15 @@ export async function POST(req: Request) {
 
     // Parse based on file type
     if (fileType === "application/pdf") {
-      // For PDFs, we'll just store the raw text for now
-      // In a production environment, you might want to use a more robust PDF parsing solution
-      parsedText = "PDF content extracted. Please use the text input field to paste your resume content.";
+      try {
+        parsedText = await extractTextFromPDF(fileBuffer);
+      } catch (error) {
+        console.error("Error parsing PDF:", error);
+        return NextResponse.json(
+          { error: "Failed to parse PDF. Please ensure it contains extractable text." },
+          { status: 400 }
+        );
+      }
     } else {
       const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
       parsedText = result.value;
