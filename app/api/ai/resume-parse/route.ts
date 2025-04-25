@@ -1,65 +1,58 @@
 import { NextResponse } from "next/server";
-import { UTApi } from "uploadthing/server";
-import { prisma } from "@/app/utils/db";
 import { auth } from "@/app/utils/auth";
-
-const utapi = new UTApi();
+import { prisma } from "@/app/utils/db";
 
 export async function POST(req: Request): Promise<Response> {
   try {
+    // Authentication check
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Get file from form data
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
+    
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Upload the file
-    const uploadResponse = await utapi.uploadFiles(file);
-    console.log("uploadResponse:", uploadResponse);
-
-    const ufsUrl = uploadResponse?.data?.ufsUrl;
-    if (!ufsUrl) {
-      return NextResponse.json({ error: "UploadThing ufsUrl missing" }, { status: 500 });
+    // Validate file type
+    const allowedTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Invalid file type. Only PDF and DOCX files are supported." },
+        { status: 400 }
+      );
     }
 
-    console.log("Fetching resume from:", ufsUrl);
-    const fileResponse = await fetch(ufsUrl);
-    console.log("Fetch status:", fileResponse.status);
-
-    const fileBuffer: ArrayBuffer = await fileResponse.arrayBuffer();
-    console.log("fileBuffer byte length:", fileBuffer.byteLength);
+    // Read file content
+    const fileBuffer = await file.arrayBuffer();
+    console.log(`Processing ${file.type} file of size ${fileBuffer.byteLength} bytes`);
 
     let parsedText: string;
 
-    if (file.type === "application/pdf") {
-      // PDF parsing
-      try {
-        const { default: pdfParse }: { default: typeof import("pdf-parse") } =
-          await import("pdf-parse");
+    try {
+      if (file.type === "application/pdf") {
+        // Lazy load pdf-parse to avoid build issues
+        const { default: pdfParse } = await import("pdf-parse");
         const pdfData = await pdfParse(Buffer.from(fileBuffer));
         parsedText = pdfData.text;
-      } catch (error: unknown) {
-        console.error("PDF parse error:", error);
-        const msg = error instanceof Error ? error.message : String(error);
-        return NextResponse.json({ error: msg }, { status: 500 });
-      }
-    } else {
-      // DOCX parsing via Mammoth
-      try {
-        const { extractRawText }: typeof import("mammoth") =
-          await import("mammoth");
+        console.log("Successfully parsed PDF file");
+      } else {
+        // Lazy load mammoth for DOCX files
+        const { extractRawText } = await import("mammoth");
         const result = await extractRawText({ arrayBuffer: fileBuffer });
         parsedText = result.value;
-      } catch (error: unknown) {
-        console.error("DOCX parse error:", error);
-        const msg = error instanceof Error ? error.message : String(error);
-        return NextResponse.json({ error: msg }, { status: 500 });
+        console.log("Successfully parsed DOCX file");
       }
+    } catch (parseError) {
+      console.error("Error parsing file:", parseError);
+      return NextResponse.json(
+        { error: "Failed to parse file. Please ensure it's a valid PDF or DOCX file." },
+        { status: 400 }
+      );
     }
 
     // Clean up whitespace
@@ -71,15 +64,22 @@ export async function POST(req: Request): Promise<Response> {
         where: { userId: session.user.id },
         data: { resume: parsedText },
       });
-    } catch (error: unknown) {
-      console.error("Prisma update error:", error);
-      // swallow—don't break the response
+      console.log("Successfully updated user's resume in database");
+    } catch (dbError) {
+      console.error("Error updating resume in database:", dbError);
+      // Continue with response even if database update fails
     }
 
-    return NextResponse.json({ text: parsedText });
-  } catch (error: unknown) {
+    return NextResponse.json({ 
+      success: true,
+      text: parsedText,
+      fileType: file.type,
+      fileSize: file.size
+    });
+
+  } catch (error) {
     console.error("Unexpected error in resume-parse:", error);
-    const msg = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
