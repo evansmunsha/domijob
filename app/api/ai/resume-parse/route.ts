@@ -5,7 +5,7 @@ import { auth } from "@/app/utils/auth";
 
 const utapi = new UTApi();
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<Response> {
   try {
     const session = await auth();
     if (!session?.user) {
@@ -13,43 +13,34 @@ export async function POST(req: Request) {
     }
 
     const formData = await req.formData();
-    const file = formData.get("file") as File;
-    
+    const file = formData.get("file") as File | null;
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Check file type
-    const fileType = file.type;
-    if (!["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(fileType)) {
-      return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
-    }
-
-    // Upload file to UploadThing
+    // Upload the file
     const uploadResponse = await utapi.uploadFiles(file);
     console.log("uploadResponse:", uploadResponse);
-    
-    if (!uploadResponse?.data?.ufsUrl) {
-      console.error("Upload failed - no ufsUrl:", uploadResponse);
-      return NextResponse.json({ error: "Failed to upload file - no URL returned" }, { status: 500 });
+
+    const ufsUrl = uploadResponse?.data?.ufsUrl;
+    if (!ufsUrl) {
+      return NextResponse.json({ error: "UploadThing ufsUrl missing" }, { status: 500 });
     }
 
-    // Get file content
-    const fileUrl = uploadResponse.data.ufsUrl;
-    console.log("Fetching resume from:", fileUrl);
-    
-    const fileResponse = await fetch(fileUrl);
+    console.log("Fetching resume from:", ufsUrl);
+    const fileResponse = await fetch(ufsUrl);
     console.log("Fetch status:", fileResponse.status);
-    
+
     const fileBuffer: ArrayBuffer = await fileResponse.arrayBuffer();
     console.log("fileBuffer byte length:", fileBuffer.byteLength);
 
     let parsedText: string;
 
-    // Parse based on file type
-    if (fileType === "application/pdf") {
+    if (file.type === "application/pdf") {
+      // PDF parsing
       try {
-        const { default: pdfParse }: { default: typeof import("pdf-parse") } = await import("pdf-parse");
+        const { default: pdfParse }: { default: typeof import("pdf-parse") } =
+          await import("pdf-parse");
         const pdfData = await pdfParse(Buffer.from(fileBuffer));
         parsedText = pdfData.text;
       } catch (error: unknown) {
@@ -58,8 +49,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: msg }, { status: 500 });
       }
     } else {
+      // DOCX parsing via Mammoth
       try {
-        const { extractRawText } = await import("mammoth");
+        const { extractRawText }: typeof import("mammoth") =
+          await import("mammoth");
         const result = await extractRawText({ arrayBuffer: fileBuffer });
         parsedText = result.value;
       } catch (error: unknown) {
@@ -69,25 +62,23 @@ export async function POST(req: Request) {
       }
     }
 
-    // Clean up text
+    // Clean up whitespace
     parsedText = parsedText.replace(/\s+/g, " ").trim();
 
     // Store parsed resume in user's profile
     try {
       await prisma.jobSeeker.update({
         where: { userId: session.user.id },
-        data: {
-          resume: parsedText
-        }
+        data: { resume: parsedText },
       });
     } catch (error: unknown) {
       console.error("Prisma update error:", error);
-      // Continue even if storage fails
+      // swallow—don't break the response
     }
 
     return NextResponse.json({ text: parsedText });
   } catch (error: unknown) {
-    console.error("Top-level error:", error);
+    console.error("Unexpected error in resume-parse:", error);
     const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
