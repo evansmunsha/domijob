@@ -112,7 +112,7 @@ export function ResumeSection({ resumeUrl, userId }: ResumeSectionProps) {
             endpoint="resumeUploader"
             onUploadProgress={handleUploadProgress}
             onClientUploadComplete={(res) => {
-              handleResumeUpdate(res[0].url)
+              handleResumeUpdate(res[0].ufsUrl)
               setUploadProgress(0)
             }}
             onUploadError={(error) => {
