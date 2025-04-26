@@ -9,6 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "../ui/form";
 import { Input } from "../ui/input";
 import {
@@ -207,8 +208,16 @@ export function CreateJobForm({
                 <FormItem>
                   <FormLabel>Job Description</FormLabel>
                   <FormControl>
-                    <JobDescriptionEditor field={field} />
+                    <JobDescriptionEditor
+                      field={field}
+                      jobTitle={form.getValues("jobTitle")}
+                      industry={form.getValues("employmentType")}
+                      location={form.getValues("location")}
+                    />
                   </FormControl>
+                  <FormDescription>
+                    Provide a detailed description of the job responsibilities and requirements.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

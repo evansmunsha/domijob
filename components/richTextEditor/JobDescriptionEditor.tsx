@@ -11,6 +11,7 @@ import TextStyle from "@tiptap/extension-text-style"
 import Color from "@tiptap/extension-color"
 import Highlight from "@tiptap/extension-highlight"
 import { FontSize } from "../extensions/FontSize"
+import { AIJobEnhancer } from "../company/AIJobEnhancer"
 
 interface FormField {
   value: string
@@ -19,9 +20,12 @@ interface FormField {
 
 interface JobDescriptionEditorProps {
   field: FormField
+  jobTitle?: string
+  industry?: string
+  location?: string
 }
 
-export default function JobDescriptionEditor({ field }: JobDescriptionEditorProps) {
+export default function JobDescriptionEditor({ field, jobTitle, industry, location }: JobDescriptionEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -55,10 +59,26 @@ export default function JobDescriptionEditor({ field }: JobDescriptionEditorProp
     }
   }, [editor, field.value])
 
+  const handleApply = (enhancedDescription: string, titleSuggestion?: string) => {
+    if (editor) {
+      editor.commands.setContent(JSON.parse(enhancedDescription))
+      field.onChange(enhancedDescription)
+    }
+  }
+
   return (
     <div className="w-full">
       <div className="border rounded-lg overflow-hidden bg-card">
-        <MenuBar editor={editor} />
+        <div className="flex items-center justify-between p-2 border-b">
+          <MenuBar editor={editor} />
+          <AIJobEnhancer
+            jobTitle={jobTitle || ""}
+            jobDescription={field.value}
+            industry={industry}
+            location={location}
+            onApply={handleApply}
+          />
+        </div>
         <EditorContent editor={editor} />
       </div>
     </div>
