@@ -2,6 +2,30 @@ import { NextResponse } from "next/server";
 import { auth } from "@/app/utils/auth";
 import { generateAIResponse } from "@/app/utils/openai";
 
+// Function to convert Tiptap document to plain text
+function convertTiptapToText(doc: any): string {
+  if (!doc?.content) return "";
+  
+  let text = "";
+  
+  for (const node of doc.content) {
+    if (node.type === "blockquote") {
+      for (const block of node.content) {
+        if (block.type === "paragraph") {
+          for (const content of block.content || []) {
+            if (content.type === "text") {
+              text += content.text + "\n";
+            }
+          }
+        }
+      }
+      text += "\n";
+    }
+  }
+  
+  return text.trim();
+}
+
 export async function POST(req: Request) {
   try {
     // Get authenticated user
@@ -59,6 +83,12 @@ Return the result as JSON with these fields:
       );
 
       clearTimeout(timeout);
+
+      // Convert the Tiptap document to plain text if needed
+      if (typeof result.enhancedDescription === 'object') {
+        result.enhancedDescription = convertTiptapToText(result.enhancedDescription);
+      }
+
       return NextResponse.json(result);
     } catch (error) {
       clearTimeout(timeout);
