@@ -29,7 +29,7 @@ export default function JobMatcherPage() {
   const creditsBalance = use(getUserCreditBalance())
   
   return (
-    <div className="container py-10 max-w-6xl">
+    <div className="container py-10 max-w-6xl mx-auto">
       <div className="mb-8 space-y-2">
         <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
           <Sparkles className="h-8 w-8 text-primary" />

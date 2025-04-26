@@ -143,7 +143,7 @@ export default function JobMatcherAnalyzePage() {
   }
   
   return (
-    <div className="container py-10 max-w-6xl">
+    <div className="container py-10 max-w-6xl mx-auto">
       <div className="mb-8">
         <Button asChild variant="ghost" size="sm" className="mb-4">
           <Link href="/ai-tools/job-matcher">

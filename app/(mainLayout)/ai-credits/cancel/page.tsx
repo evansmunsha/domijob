@@ -20,7 +20,7 @@ export default function AICreditsCancelPage() {
   }
 
   return (
-    <div className="container py-10 max-w-md">
+    <div className="container py-10 max-w-md mx-auto">
       <Card>
         <CardHeader className="pb-2 flex flex-col items-center text-center">
           <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-4">

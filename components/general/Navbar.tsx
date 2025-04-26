@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button, buttonVariants } from "@/components/ui/button"
 import Image from "next/image"
 import Logo from "@/public/logo.png"
-import { Menu, BarChart, Users, MessageSquare, Share2 } from "lucide-react"
+import { Menu, BarChart, Users, MessageSquare, Share2, Sparkles } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "./ThemeToggle"
 import { useSession, signOut } from "next-auth/react"
@@ -33,6 +33,11 @@ export function Navbar() {
               Find Jobs
             </Link>
 
+            <Link href="/ai-tools" className={buttonVariants({ variant: "ghost" })}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Tools
+            </Link>
+
             <Link href="/messages" className="text-gray-300 hover:text-green-500">
               Messages <UnreadMessagesIndicator />
             </Link>
@@ -53,6 +58,10 @@ export function Navbar() {
             <Link href="/company/potential-candidates" className={buttonVariants({ variant: "ghost" })}>
               <Users className="h-4 w-4 mr-2" />
               Candidates
+            </Link>
+            <Link href="/ai-tools" className={buttonVariants({ variant: "ghost" })}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Tools
             </Link>
             <Link href="/affiliate" className={buttonVariants({ variant: "ghost" })}>
               <Share2 className="h-4 w-4 mr-2" />
@@ -113,7 +122,6 @@ export function Navbar() {
 
             <div className="flex flex-col gap-2 mt-6">
               {!isCompanyUser && (
-                
                 <>
                   <Link
                     href="/jobs"
@@ -121,7 +129,13 @@ export function Navbar() {
                   >
                     Find Jobs
                   </Link>
-                  
+                  <Link
+                    href="/ai-tools"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200 flex items-center"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    AI Tools
+                  </Link>
                 </>
               )}
 
@@ -147,6 +161,13 @@ export function Navbar() {
                   >
                     <Users className="h-4 w-4 mr-2 inline-block" />
                     Potential Candidates
+                  </Link>
+                  <Link
+                    href="/ai-tools"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200 flex items-center"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    AI Tools
                   </Link>
                   <Link
                     href="/affiliate"

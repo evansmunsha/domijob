@@ -28,7 +28,7 @@ export default function AIResumeEnhancerPage() {
   const hasEnoughCredits = creditsBalance >= costPerUse
 
   return (
-    <div className="container py-10 max-w-5xl">
+    <div className="container py-10 max-w-5xl mx-auto">
       <div className="mb-6">
         <Button asChild variant="ghost" size="sm" className="mb-2">
           <Link href="/ai-tools">
