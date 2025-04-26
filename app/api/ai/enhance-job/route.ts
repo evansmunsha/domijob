@@ -42,16 +42,34 @@ Return the result as JSON with these fields:
   "titleSuggestion": "An optional improved job title if the original could be better"
 }`;
 
-    // Call OpenAI
-    const result = await generateAIResponse(
-      userId,
-      "job_description_enhancement",
-      systemPrompt,
-      userPrompt,
-      { cache: true }
-    );
+    // Call OpenAI with a timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    return NextResponse.json(result);
+    try {
+      const result = await generateAIResponse(
+        userId,
+        "job_description_enhancement",
+        systemPrompt,
+        userPrompt,
+        { 
+          cache: true,
+          signal: controller.signal 
+        }
+      );
+
+      clearTimeout(timeout);
+      return NextResponse.json(result);
+    } catch (error) {
+      clearTimeout(timeout);
+      if (error instanceof Error && error.name === 'AbortError') {
+        return NextResponse.json(
+          { error: "Request timed out. Please try again." },
+          { status: 504 }
+        );
+      }
+      throw error;
+    }
   } catch (error) {
     console.error("Job enhancement error:", error);
     return NextResponse.json(

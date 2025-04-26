@@ -84,6 +84,7 @@ export async function generateAIResponse(
     temperature?: number;
     cache?: boolean;
     skipCreditCheck?: boolean;
+    signal?: AbortSignal;
   } = {}
 ) {
   try {
@@ -122,6 +123,8 @@ export async function generateAIResponse(
       temperature: options.temperature ?? 0.2,
       max_tokens: settings.maxTokens,
       response_format: { type: "json_object" }
+    }, {
+      signal: options.signal
     });
 
     // Calculate token usage and cost
@@ -131,7 +134,7 @@ export async function generateAIResponse(
     
     // Get pricing for the model
     const pricing = MODEL_PRICING[settings.model as keyof typeof MODEL_PRICING] || 
-                   MODEL_PRICING["gpt-4o-mini"]; // Default to gpt-4o-mini pricing
+                   MODEL_PRICING["gpt-4o-mini"];
     
     // Calculate cost in USD
     const cost = (promptTokens * pricing.input + completionTokens * pricing.output) / 1000000;
