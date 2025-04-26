@@ -71,6 +71,10 @@ export default function JobDescriptionEditor({ field, jobTitle, industry, locati
       <div className="border rounded-lg overflow-hidden bg-card">
         <div className="flex items-center justify-between p-2 border-b">
           <MenuBar editor={editor} />
+          
+        </div>
+        <div className="flex items-start justify-start border-b">
+          
           <AIJobEnhancer
             jobTitle={jobTitle || ""}
             jobDescription={field.value}

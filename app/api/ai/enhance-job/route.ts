@@ -62,10 +62,25 @@ Return the result as JSON with these fields:
       return NextResponse.json(result);
     } catch (error) {
       clearTimeout(timeout);
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          return NextResponse.json(
+            { error: "Request timed out. Please try again." },
+            { status: 504 }
+          );
+        }
+        // Log the specific error details
+        console.error("OpenAI API error details:", {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
         return NextResponse.json(
-          { error: "Request timed out. Please try again." },
-          { status: 504 }
+          { 
+            error: "Failed to enhance job description",
+            details: error.message
+          },
+          { status: 500 }
         );
       }
       throw error;
@@ -73,7 +88,10 @@ Return the result as JSON with these fields:
   } catch (error) {
     console.error("Job enhancement error:", error);
     return NextResponse.json(
-      { error: "Failed to enhance job description" },
+      { 
+        error: "Failed to enhance job description",
+        details: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }
