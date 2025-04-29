@@ -45,6 +45,7 @@ export function AIJobEnhancer({
     try {
       const response = await fetch("/api/ai/enhance-job", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
