@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/utils/auth";
 import { generateAIResponse } from "@/app/utils/openai";
+import { prisma } from "@/app/utils/db";
+import { deductCredits, CREDIT_COSTS } from "@/app/utils/credits";
 
 // Function to convert Tiptap document to plain text
 function convertTiptapToText(doc: any): string {
@@ -30,16 +32,29 @@ export async function POST(req: Request) {
   try {
     // Get authenticated user
     const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "You must be logged in to use this feature" },
+        { status: 401 }
+      );
     }
 
-    const userId = session.user.id ?? null;
+    const userId = session.user.id;
     const { jobTitle, jobDescription, industry, location } = await req.json();
     console.log("Enhance-job request body:", { jobTitle, jobDescription, industry, location });
 
     if (!jobDescription) {
       return NextResponse.json({ error: "Job description is required" }, { status: 400 });
+    }
+
+    // Check if user has enough credits
+    try {
+      await deductCredits(userId, "job_description_enhancement");
+    } catch (error) {
+      return NextResponse.json(
+        { error: "Insufficient credits to use this feature. Please purchase more credits." },
+        { status: 402 }
+      );
     }
 
     // Create a prompt for the AI
@@ -78,9 +93,10 @@ Return the result as JSON with these fields:
         "job_description_enhancement",
         systemPrompt,
         userPrompt,
-        { 
+        {
           cache: true,
-          signal: controller.signal 
+          skipCreditCheck: true,
+          signal: controller.signal
         }
       );
 
@@ -91,7 +107,10 @@ Return the result as JSON with these fields:
         result.enhancedDescription = convertTiptapToText(result.enhancedDescription);
       }
 
-      return NextResponse.json(result);
+      return NextResponse.json({
+        ...result,
+        creditsUsed: CREDIT_COSTS.job_description_enhancement
+      });
     } catch (error) {
       clearTimeout(timeout);
       if (error instanceof Error) {
