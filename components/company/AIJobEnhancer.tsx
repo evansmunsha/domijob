@@ -48,6 +48,15 @@ export function AIJobEnhancer({
   const [enhancedDescription, setEnhancedDescription] = useState("");
   const [titleSuggestion, setTitleSuggestion] = useState("");
 
+  // Compute plain-text original description
+  const originalDescriptionText = (() => {
+    try {
+      const parsed = JSON.parse(jobDescription);
+      if (parsed?.type === 'doc') return convertTiptapToText(parsed);
+    } catch {}
+    return jobDescription;
+  })();
+
   const enhanceJobDescription = async () => {
     if (!jobDescription.trim()) {
       toast.error("Job description is required");
@@ -174,7 +183,7 @@ export function AIJobEnhancer({
                     <label className="text-sm font-medium">Original Job Description</label>
                   </div>
                   <div className="min-h-[300px] p-3 bg-muted rounded-md overflow-y-auto whitespace-pre-wrap">
-                    {jobDescription}
+                    {originalDescriptionText}
                   </div>
                 </TabsContent>
               </Tabs>
