@@ -7,24 +7,25 @@ import { deductCredits, CREDIT_COSTS } from "@/app/utils/credits";
 // Function to convert Tiptap document to plain text
 function convertTiptapToText(doc: any): string {
   if (!doc?.content) return "";
-  
   let text = "";
-  
-  for (const node of doc.content) {
-    if (node.type === "blockquote") {
-      for (const block of node.content) {
-        if (block.type === "paragraph") {
-          for (const content of block.content || []) {
-            if (content.type === "text") {
-              text += content.text + "\n";
-            }
-          }
-        }
+  // Recursively traverse all nodes
+  function traverse(node: any) {
+    if (node.type === 'text' && typeof node.text === 'string') {
+      text += node.text;
+    }
+    if (node.content) {
+      for (const child of node.content) {
+        traverse(child);
       }
-      text += "\n";
+    }
+    // Add newline after block-level elements
+    if (['paragraph', 'heading', 'blockquote', 'listItem'].includes(node.type)) {
+      text += '\n';
     }
   }
-  
+  for (const node of doc.content) {
+    traverse(node);
+  }
   return text.trim();
 }
 
@@ -102,9 +103,18 @@ Return the result as JSON with these fields:
 
       clearTimeout(timeout);
 
-      // Convert the Tiptap document to plain text if needed
-      if (typeof result.enhancedDescription === 'object') {
-        result.enhancedDescription = convertTiptapToText(result.enhancedDescription);
+      // Normalize enhancedDescription: convert Tiptap JSON (object or JSON string) to plain text
+      try {
+        if (typeof result.enhancedDescription === 'object') {
+          result.enhancedDescription = convertTiptapToText(result.enhancedDescription);
+        } else if (typeof result.enhancedDescription === 'string') {
+          const parsedDoc = JSON.parse(result.enhancedDescription);
+          if (parsedDoc && typeof parsedDoc === 'object' && parsedDoc.type === 'doc') {
+            result.enhancedDescription = convertTiptapToText(parsedDoc);
+          }
+        }
+      } catch {
+        // leave as-is if parsing fails
       }
 
       return NextResponse.json({

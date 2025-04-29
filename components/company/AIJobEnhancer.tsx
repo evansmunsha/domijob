@@ -15,6 +15,19 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Convert Tiptap JSON document to plain text
+function convertTiptapToText(doc: any): string {
+  if (!doc?.content) return '';
+  let text = '';
+  const walk = (node: any) => {
+    if (node.type === 'text' && typeof node.text === 'string') text += node.text;
+    if (node.content) node.content.forEach(walk);
+    if (['paragraph','heading','blockquote','listItem','bulletList','orderedList'].includes(node.type)) text += '\n';
+  };
+  doc.content.forEach(walk);
+  return text.trim();
+}
+
 interface AIJobEnhancerProps {
   jobTitle: string;
   jobDescription: string;
@@ -63,7 +76,17 @@ export function AIJobEnhancer({
       }
 
       const data = await response.json();
-      setEnhancedDescription(data.enhancedDescription || "");
+      // Normalize enhancedDescription
+      let enhanced = data.enhancedDescription;
+      if (typeof enhanced === 'object') {
+        enhanced = convertTiptapToText(enhanced);
+      } else if (typeof enhanced === 'string') {
+        try {
+          const parsed = JSON.parse(enhanced);
+          if (parsed?.type === 'doc') enhanced = convertTiptapToText(parsed);
+        } catch {}
+      }
+      setEnhancedDescription(enhanced || "");
       setTitleSuggestion(data.titleSuggestion || "");
       
       toast.success("Job description enhanced!");
