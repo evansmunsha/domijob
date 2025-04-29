@@ -29,6 +29,27 @@ function convertTiptapToText(doc: any): string {
   return text.trim();
 }
 
+// Flatten structured JSON sections into plaintext
+function flattenEnhancedDescription(obj: any): string {
+  const lines: string[] = [];
+  if (obj.companyIntroduction) lines.push(obj.companyIntroduction);
+  if (obj.roleOverview) lines.push(obj.roleOverview);
+  if (Array.isArray(obj.keyResponsibilities)) {
+    lines.push('Key Responsibilities:');
+    obj.keyResponsibilities.forEach((item: string) => lines.push(`- ${item}`));
+  }
+  if (Array.isArray(obj.requiredQualifications)) {
+    lines.push('Required Qualifications:');
+    obj.requiredQualifications.forEach((item: string) => lines.push(`- ${item}`));
+  }
+  if (Array.isArray(obj.benefitsPerks)) {
+    lines.push('Benefits/Perks:');
+    obj.benefitsPerks.forEach((item: string) => lines.push(`- ${item}`));
+  }
+  if (obj.howToApply) lines.push(obj.howToApply);
+  return lines.join('\n');
+}
+
 export async function POST(req: Request) {
   try {
     // Get authenticated user
@@ -109,12 +130,19 @@ Return the result as JSON with these fields:
       // Normalize enhancedDescription: convert Tiptap JSON (object or JSON string) to plain text
       try {
         if (typeof result.enhancedDescription === 'object') {
-          result.enhancedDescription = convertTiptapToText(result.enhancedDescription);
-        } else if (typeof result.enhancedDescription === 'string') {
-          const parsedDoc = JSON.parse(result.enhancedDescription);
-          if (parsedDoc && typeof parsedDoc === 'object' && parsedDoc.type === 'doc') {
-            result.enhancedDescription = convertTiptapToText(parsedDoc);
+          // Tiptap doc vs. structured sections
+          if (result.enhancedDescription.type === 'doc') {
+            result.enhancedDescription = convertTiptapToText(result.enhancedDescription);
+          } else {
+            result.enhancedDescription = flattenEnhancedDescription(result.enhancedDescription);
           }
+        } else if (typeof result.enhancedDescription === 'string') {
+          try {
+            const parsedDoc = JSON.parse(result.enhancedDescription);
+            if (parsedDoc?.type === 'doc') {
+              result.enhancedDescription = convertTiptapToText(parsedDoc);
+            }
+          } catch {}
         }
       } catch {
         // leave as-is if parsing fails
