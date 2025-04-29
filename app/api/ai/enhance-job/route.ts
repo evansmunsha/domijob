@@ -103,6 +103,9 @@ Return the result as JSON with these fields:
 
       clearTimeout(timeout);
 
+      // Debug: preserve raw AI result
+      const debugRaw = { ...result };
+
       // Normalize enhancedDescription: convert Tiptap JSON (object or JSON string) to plain text
       try {
         if (typeof result.enhancedDescription === 'object') {
@@ -117,8 +120,11 @@ Return the result as JSON with these fields:
         // leave as-is if parsing fails
       }
 
+      // Return debug and normalized output
       return NextResponse.json({
-        ...result,
+        debugRaw,
+        enhancedDescription: result.enhancedDescription,
+        titleSuggestion: result.titleSuggestion,
         creditsUsed: CREDIT_COSTS.job_description_enhancement
       });
     } catch (error) {

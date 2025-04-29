@@ -76,6 +76,7 @@ export function AIJobEnhancer({
       }
 
       const data = await response.json();
+      console.log("Enhance-job response data:", data);
       // Normalize enhancedDescription
       let enhanced = data.enhancedDescription;
       if (typeof enhanced === 'object') {
