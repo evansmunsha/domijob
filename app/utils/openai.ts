@@ -114,8 +114,10 @@ export async function generateAIResponse(
       await deductCredits(userId, endpoint);
     }
 
+    // Use faster model for job_description_enhancement to speed up response
+    const modelName = endpoint === 'job_description_enhancement' ? 'gpt-3.5-turbo' : settings.model;
     const response = await openai.chat.completions.create({
-      model: settings.model,
+      model: modelName,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -133,7 +135,7 @@ export async function generateAIResponse(
     const totalTokens = promptTokens + completionTokens;
     
     // Get pricing for the model
-    const pricing = MODEL_PRICING[settings.model as keyof typeof MODEL_PRICING] || 
+    const pricing = MODEL_PRICING[modelName as keyof typeof MODEL_PRICING] || 
                    MODEL_PRICING["gpt-4o-mini"];
     
     // Calculate cost in USD

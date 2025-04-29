@@ -85,7 +85,7 @@ Return the result as JSON with these fields:
 
     // Call OpenAI with a timeout
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const timeout = setTimeout(() => controller.abort(), 9000); // 9 second timeout
 
     try {
       const result = await generateAIResponse(
