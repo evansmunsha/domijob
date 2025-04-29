@@ -36,6 +36,7 @@ export async function POST(req: Request) {
 
     const userId = session.user.id ?? null;
     const { jobTitle, jobDescription, industry, location } = await req.json();
+    console.log("Enhance-job request body:", { jobTitle, jobDescription, industry, location });
 
     if (!jobDescription) {
       return NextResponse.json({ error: "Job description is required" }, { status: 400 });
@@ -65,6 +66,7 @@ Return the result as JSON with these fields:
   "enhancedDescription": "The improved job description with better structure and language",
   "titleSuggestion": "An optional improved job title if the original could be better"
 }`;
+    console.log("Enhance-job prompts:", { systemPrompt, userPrompt });
 
     // Call OpenAI with a timeout
     const controller = new AbortController();
