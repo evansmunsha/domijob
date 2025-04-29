@@ -61,8 +61,16 @@ export default function JobDescriptionEditor({ field, jobTitle, industry, locati
 
   const handleApply = (enhancedDescription: string, titleSuggestion?: string) => {
     if (editor) {
-      editor.commands.setContent(JSON.parse(enhancedDescription))
-      field.onChange(enhancedDescription)
+      // Apply either Tiptap JSON or plain text
+      let content: any;
+      try {
+        content = JSON.parse(enhancedDescription);
+      } catch {
+        content = enhancedDescription;
+      }
+      editor.commands.setContent(content);
+      // Persist updated editor state as JSON string
+      field.onChange(JSON.stringify(editor.getJSON()));
     }
   }
 
@@ -88,4 +96,3 @@ export default function JobDescriptionEditor({ field, jobTitle, industry, locati
     </div>
   )
 }
-
