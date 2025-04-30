@@ -1,10 +1,10 @@
 import type React from "react"
-import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "@/components/general/ThemeProvider"
 import { Analytics } from "@vercel/analytics/react"
+import { constructMetadata } from "@/lib/utils"
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -15,10 +15,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
-export const metadata: Metadata = {
-  title: "domijob - Find Your Next Opportunity",
-  description: "domijob is a platform for job seekers and employers to connect.",
-}
+export const metadata = constructMetadata({});
 
 export default function RootLayout({
   children,
@@ -37,4 +34,3 @@ export default function RootLayout({
     </html>
   )
 }
-
