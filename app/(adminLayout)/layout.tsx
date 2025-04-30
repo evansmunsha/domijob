@@ -2,6 +2,7 @@ import { ReactNode } from "react"
 import { auth } from "@/app/utils/auth"
 import { redirect } from "next/navigation"
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
+import { Analytics } from "@vercel/analytics/react"
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await auth()
@@ -15,7 +16,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <AdminSidebar />
+      <AdminSidebar /><Analytics/>
       <div className="flex-1 overflow-auto">
         <main className="p-6">
           {children}

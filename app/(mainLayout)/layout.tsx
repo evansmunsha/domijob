@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/general/Navbar";
+import { Analytics } from "@vercel/analytics/react";
 import React from "react";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
@@ -6,7 +7,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="max-w-7xl mx-auto  pb-12">
       <Navbar />
       {children}
-      
+      <Analytics/>
     </div>
   );
 };
