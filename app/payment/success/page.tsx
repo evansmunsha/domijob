@@ -16,10 +16,13 @@ export default async function PaymentSucess() {
 
           <div className="mt-3 text-center sm:mt-5 w-full">
             <h2 className="text-xl font-semibold">Payment Successfull</h2>
-            <p className="text-sm mt-2 text-muted-foreground tracking-tight">
+            {/* <p className="text-sm mt-2 text-muted-foreground tracking-tight">
               Congrasts your payment was successful. Your Job Posting is now
               active.
-            </p>
+            </p> */}
+              <div className="bg-green-100 text-green-800 text-sm p-4 rounded-md border border-green-300">
+                Your test payment was successful. Your job listing is now active.
+              </div>
 
             <Button asChild className="w-full mt-5">
               <Link href="/">Go back to Homepage</Link>
