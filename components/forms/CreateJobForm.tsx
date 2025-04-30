@@ -434,7 +434,14 @@ export function CreateJobForm({
             />
           </CardContent>
         </Card>
-        <Button type="submit" className="w-full" disabled={pending}>
+        
+        <div className="bg-yellow-100 text-yellow-800 text-sm p-4 rounded-md border border-yellow-300">
+          <strong>Note:</strong> After submitting, you’ll go through a <span className="underline">test payment</span> via Stripe. 
+          <br />
+          <strong>You will not be charged.</strong> This is part of our early-access program to test the full experience.
+        </div>
+
+        <Button type="submit" className="w-full mt-4" disabled={pending}>
           {pending ? "Submitting..." : "Continue"}
         </Button>
       </form>
