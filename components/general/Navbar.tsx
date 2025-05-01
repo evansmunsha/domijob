@@ -38,7 +38,7 @@ export function Navbar() {
               AI Tools
             </Link>
 
-            <Link href="/messages" className="text-gray-300 hover:text-green-500">
+            <Link href="/messages" className=" hover:text-green-500">
               Messages <UnreadMessagesIndicator />
             </Link>
 
@@ -68,7 +68,7 @@ export function Navbar() {
               Affiliate
             </Link>
 
-            <Link href="/messages" className="text-gray-300 hover:text-green-500">
+            <Link href="/messages" className=" hover:text-green-500">
               Messages <UnreadMessagesIndicator />
             </Link>
           </>
