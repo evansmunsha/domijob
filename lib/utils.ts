@@ -25,7 +25,7 @@ export function constructMetadata({
     "Domijob is an AI-driven job board connecting job seekers and recruiters. Find your next opportunity or hire top talent efficiently.";
 
   // Preview image for social sharing (1200x630px recommended&#8203;:contentReference[oaicite:9]{index=9})
-  const imageUrl = new URL("/og-image.jpg", metadataBase);
+  const imageUrl = new URL("/logo.png", metadataBase);
 
   return {
     title,
