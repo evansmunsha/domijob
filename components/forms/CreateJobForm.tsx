@@ -458,7 +458,7 @@ export function CreateJobForm({
 
         {showConfirmModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center   justify-center">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full space-y-4">
+            <div className=" p-6 rounded-lg shadow-lg max-w-sm w-full space-y-4">
               <h2 className="text-lg font-semibold">Confirm Listing</h2>
               <p className="text-sm text-muted-foreground">
                 You’re about to submit this job listing and continue to a test payment screen via Stripe. 
