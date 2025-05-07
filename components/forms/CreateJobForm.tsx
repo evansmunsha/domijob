@@ -74,31 +74,23 @@ export function CreateJobForm({
       listingDuration: 30,
     },
   });
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [formValues, setFormValues] = useState<z.infer<typeof jobSchema> | null>(null);
   
   const [pending, setPending] = useState(false);
 
   async function onSubmit(values: z.infer<typeof jobSchema>) {
-    setFormValues(values);
-    setShowConfirmModal(true); // trigger the modal instead of submitting immediately
-  }
-  
-
-  async function handleConfirmSubmission() {
-    if (!formValues) return;
-  
     try {
       setPending(true);
-      await createJob(formValues);
-      // Optionally: redirect or toast here
+
+      await createJob(values);
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setPending(false);
-      setShowConfirmModal(false);
     }
   }
+  
+
+  
   
   return (
     <Form {...form}>
@@ -448,31 +440,6 @@ export function CreateJobForm({
           </CardContent>
         </Card>
         
-
-        <div className="bg-yellow-100 text-yellow-800 text-sm p-4 rounded-md border border-yellow-300">
-          <strong>Note:</strong> After submitting, you’ll go through a <span className="underline">test payment</span> via Stripe. 
-          <br />
-          <strong>You will not be charged.</strong> This is part of our early-access program to test the full experience.
-        </div>
-
-
-        {showConfirmModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center   justify-center">
-            <div className=" bg-black p-6 rounded-lg shadow-lg max-w-sm w-full space-y-4">
-              <h2 className="text-lg font-semibold text-muted-foreground">Confirm Listing</h2>
-              <p className="text-sm text-muted-foreground">
-                You’re about to submit this job listing and continue to a test payment screen via Stripe. 
-                <strong> You will not be charged.</strong>
-              </p>
-              <div className="flex justify-end gap-4">
-                <Button variant="outline" onClick={() => setShowConfirmModal(false)}>Cancel</Button>
-                <Button onClick={handleConfirmSubmission} disabled={pending}>
-                  {pending ? "Processing..." : "Confirm & Continue"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         <Button type="submit" className="w-full mt-4" disabled={pending}>
           {pending ? "Submitting..." : "Continue"}

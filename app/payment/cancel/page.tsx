@@ -17,13 +17,9 @@ const CancelledPage = async () => {
 
           <div className="mt-3 text-center sm:mt-5 w-full">
             <h2 className="text-xl font-semibold">Payment Cancelled</h2>
-            {/* <p className="text-sm mt-2 text-muted-foreground tracking-tight">
+            <p className="text-sm mt-2 text-muted-foreground tracking-tight">
               No worries, you wont be chaged. Please try again.
-            </p> */}
-            <div className="bg-red-100 text-red-800 text-sm p-4 rounded-md border border-red-300">
-              You cancelled the checkout. Your job listing has not been submitted.
-            </div>
-
+            </p>
             <Button asChild className="w-full mt-5">
               <Link href="/">Go back to Homepage</Link>
             </Button>
