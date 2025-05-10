@@ -8,16 +8,18 @@ type Props = {
 
 export const dynamic = "force-static"; // Ensure Next.js pre-renders this page
 
+
+
 export async function generateStaticParams() {
   const companies = await prisma.company.findMany({
-    select: { id: true },
-    take: 100, // Limit to avoid long builds in dev/preview
+    select: { id: true }, // Fetch all company IDs
   });
 
   return companies.map((company) => ({
-    id: company.id,
+    id: company.id, // Map each company ID
   }));
 }
+
 
 async function getCompany(id: string) {
   const company = await prisma.company.findUnique({

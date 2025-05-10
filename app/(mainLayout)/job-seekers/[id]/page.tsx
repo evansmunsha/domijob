@@ -8,16 +8,17 @@ import { Badge } from "@/components/ui/badge";
 type Props = {
   params: { id: string };
 };
+
 export async function generateStaticParams() {
   const jobSeekers = await prisma.jobSeeker.findMany({
-    select: { id: true },
-    take: 1000, // Adjust this as needed based on how many you want to pre-render
+    select: { id: true }, // Fetch all job seeker IDs
   });
 
-  return jobSeekers.map((js) => ({
-    id: js.id,
+  return jobSeekers.map((jobSeeker) => ({
+    id: jobSeeker.id, // Map each job seeker ID
   }));
 }
+
 
 export const dynamic = "force-dynamic"; // This route depends on session
 
