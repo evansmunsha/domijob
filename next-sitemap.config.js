@@ -1,3 +1,4 @@
+/** @type {import('next-sitemap').IConfig} */
 module.exports = {
   siteUrl: 'https://domijob.vercel.app',
   generateRobotsTxt: true,
