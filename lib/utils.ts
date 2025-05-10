@@ -60,7 +60,10 @@ export function constructMetadata({
       "career",
       "recruiters",
       "job seekers",
-    ],
+    ],// ✅ Add this
+    verification: {
+      google: "XoXKKpxJAqwZshDFMDfiTdq3NOjfVkZcCtbvUNQ0nVo",
+    },
     metadataBase,
     openGraph: {
       title,
@@ -96,6 +99,9 @@ export function constructMetadata({
             }).toString()}`
           : ""
       }`,
+
+      
+    
     },
     
   };
