@@ -11,26 +11,46 @@ export function constructMetadata({
 }: {
   searchParams?: Record<string, string>;
 }): Metadata {
-  // Base site URL
-  const metadataBase = new URL("https://domijob.vercel.app");
-  // Preserve referral parameter if provided (e.g. /?ref=CODE)
-  const refCode = searchParams?.ref;
-  const pageUrl = refCode
-    ? `${metadataBase.toString()}?ref=${encodeURIComponent(refCode)}`
-    : metadataBase.toString();
+  const base = "https://domijob.vercel.app";
+  const metadataBase = new URL(base);
 
-  // Title and description with AI emphasis and target audience
+  // Preserve referral parameter if provided (e.g., /?ref=CODE)
+  const refCode = searchParams?.ref;
+  const page = searchParams?.page;
+  const jobTypes = searchParams?.jobTypes;
+  const location = searchParams?.location;
+
+  // Construct the canonical path with only meaningful query parameters
+  const url = new URL(base);
+  if (refCode) url.searchParams.set("ref", refCode);
+  if (page) url.searchParams.set("page", page);
+  if (jobTypes) url.searchParams.set("jobTypes", jobTypes);
+  if (location) url.searchParams.set("location", location);
+
   const title = "Domijob | AI-Powered Job Board for Job Seekers & Recruiters";
   const description =
     "Domijob is an AI-driven job board connecting job seekers and recruiters. Find your next opportunity or hire top talent efficiently.";
 
-  // Preview image for social sharing (1200x630px recommended&#8203;:contentReference[oaicite:9]{index=9})
   const imageUrl = new URL("/logo.png", metadataBase);
+
+  const breadcrumbList = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: base,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Job Listings",
+      item: url.toString(), // This would be your current page URL with parameters
+    },
+  ];
 
   return {
     title,
     description,
-    // Include relevant keywords for SEO
     keywords: [
       "AI job board",
       "recruitment",
@@ -41,14 +61,11 @@ export function constructMetadata({
       "recruiters",
       "job seekers",
     ],
-    // Base URL for Open Graph and other tags
     metadataBase,
-    // Open Graph tags
     openGraph: {
       title,
       description,
-      // Use the full URL including ref if present
-      url: pageUrl,
+      url: url.toString(), // Share URL with tracking/ref params
       siteName: "Domijob",
       type: "website",
       images: [
@@ -60,19 +77,26 @@ export function constructMetadata({
         },
       ],
     },
-    // Twitter card tags
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      // Summary card with large image&#8203;:contentReference[oaicite:10]{index=10}
       images: [imageUrl.toString()],
-      // (Optional) add a Twitter handle if available, e.g. creator: "@DomijobAI"
     },
-    // Favicon and icons
     icons: {
       icon: "/favicon.ico",
-      // You can add other icons like Apple Touch here if needed
     },
+    alternates: {
+      canonical: `${base}${
+        page || jobTypes || location
+          ? `?${new URLSearchParams({
+              ...(page && { page }),
+              ...(jobTypes && { jobTypes }),
+              ...(location && { location }),
+            }).toString()}`
+          : ""
+      }`,
+    },
+    
   };
 }

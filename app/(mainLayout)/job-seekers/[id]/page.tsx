@@ -1,22 +1,34 @@
-import { auth } from "@/app/utils/auth"
-import { prisma } from "@/app/utils/db"
-import { notFound } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { use } from "react"
+import { auth } from "@/app/utils/auth";
+import { prisma } from "@/app/utils/db";
+import { notFound } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+
+type Props = {
+  params: { id: string };
+};
+export async function generateStaticParams() {
+  const jobSeekers = await prisma.jobSeeker.findMany({
+    select: { id: true },
+    take: 1000, // Adjust this as needed based on how many you want to pre-render
+  });
+
+  return jobSeekers.map((js) => ({
+    id: js.id,
+  }));
+}
+
+export const dynamic = "force-dynamic"; // This route depends on session
 
 async function getJobSeeker(id: string) {
   const jobSeeker = await prisma.jobSeeker.findUnique({
     where: { id },
     include: { user: true },
-  })
+  });
 
-  if (!jobSeeker) {
-    notFound()
-  }
-
-  return jobSeeker
+  if (!jobSeeker) notFound();
+  return jobSeeker;
 }
 
 async function checkApplicationStatus(jobSeekerId: string, companyId: string) {
@@ -24,28 +36,25 @@ async function checkApplicationStatus(jobSeekerId: string, companyId: string) {
     where: {
       userId: jobSeekerId,
       job: {
-        companyId: companyId,
+        companyId,
       },
     },
-  })
+  });
 
-  return !!application
+  return !!application;
 }
 
-export default function JobSeekerProfile({ params }: { params: Promise<{ id: string }> }) {
-  // Unwrap the params Promise using React.use()
-  const resolvedParams = use(params)
-  const id = resolvedParams.id
+export default async function JobSeekerProfile({ params }: Props) {
+  const session = await auth();
+  const jobSeeker = await getJobSeeker(params.id);
 
-  // Use the use() hook to handle async functions
-  const session = use(auth())
-  const jobSeeker = use(getJobSeeker(id))
-
-  let canViewFullProfile = false
+  let canViewFullProfile = false;
 
   if (session?.user?.userType === "COMPANY" && session.user.companyId) {
-    // We need to handle this Promise with use() as well
-    canViewFullProfile = use(checkApplicationStatus(jobSeeker.userId, session.user.companyId))
+    canViewFullProfile = await checkApplicationStatus(
+      jobSeeker.userId,
+      session.user.companyId
+    );
   }
 
   return (
@@ -58,7 +67,9 @@ export default function JobSeekerProfile({ params }: { params: Promise<{ id: str
                 src={jobSeeker.user.image || `https://avatar.vercel.sh/${jobSeeker.name}`}
                 alt={jobSeeker.name}
               />
-              <AvatarFallback>{jobSeeker.name.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>
+                {jobSeeker.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <div>
               <CardTitle className="text-2xl">{jobSeeker.name}</CardTitle>
@@ -74,7 +85,7 @@ export default function JobSeekerProfile({ params }: { params: Promise<{ id: str
                 <p>{jobSeeker.about}</p>
               </section>
 
-              {jobSeeker.skills && jobSeeker.skills.length > 0 && (
+              {jobSeeker.skills?.length > 0 && (
                 <section>
                   <h3 className="font-semibold mb-2">Skills</h3>
                   <div className="flex flex-wrap gap-2">
@@ -87,20 +98,18 @@ export default function JobSeekerProfile({ params }: { params: Promise<{ id: str
                 </section>
               )}
 
-              {jobSeeker.languages && jobSeeker.languages.length > 0 && (
+              {jobSeeker.languages?.length > 0 && (
                 <section>
                   <h3 className="font-semibold mb-2">Languages</h3>
                   <div className="flex flex-wrap gap-2">
-                    {jobSeeker.languages.map((language, index) => (
+                    {jobSeeker.languages.map((lang, index) => (
                       <Badge key={index} variant="outline">
-                        {language}
+                        {lang}
                       </Badge>
                     ))}
                   </div>
                 </section>
               )}
-
-              {/* Add more sections as needed */}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -114,6 +123,5 @@ export default function JobSeekerProfile({ params }: { params: Promise<{ id: str
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

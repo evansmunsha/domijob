@@ -4,23 +4,23 @@ import JobListingsLoading from "@/components/general/JobListingsLoading";
 import { Suspense } from "react";
 
 type SearchParamsProps = {
-  searchParams: Promise<{
+  searchParams: {
     page?: string;
     jobTypes?: string;
     location?: string;
-  }>;
+    ref?: string; // <--- Add this
+  };
 };
 
-export default async function Home({ searchParams }: SearchParamsProps) {
-  const params = await searchParams;
-  const currentPage = Number(params.page) || 1;
-  const jobTypes = params.jobTypes?.split(",") || [];
-  const location = params.location || "";
 
-  // Create a composite key from all filter parameters
-  const filterKey = `page=${currentPage};types=${jobTypes.join(
-    ","
-  )};location=${location}`;
+export default function Home({ searchParams }: SearchParamsProps) {
+  const currentPage = Number(searchParams.page) || 1;
+  const jobTypes = searchParams.jobTypes?.split(",") || [];
+  const location = searchParams.location || "";
+  const refCode = searchParams?.ref;
+
+
+  const filterKey = `page=${currentPage};types=${jobTypes.join(",")};location=${location}`;
 
   return (
     <div className="container mx-auto w-full sm:px-6 lg:px-1">
