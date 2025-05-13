@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ReferralList } from "./ReferralList"
 import { PaymentHistory } from "./PaymentHistory"
 import { ClickAnalytics } from "./ClickAnalytics"
@@ -12,6 +12,7 @@ import { MarketingMaterials } from "./MarketingMaterials"
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
 import Link from "next/link"
+import { ScrollableTabsList } from "./ScrollableTabsList"
 
 interface AffiliateStats {
   code: string
@@ -53,14 +54,14 @@ export function AffiliateDashboard() {
     try {
       setRegistering(true)
       const response = await fetch("/api/affiliate/register", {
-        method: "POST"
+        method: "POST",
       })
-      
+
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.error || "Failed to register")
       }
-      
+
       // Registration successful, fetch stats again
       fetchStats()
     } catch (err) {
@@ -74,7 +75,7 @@ export function AffiliateDashboard() {
     try {
       setLoading(true)
       const response = await fetch("/api/affiliate/stats")
-      
+
       if (!response.ok) {
         const data = await response.json()
         // Handle different error cases
@@ -90,7 +91,7 @@ export function AffiliateDashboard() {
         }
         throw new Error(data.error || "Failed to fetch stats")
       }
-      
+
       const data = await response.json()
       setStats(data)
       setError(null)
@@ -107,15 +108,15 @@ export function AffiliateDashboard() {
   }
 
   const refreshData = () => {
-    setRefreshKey(prev => prev + 1)
+    setRefreshKey((prev) => prev + 1)
   }
 
   useEffect(() => {
     fetchStats()
-  }, [])
+  }, [refreshKey])
 
   if (loading) return <div>Loading...</div>
-  
+
   // Show login prompt
   if (error === "unauthorized") {
     return (
@@ -125,8 +126,8 @@ export function AffiliateDashboard() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p>You need to be logged in to access the affiliate dashboard.</p>
-          <a 
-            href="/login" 
+          <a
+            href="/login"
             className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded inline-block"
           >
             Sign In
@@ -135,7 +136,7 @@ export function AffiliateDashboard() {
       </Card>
     )
   }
-  
+
   // Show registration option
   if (error === "not_registered") {
     return (
@@ -150,7 +151,7 @@ export function AffiliateDashboard() {
             <li>Track your earnings and performance</li>
             <li>Request payouts for your earnings</li>
           </ul>
-          <button 
+          <button
             className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded"
             onClick={registerAsAffiliate}
             disabled={registering}
@@ -161,9 +162,19 @@ export function AffiliateDashboard() {
       </Card>
     )
   }
-  
+
   if (error && error !== "not_registered") return <div>Error: {error}</div>
   if (!stats) return null
+
+  // Define tabs for the ScrollableTabsList component
+  const tabs = [
+    { value: "link", label: "Your Link" },
+    { value: "referrals", label: "Referrals" },
+    { value: "analytics", label: "Analytics" },
+    { value: "payments", label: "Payments" },
+    { value: "request", label: "Request Payout" },
+    { value: "marketing", label: "Marketing Materials" },
+  ]
 
   return (
     <div className="space-y-6">
@@ -213,14 +224,7 @@ export function AffiliateDashboard() {
       </div>
 
       <Tabs defaultValue="link">
-        <TabsList className="grid grid-cols-6 mb-8">
-          <TabsTrigger value="link">Your Link</TabsTrigger>
-          <TabsTrigger value="referrals">Referrals</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="request">Request Payout</TabsTrigger>
-          <TabsTrigger value="marketing">Marketing Materials</TabsTrigger>
-        </TabsList>
+        <ScrollableTabsList tabs={tabs} />
 
         <TabsContent value="link">
           <AffiliateLink code={stats.code} />
@@ -239,16 +243,13 @@ export function AffiliateDashboard() {
         </TabsContent>
 
         <TabsContent value="request">
-          <PaymentRequest 
-            pendingAmount={stats.pendingEarnings} 
-            onSuccess={refreshData} 
-          />
+          <PaymentRequest pendingAmount={stats.pendingEarnings} onSuccess={refreshData} />
         </TabsContent>
-        
+
         <TabsContent value="marketing">
           <MarketingMaterials affiliateCode={stats.code} />
         </TabsContent>
       </Tabs>
     </div>
   )
-} 
+}
