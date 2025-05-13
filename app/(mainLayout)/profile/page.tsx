@@ -44,20 +44,20 @@ export default async function ProfilePage() {
       />
 
       <Tabs defaultValue="profile" className="mt-8">
-        <TabsList className="flex w-full flex-wrap md:grid md:grid-cols-5 overflow-x-auto">
-          <TabsTrigger value="profile" className="flex-1 min-w-[100px] text-xs sm:text-sm">
+      <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="profile" className="px-1 sm:px-3 text-xs sm:text-sm">
             Profile
           </TabsTrigger>
-          <TabsTrigger value="skills" className="flex-1 min-w-[100px] text-xs sm:text-sm">
+          <TabsTrigger value="skills" className="px-1 sm:px-3 text-xs sm:text-sm">
             Skills
           </TabsTrigger>
-          <TabsTrigger value="languages" className="flex-1 min-w-[100px] text-xs sm:text-sm">
+          <TabsTrigger value="languages" className="px-1 sm:px-3 text-xs sm:text-sm">
             Languages
           </TabsTrigger>
-          <TabsTrigger value="preferences" className="flex-1 min-w-[100px] text-xs sm:text-sm">
+          <TabsTrigger value="preferences" className="px-1 sm:px-3 text-xs sm:text-sm">
             Preferences
           </TabsTrigger>
-          <TabsTrigger value="resume" className="flex-1 min-w-[100px] text-xs sm:text-sm">
+          <TabsTrigger value="resume" className="px-1 sm:px-3 text-xs sm:text-sm">
             Resume
           </TabsTrigger>
         </TabsList>
