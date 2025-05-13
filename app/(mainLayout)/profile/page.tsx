@@ -44,23 +44,37 @@ export default async function ProfilePage() {
       />
 
       <Tabs defaultValue="profile" className="mt-8">
-      <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="profile" className="px-1 sm:px-3 text-xs sm:text-sm">
-            Profile
-          </TabsTrigger>
-          <TabsTrigger value="skills" className="px-1 sm:px-3 text-xs sm:text-sm">
-            Skills
-          </TabsTrigger>
-          <TabsTrigger value="languages" className="px-1 sm:px-3 text-xs sm:text-sm">
-            Languages
-          </TabsTrigger>
-          <TabsTrigger value="preferences" className="px-1 sm:px-3 text-xs sm:text-sm">
-            Preferences
-          </TabsTrigger>
-          <TabsTrigger value="resume" className="px-1 sm:px-3 text-xs sm:text-sm">
-            Resume
-          </TabsTrigger>
-        </TabsList>
+      <div className="relative w-full">
+          <TabsList className="flex w-full overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+            <TabsTrigger value="profile" className="px-4 py-2 text-sm flex-shrink-0 snap-start">
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="skills" className="px-4 py-2 text-sm flex-shrink-0 snap-start">
+              Skills
+            </TabsTrigger>
+            <TabsTrigger value="languages" className="px-4 py-2 text-sm flex-shrink-0 snap-start">
+              Languages
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="px-4 py-2 text-sm flex-shrink-0 snap-start">
+              Preferences
+            </TabsTrigger>
+            <TabsTrigger value="resume" className="px-4 py-2 text-sm flex-shrink-0 snap-start">
+              Resume
+            </TabsTrigger>
+          </TabsList>
+          <style jsx global>{`
+            /* Hide scrollbar for Chrome, Safari and Opera */
+            .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+            }
+            
+            /* Hide scrollbar for IE, Edge and Firefox */
+            .scrollbar-hide {
+              -ms-overflow-style: none;  /* IE and Edge */
+              scrollbar-width: none;  /* Firefox */
+            }
+          `}</style>
+        </div>
 
         <TabsContent value="profile" className="mt-6">
           <Card>
