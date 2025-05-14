@@ -4,6 +4,7 @@ import { PaginationComponent } from "./PaginationComponent"
 import { JobPostStatus } from "@prisma/client"
 import { Button } from "@/components/ui/button"
 import { JobCard } from "./JobCard"
+import Link from "next/link"
 
 async function getJobs(page = 1, pageSize = 20, jobTypes: string[] = [], location = "") {
   const skip = (page - 1) * pageSize
@@ -77,15 +78,21 @@ export default async function JobListings({
           <div className="bg-red-500 text-white rounded-t-lg p-4 flex justify-between items-center">
             <h2 className="font-bold text-lg">Remote Jobs</h2>
             <div className="flex gap-2">
-              <Button size="sm" variant="secondary" className="text-xs">
-                Post a Job
-              </Button>
-              <Button size="sm" variant="secondary" className="text-xs">
-                Create Alert
-              </Button>
-              <Button size="sm" variant="secondary" className="text-xs">
-                RSS
-              </Button>
+              <Link href="/post-job">
+                <Button size="sm" variant="secondary" className="text-xs">
+                  Post a Job
+                </Button>
+              </Link>
+              <Link href="/create-alert">
+                <Button size="sm" variant="secondary" className="text-xs">
+                  Create Alert
+                </Button>
+              </Link>
+              <Link href="/rss">
+                <Button size="sm" variant="secondary" className="text-xs">
+                  RSS
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -100,15 +107,21 @@ export default async function JobListings({
           <div className="bg-red-500 text-white rounded-b-lg p-4 flex justify-between items-center mt-4">
             <h2 className="font-bold text-lg">Remote Jobs</h2>
             <div className="flex gap-2">
-              <Button size="sm" variant="secondary" className="text-xs">
-                Post a Job
-              </Button>
-              <Button size="sm" variant="secondary" className="text-xs">
-                Create Alert
-              </Button>
-              <Button size="sm" variant="secondary" className="text-xs">
-                RSS
-              </Button>
+              <Link href="/post-job">
+                <Button size="sm" variant="secondary" className="text-xs">
+                  Post a Job
+                </Button>
+              </Link>
+              <Link href="/create-alert">
+                <Button size="sm" variant="secondary" className="text-xs">
+                  Create Alert
+                </Button>
+              </Link>
+              <Link href="/rss">
+                <Button size="sm" variant="secondary" className="text-xs">
+                  RSS
+                </Button>
+              </Link>
             </div>
           </div>
 

@@ -64,6 +64,13 @@ export function JobFilters() {
     router.push("/")
   }
 
+  const handleCompanyClick = (company: string) => {
+    // This would typically filter by company, but for now just show a toast
+    console.log(`Filtering by company: ${company}`)
+    // You could implement this by adding a company filter parameter
+    // router.push(`?${createQueryString("company", company)}`)
+  }
+
   return (
     <Card className="col-span-1 h-fit md:sticky md:top-2">
       <CardHeader className="space-y-4">
@@ -87,7 +94,10 @@ export function JobFilters() {
                   checked={currentJobTypes.includes(type)}
                   onCheckedChange={(checked) => handleJobTypeChange(type, checked as boolean)}
                 />
-                <Label htmlFor={type.toLowerCase()} className="text-sm font-medium">
+                <Label
+                  htmlFor={type.toLowerCase()}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
                   {type}
                 </Label>
               </div>
@@ -126,7 +136,13 @@ export function JobFilters() {
           <Label className="text-lg font-semibold">Popular Companies</Label>
           <div className="flex flex-wrap gap-2">
             {["Microsoft", "Google", "Amazon", "Apple", "Meta"].map((company) => (
-              <Button key={company} variant="outline" size="sm" className="text-xs">
+              <Button
+                key={company}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => handleCompanyClick(company)}
+              >
                 {company}
               </Button>
             ))}

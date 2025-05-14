@@ -3,6 +3,7 @@ import JobListings from "@/components/general/JobListings"
 import JobListingsLoading from "@/components/general/JobListingsLoading"
 import { Suspense } from "react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 type SearchParamsProps = {
   searchParams: {
@@ -32,12 +33,16 @@ export default function Home({ searchParams }: SearchParamsProps) {
             top talent efficiently.
           </p>
           <div className="flex justify-center gap-4">
-            <Button size="lg" className="bg-white text-blue-700 hover:bg-gray-100">
-              Find Jobs
-            </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-blue-700">
-              Post a Job
-            </Button>
+            <Link href="#job-listings">
+              <Button size="lg" className="bg-white text-blue-700 hover:bg-gray-100">
+                Find Jobs
+              </Button>
+            </Link>
+            <Link href="/post-job">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-blue-700">
+                Post a Job
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -55,7 +60,7 @@ export default function Home({ searchParams }: SearchParamsProps) {
       </div>
 
       {/* Main content */}
-      <div className="container mx-auto w-full px-4">
+      <div id="job-listings" className="container mx-auto w-full px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-1">
             <JobFilters />

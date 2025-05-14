@@ -1,11 +1,17 @@
 "use client"
 
+import type React from "react"
+
 import Link from "next/link"
 import { MapPin, Building2, Heart, ExternalLink } from "lucide-react"
 import { Badge } from "../ui/badge"
 import { formatCurrency } from "@/app/utils/formatCurrency"
 import Image from "next/image"
 import { formatRelativeTime } from "@/app/utils/formatRelativeTime"
+import { Button } from "../ui/button"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 interface iAppProps {
   job: {
@@ -28,12 +34,34 @@ interface iAppProps {
 }
 
 export function JobCard({ job, isHighlighted = false }: iAppProps) {
+  const [isSaved, setIsSaved] = useState(false)
+  const router = useRouter()
+
   // Format salary range
   const formatSalary = (from: number, to: number) => {
     if (!from && !to) return "Salary not specified"
     if (from && !to) return formatCurrency(from) + "+"
     if (!from && to) return "Up to " + formatCurrency(to)
     return `${formatCurrency(from)} - ${formatCurrency(to)}`
+  }
+
+  const handleApply = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    router.push(`/job/${job.id}/apply`)
+  }
+
+  const handleSave = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsSaved(!isSaved)
+    toast.success(isSaved ? "Job removed from saved jobs" : "Job saved successfully")
+  }
+
+  const handleDetails = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    router.push(`/job/${job.id}`)
   }
 
   return (
@@ -70,7 +98,7 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
               </div>
             </div>
 
-            {/* Tags */}
+            {/* Tags and action buttons */}
             <div className="flex flex-wrap gap-2 mt-3">
               <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
                 {job.employmentType}
@@ -79,17 +107,31 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
                 <MapPin className="h-3 w-3 mr-1" />
                 {job.location || "Worldwide"}
               </Badge>
-              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
+
+              {/* Action buttons */}
+              <Button variant="outline" size="sm" className="text-xs h-5 px-2 rounded-full" onClick={handleApply}>
                 Apply Now
-              </Badge>
-              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
-                <Heart className="h-3 w-3 mr-1" />
-                Save
-              </Badge>
-              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className={`text-xs h-5 px-2 rounded-full flex items-center ${isSaved ? "text-red-500" : ""}`}
+                onClick={handleSave}
+              >
+                <Heart className="h-3 w-3 mr-1" fill={isSaved ? "currentColor" : "none"} />
+                {isSaved ? "Saved" : "Save"}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-5 px-2 rounded-full flex items-center"
+                onClick={handleDetails}
+              >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 Details
-              </Badge>
+              </Button>
             </div>
 
             {/* Company description - only show if highlighted */}
