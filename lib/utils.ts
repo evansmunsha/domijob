@@ -6,51 +6,44 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 
+
 export function constructMetadata({
-  searchParams,
+  title = "Domijob | AI-Powered Job Board for Job Seekers & Recruiters",
+  description = "Domijob is an AI-driven job board connecting job seekers and recruiters. Find your next opportunity or hire top talent efficiently.",
+  image = "/logo.png",
+  icons = "/favicon.ico",
+  noIndex = false,
+  searchParams = {},
 }: {
-  searchParams?: Record<string, string>;
+  title?: string
+  description?: string
+  image?: string
+  icons?: string
+  noIndex?: boolean
+  searchParams?: Record<string, string>
 }): Metadata {
-  const base = "https://domijob.vercel.app";
-  const metadataBase = new URL(base);
+  const base = process.env.NEXT_PUBLIC_URL || "https://domijob.vercel.app"
+  const metadataBase = new URL(base)
 
   // Preserve referral parameter if provided (e.g., /?ref=CODE)
-  const refCode = searchParams?.ref;
-  const page = searchParams?.page;
-  const jobTypes = searchParams?.jobTypes;
-  const location = searchParams?.location;
+  const refCode = searchParams?.ref
+  const page = searchParams?.page
+  const jobTypes = searchParams?.jobTypes
+  const location = searchParams?.location
 
   // Construct the canonical path with only meaningful query parameters
-  const url = new URL(base);
-  if (refCode) url.searchParams.set("ref", refCode);
-  if (page) url.searchParams.set("page", page);
-  if (jobTypes) url.searchParams.set("jobTypes", jobTypes);
-  if (location) url.searchParams.set("location", location);
+  const url = new URL(base)
+  if (refCode) url.searchParams.set("ref", refCode)
+  if (page) url.searchParams.set("page", page)
+  if (jobTypes) url.searchParams.set("jobTypes", jobTypes)
+  if (location) url.searchParams.set("location", location)
 
-  const title = "Domijob | AI-Powered Job Board for Job Seekers & Recruiters";
-  const description =
-    "Domijob is an AI-driven job board connecting job seekers and recruiters. Find your next opportunity or hire top talent efficiently.";
-
-  const imageUrl = new URL("/logo.png", metadataBase);
-
-  const breadcrumbList = [
-    {
-      "@type": "ListItem",
-      position: 1,
-      name: "Home",
-      item: base,
-    },
-    {
-      "@type": "ListItem",
-      position: 2,
-      name: "Job Listings",
-      item: url.toString(), // This would be your current page URL with parameters
-    },
-  ];
+  const imageUrl = new URL(image, metadataBase)
 
   return {
     title,
     description,
+    metadataBase,
     keywords: [
       "AI job board",
       "recruitment",
@@ -60,15 +53,20 @@ export function constructMetadata({
       "career",
       "recruiters",
       "job seekers",
-    ],// ✅ Add this
+    ],
     verification: {
       google: "XoXKKpxJAqwZshDFMDfiTdq3NOjfVkZcCtbvUNQ0nVo",
     },
-    metadataBase,
+    ...(noIndex && {
+      robots: {
+        index: false,
+        follow: false,
+      },
+    }),
     openGraph: {
       title,
       description,
-      url: url.toString(), // Share URL with tracking/ref params
+      url: url.toString(),
       siteName: "Domijob",
       type: "website",
       images: [
@@ -87,7 +85,7 @@ export function constructMetadata({
       images: [imageUrl.toString()],
     },
     icons: {
-      icon: "/favicon.ico",
+      icon: icons,
     },
     alternates: {
       canonical: `${base}${
@@ -99,10 +97,7 @@ export function constructMetadata({
             }).toString()}`
           : ""
       }`,
-
-      
-    
     },
-    
-  };
+  }
 }
+
