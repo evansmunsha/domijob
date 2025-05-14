@@ -26,7 +26,7 @@ export default function Home({ searchParams }: SearchParamsProps) {
   return (
     <>
       {/* Hero section */}
-      <div className=" from-blue-600 to-indigo-700 text-white py-12 mb-8">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white dark:from-gray-900 dark:to-gray-800 dark:text-gray-100 py-12 mb-8">
         <div className="container mx-auto text-center px-4">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Find Remote Jobs Anywhere</h1>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
@@ -35,12 +35,19 @@ export default function Home({ searchParams }: SearchParamsProps) {
           </p>
           <div className="flex justify-center gap-4">
             <Link href="#job-listings">
-              <Button size="lg" className="bg-white text-blue-700 hover:bg-gray-100">
+              <Button
+                size="lg"
+                className="bg-white text-blue-700 hover:bg-gray-100 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200"
+              >
                 Find Jobs
               </Button>
             </Link>
             <Link href="/post-job">
-              <Button size="lg" variant="outline" className="border-white  hover:bg-blue-700">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white text-white hover:bg-blue-700 dark:border-gray-300 dark:hover:bg-gray-700"
+              >
                 Post a Job
               </Button>
             </Link>
@@ -55,10 +62,10 @@ export default function Home({ searchParams }: SearchParamsProps) {
 
       {/* Trusted by section */}
       <div className="container mx-auto mb-12 px-4">
-        <p className="text-center text-gray-500 mb-6">Trusted by leading companies</p>
+        <p className="text-center text-gray-500 dark:text-gray-400 mb-6">Trusted by leading companies</p>
         <div className="flex flex-wrap justify-center items-center gap-8 opacity-70">
           {["Microsoft", "Google", "Amazon", "Apple", "Meta", "Netflix", "Airbnb", "Uber"].map((company) => (
-            <div key={company} className="text-gray-400 font-semibold">
+            <div key={company} className="text-gray-400 dark:text-gray-500 font-semibold">
               {company}
             </div>
           ))}
