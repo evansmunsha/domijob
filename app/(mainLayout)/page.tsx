@@ -26,7 +26,7 @@ export default function Home({ searchParams }: SearchParamsProps) {
   return (
     <>
       {/* Hero section */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-12 mb-8">
+      <div className=" from-blue-600 to-indigo-700 text-white py-12 mb-8">
         <div className="container mx-auto text-center px-4">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Find Remote Jobs Anywhere</h1>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
@@ -40,7 +40,7 @@ export default function Home({ searchParams }: SearchParamsProps) {
               </Button>
             </Link>
             <Link href="/post-job">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-blue-700">
+              <Button size="lg" variant="outline" className="border-white  hover:bg-blue-700">
                 Post a Job
               </Button>
             </Link>
