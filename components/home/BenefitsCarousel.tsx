@@ -40,7 +40,7 @@ export function BenefitsCarousel() {
   }, [])
 
   return (
-    <div className="relative h-32 md:h-24 flex items-center justify-center overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg px-6 py-4">
+    <div className="relative h-32 md:h-24 flex items-center justify-center overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-700 text-white dark:from-gray-900 dark:to-gray-800 dark:text-gray-100 rounded-lg px-6 py-6">
       <Sparkles className="absolute left-6 h-6 w-6 opacity-70" />
       <Sparkles className="absolute right-6 h-6 w-6 opacity-70" />
 

@@ -46,7 +46,7 @@ export default function Home({ searchParams }: SearchParamsProps) {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-white text-black  hover:bg-blue-700 dark:border-gray-300 dark:hover:bg-gray-700"
+                className="border-white dark:text-white  hover:bg-blue-700 dark:border-gray-300 dark:hover:bg-gray-700"
               >
                 Post a Job
               </Button>
