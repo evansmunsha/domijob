@@ -2,16 +2,17 @@
 
 import type React from "react"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { MapPin, Building2, Heart, ExternalLink } from "lucide-react"
+import { MapPin, Building2, Heart, ExternalLink, Loader2 } from "lucide-react"
 import { Badge } from "../ui/badge"
 import { formatCurrency } from "@/app/utils/formatCurrency"
 import Image from "next/image"
 import { formatRelativeTime } from "@/app/utils/formatRelativeTime"
 import { Button } from "../ui/button"
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { applyForJob, saveJobPost, unsaveJobPost } from "@/app/actions"
 
 interface iAppProps {
   job: {
@@ -34,7 +35,11 @@ interface iAppProps {
 }
 
 export function JobCard({ job, isHighlighted = false }: iAppProps) {
-  const [isSaved, setIsSaved] = useState(false)
+  const [savedJob, setSavedJob] = useState<{ id: string } | null>(null)
+  const [isApplying, setIsApplying] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [hasApplied, setHasApplied] = useState(false)
+  const [session, setSession] = useState<{ user?: { id?: string } } | null>(null)
   const router = useRouter()
 
   // Format salary range
@@ -45,17 +50,88 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
     return `${formatCurrency(from)} - ${formatCurrency(to)}`
   }
 
-  const handleApply = (e: React.MouseEvent) => {
+  // Fetch session and check if user has applied/saved
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const sessionResponse = await fetch("/api/auth/session")
+        if (sessionResponse.ok) {
+          const sessionData = await sessionResponse.json()
+          setSession(sessionData)
+
+          if (sessionData?.user) {
+            const [savedResponse, appliedResponse] = await Promise.all([
+              fetch(`/api/jobs/${job.id}/saved`),
+              fetch(`/api/jobs/${job.id}/applied`),
+            ])
+
+            if (savedResponse.ok) {
+              const savedData = await savedResponse.json()
+              setSavedJob(savedData)
+            }
+
+            if (appliedResponse.ok) {
+              setHasApplied(true)
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+      }
+    }
+
+    fetchUserData()
+  }, [job.id])
+
+  const handleApply = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    router.push(`/job/${job.id}/apply`)
+
+    if (!session?.user) {
+      router.push(`/login?callbackUrl=/job/${job.id}`)
+      return
+    }
+
+    setIsApplying(true)
+    try {
+      await applyForJob(job.id)
+      toast("Application submitted", {
+        description: "Your application has been sent to the company.",
+      })
+      setHasApplied(true)
+    } catch (error) {
+      toast(`${error instanceof Error ? error.message : "An error occurred while submitting your application."}`)
+    } finally {
+      setIsApplying(false)
+    }
   }
 
-  const handleSave = (e: React.MouseEvent) => {
+  const handleSaveJob = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsSaved(!isSaved)
-    toast.success(isSaved ? "Job removed from saved jobs" : "Job saved successfully")
+
+    if (!session?.user) {
+      router.push(`/login?callbackUrl=/job/${job.id}`)
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      if (savedJob) {
+        await unsaveJobPost(savedJob.id)
+        setSavedJob(null)
+        toast.success("Job removed from saved jobs")
+      } else {
+        const result = await saveJobPost(job.id)
+        setSavedJob(result)
+        toast.success("Job saved successfully")
+      }
+    } catch (error) {
+      toast.error("Failed to save job")
+      console.error("Error saving job:", error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleDetails = (e: React.MouseEvent) => {
@@ -108,21 +184,47 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
                 {job.location || "Worldwide"}
               </Badge>
 
-              {/* Action buttons */}
-              <Button variant="outline" size="sm" className="text-xs h-5 px-2 rounded-full" onClick={handleApply}>
-                Apply Now
-              </Button>
+              {/* Apply button */}
+              {hasApplied ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-5 px-2 rounded-full bg-green-50 text-green-600 border-green-200"
+                  disabled
+                  onClick={(e) => e.preventDefault()}
+                >
+                  Already Applied
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-5 px-2 rounded-full"
+                  onClick={handleApply}
+                  disabled={isApplying}
+                >
+                  {isApplying && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                  {isApplying ? "Applying..." : "Apply Now"}
+                </Button>
+              )}
 
+              {/* Save button */}
               <Button
                 variant="outline"
                 size="sm"
-                className={`text-xs h-5 px-2 rounded-full flex items-center ${isSaved ? "text-red-500" : ""}`}
-                onClick={handleSave}
+                className={`text-xs h-5 px-2 rounded-full flex items-center ${savedJob ? "text-red-500" : ""}`}
+                onClick={handleSaveJob}
+                disabled={isSaving}
               >
-                <Heart className="h-3 w-3 mr-1" fill={isSaved ? "currentColor" : "none"} />
-                {isSaved ? "Saved" : "Save"}
+                {isSaving ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Heart className="h-3 w-3 mr-1" fill={savedJob ? "currentColor" : "none"} />
+                )}
+                {isSaving ? "Saving..." : savedJob ? "Saved" : "Save"}
               </Button>
 
+              {/* Details button */}
               <Button
                 variant="outline"
                 size="sm"
