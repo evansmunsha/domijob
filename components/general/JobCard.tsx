@@ -1,8 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Card, CardHeader } from "../ui/card"
-import { MapPin, User2 } from "lucide-react"
+import { MapPin, Building2, Heart, ExternalLink } from "lucide-react"
 import { Badge } from "../ui/badge"
 import { formatCurrency } from "@/app/utils/formatCurrency"
 import Image from "next/image"
@@ -18,68 +17,88 @@ interface iAppProps {
     location: string
     createdAt: Date
     company: {
+      id: string
       logo: string | null
       name: string
       about: string
       location: string
     }
   }
+  isHighlighted?: boolean
 }
 
-export function JobCard({ job }: iAppProps) {
+export function JobCard({ job, isHighlighted = false }: iAppProps) {
+  // Format salary range
+  const formatSalary = (from: number, to: number) => {
+    if (!from && !to) return "Salary not specified"
+    if (from && !to) return formatCurrency(from) + "+"
+    if (!from && to) return "Up to " + formatCurrency(to)
+    return `${formatCurrency(from)} - ${formatCurrency(to)}`
+  }
+
   return (
-    <Link href={`/job/${job.id}`} className="block w-full">
-      <Card className="hover:shadow-lg transition-all duration-300 hover:border-primary relative w-full">
-        <CardHeader className="p-4">
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-start gap-3">
-              {job.company.logo ? (
-                <Image
-                  src={job.company.logo || "/placeholder.svg"}
-                  alt={job.company.name}
-                  width={48}
-                  height={48}
-                  className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                />
-              ) : (
-                <div className="bg-primary/10 w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <User2 className="w-6 h-6 text-primary" />
+    <div
+      className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${isHighlighted ? "bg-yellow-50" : ""}`}
+    >
+      <Link href={`/job/${job.id}`} className="block p-4">
+        <div className="flex items-start gap-4">
+          {/* Company logo */}
+          <div className="flex-shrink-0">
+            <Image
+              src={job.company.logo || `https://avatar.vercel.sh/${job.company.name}`}
+              alt={job.company.name}
+              width={48}
+              height={48}
+              className="rounded-md"
+            />
+          </div>
+
+          {/* Job details */}
+          <div className="flex-grow">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+              <div>
+                <h3 className="font-bold text-lg">{job.jobTitle}</h3>
+                <div className="flex items-center text-sm text-gray-600 mt-1">
+                  <Building2 className="h-3 w-3 mr-1" />
+                  <span>{job.company.name}</span>
                 </div>
-              )}
-              <div className="flex-grow min-w-0">
-                <h1 className="text-base sm:text-lg md:text-xl font-semibold line-clamp-2 leading-tight mb-1">
-                  {job.jobTitle}
-                </h1>
-                <p className="text-sm text-muted-foreground truncate">{job.company.name}</p>
+              </div>
+
+              <div className="text-right text-gray-600 text-sm">
+                <div>{formatSalary(job.salaryFrom, job.salaryTo)}</div>
+                <div>{formatRelativeTime(job.createdAt)}</div>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 items-center">
-              <Badge variant="secondary" className="rounded-full">
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
                 {job.employmentType}
               </Badge>
-              <Badge variant="outline" className="rounded-full">
-                {job.location}
+              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
+                <MapPin className="h-3 w-3 mr-1" />
+                {job.location || "Worldwide"}
               </Badge>
-              <p className="text-sm text-muted-foreground ml-auto">
-                {formatCurrency(job.salaryFrom)} - {formatCurrency(job.salaryTo)}
-              </p>
+              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
+                Apply Now
+              </Badge>
+              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
+                <Heart className="h-3 w-3 mr-1" />
+                Save
+              </Badge>
+              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
+                <ExternalLink className="h-3 w-3 mr-1" />
+                Details
+              </Badge>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>{job.location}</span>
-              </div>
-              <p className="text-muted-foreground">{formatRelativeTime(job.createdAt)}</p>
-            </div>
-
-            {job.company.about && <p className="text-sm text-muted-foreground line-clamp-2">{job.company.about}</p>}
+            {/* Company description - only show if highlighted */}
+            {isHighlighted && job.company.about && (
+              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{job.company.about}</p>
+            )}
           </div>
-        </CardHeader>
-      </Card>
-    </Link>
+        </div>
+      </Link>
+    </div>
   )
 }
-
-
