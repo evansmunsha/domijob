@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { MapPin, Building2, Heart, ExternalLink, Loader2 } from "lucide-react"
@@ -42,7 +41,6 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
   const [session, setSession] = useState<{ user?: { id?: string } } | null>(null)
   const router = useRouter()
 
-  // Format salary range
   const formatSalary = (from: number, to: number) => {
     if (!from && !to) return "Salary not specified"
     if (from && !to) return formatCurrency(from) + "+"
@@ -50,7 +48,6 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
     return `${formatCurrency(from)} - ${formatCurrency(to)}`
   }
 
-  // Fetch session and check if user has applied/saved
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -142,11 +139,12 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
 
   return (
     <div
-      className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${isHighlighted ? "bg-yellow-50" : ""}`}
+      className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+        isHighlighted ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
+      }`}
     >
       <Link href={`/job/${job.id}`} className="block p-4">
         <div className="flex items-start gap-4">
-          {/* Company logo */}
           <div className="flex-shrink-0">
             <Image
               src={job.company.logo || `https://avatar.vercel.sh/${job.company.name}`}
@@ -157,39 +155,36 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
             />
           </div>
 
-          {/* Job details */}
           <div className="flex-grow">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
               <div>
-                <h3 className="font-bold text-lg">{job.jobTitle}</h3>
-                <div className="flex items-center text-sm text-gray-600 mt-1">
+                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{job.jobTitle}</h3>
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mt-1">
                   <Building2 className="h-3 w-3 mr-1" />
                   <span>{job.company.name}</span>
                 </div>
               </div>
 
-              <div className="text-right text-gray-600 text-sm">
+              <div className="text-right text-gray-600 dark:text-gray-400 text-sm">
                 <div>{formatSalary(job.salaryFrom, job.salaryTo)}</div>
                 <div>{formatRelativeTime(job.createdAt)}</div>
               </div>
             </div>
 
-            {/* Tags and action buttons */}
             <div className="flex flex-wrap gap-2 mt-3">
               <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
                 {job.employmentType}
               </Badge>
-              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full">
-                <MapPin className="h-3 w-3 mr-1" />
+              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
                 {job.location || "Worldwide"}
               </Badge>
 
-              {/* Apply button */}
               {hasApplied ? (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs h-5 px-2 rounded-full bg-green-50 text-green-600 border-green-200"
+                  className="text-xs h-5 px-2 rounded-full bg-green-50 dark:bg-green-900/20 text-green-600 border-green-200 dark:border-green-700"
                   disabled
                   onClick={(e) => e.preventDefault()}
                 >
@@ -208,11 +203,12 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
                 </Button>
               )}
 
-              {/* Save button */}
               <Button
                 variant="outline"
                 size="sm"
-                className={`text-xs h-5 px-2 rounded-full flex items-center ${savedJob ? "text-red-500" : ""}`}
+                className={`text-xs h-5 px-2 rounded-full flex items-center ${
+                  savedJob ? "text-red-500 dark:text-red-400" : ""
+                }`}
                 onClick={handleSaveJob}
                 disabled={isSaving}
               >
@@ -224,7 +220,6 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
                 {isSaving ? "Saving..." : savedJob ? "Saved" : "Save"}
               </Button>
 
-              {/* Details button */}
               <Button
                 variant="outline"
                 size="sm"
@@ -236,9 +231,8 @@ export function JobCard({ job, isHighlighted = false }: iAppProps) {
               </Button>
             </div>
 
-            {/* Company description - only show if highlighted */}
             {isHighlighted && job.company.about && (
-              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{job.company.about}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">{job.company.about}</p>
             )}
           </div>
         </div>
