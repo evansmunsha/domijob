@@ -222,20 +222,6 @@ export function JobFilters() {
               ))}
             </div>
           </div>
-
-          {/* AI-powered filter suggestion */}
-          <div className="mt-6 p-4 rounded-lg bg-primary/5 border border-primary/20">
-            <div className="flex items-center mb-2">
-              <Sparkles className="h-4 w-4 text-primary mr-2" />
-              <h4 className="font-medium">AI-Powered Suggestions</h4>
-            </div>
-            <p className="text-sm text-muted-foreground mb-3">
-              Let our AI suggest filters based on your profile and preferences
-            </p>
-            <Button size="sm" className="w-full">
-              Get Personalized Filters
-            </Button>
-          </div>
         </CardContent>
       </motion.div>
     </Card>
