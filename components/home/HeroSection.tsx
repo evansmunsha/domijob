@@ -129,7 +129,7 @@ export function HeroSection() {
               </Button>
             </Link>
             <Link href="/post-job">
-              <Button size="lg" variant="outline" className="border-white font-medium text-slate-700  hover:bg-white/10">
+              <Button size="lg" variant="outline" className="border-white font-medium dark:text-neutral-200 text-slate-700  hover:bg-white/10">
                 Post a Job
               </Button>
             </Link>
