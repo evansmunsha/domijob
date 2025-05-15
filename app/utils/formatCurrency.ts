@@ -1,11 +1,11 @@
 /**
  * Formats a number as USD currency
- * @param amount The number to format (can be undefined)
- * @returns Formatted currency string
+ * @param amount The amount to format, can be undefined or null
+ * @returns Formatted currency string or empty string if amount is undefined/null
  */
-export function formatCurrency(amount?: number) {
+export function formatCurrency(amount?: number | null): string {
   if (amount === undefined || amount === null) {
-    return ""
+    return "$0"
   }
 
   return new Intl.NumberFormat("en-US", {

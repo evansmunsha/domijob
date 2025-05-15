@@ -28,25 +28,24 @@ async function getJobs(params: {
   const where: any = {
     status: "ACTIVE",
     ...(companyId ? { companyId } : {}),
-    ...(search
-      ? {
-          OR: [
-            { jobTitle: { contains: search, mode: "insensitive" } },
-            { description: { contains: search, mode: "insensitive" } },
-            { company: { name: { contains: search, mode: "insensitive" } } },
-          ],
-        }
-      : {}),
-    ...(jobTypes && jobTypes.length > 0
-      ? {
-          employmentType: { in: jobTypes },
-        }
-      : {}),
-    ...(location && location !== "worldwide"
-      ? {
-          location: { contains: location, mode: "insensitive" },
-        }
-      : {}),
+  }
+
+  // Add search filter if provided
+  if (search) {
+    where.OR = [
+      { jobTitle: { contains: search, mode: "insensitive" } },
+      { description: { contains: search, mode: "insensitive" } },
+    ]
+  }
+
+  // Add job types filter if provided
+  if (jobTypes && jobTypes.length > 0) {
+    where.employmentType = { in: jobTypes }
+  }
+
+  // Add location filter if provided
+  if (location && location !== "worldwide" && location !== "any") {
+    where.location = { contains: location, mode: "insensitive" }
   }
 
   // Determine the sort order
@@ -61,19 +60,26 @@ async function getJobs(params: {
     orderBy = { createdAt: "asc" }
   }
 
-  return prisma.jobPost.findMany({
-    where,
-    include: {
-      company: {
-        select: {
-          id: true,
-          name: true,
-          logo: true,
+  try {
+    const jobs = await prisma.jobPost.findMany({
+      where,
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            logo: true,
+          },
         },
       },
-    },
-    orderBy,
-  })
+      orderBy,
+    })
+
+    return jobs
+  } catch (error) {
+    console.error("Error fetching jobs:", error)
+    return []
+  }
 }
 
 export default async function JobsPage({
@@ -89,7 +95,7 @@ export default async function JobsPage({
 }) {
   // Parse search parameters
   const companyId = searchParams.company
-  const search = searchParams.search
+  const search = searchParams.search || ""
   const jobTypes = searchParams.jobTypes ? searchParams.jobTypes.split(",") : []
   const location = searchParams.location || ""
   const sortBy = searchParams.sortBy || "newest"
@@ -104,10 +110,10 @@ export default async function JobsPage({
   })
 
   // Format salary range
-  const formatSalary = (from?: number, to?: number) => {
+  const formatSalary = (from?: number | null, to?: number | null) => {
     if (!from && !to) return "Salary not specified"
-    if (from && !to) return formatCurrency(from) + "+"
-    if (!from && to) return "Up to " + formatCurrency(to)
+    if (from && !to) return `${formatCurrency(from)}+`
+    if (!from && to) return `Up to ${formatCurrency(to)}`
     return `${formatCurrency(from)} - ${formatCurrency(to)}`
   }
 
@@ -133,7 +139,7 @@ export default async function JobsPage({
         <div className="absolute inset-0 bg-gradient-to-r from-green-700 to-green-600 dark:from-green-800 dark:to-green-700"></div>
         <div className="relative z-10 p-8 md:p-12">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            {companyId ? `Jobs at ${jobs[0]?.company.name}` : "Discover Your Next Opportunity"}
+            {companyId ? `Jobs at ${jobs[0]?.company.name || "Company"}` : "Discover Your Next Opportunity"}
           </h1>
           <p className="text-white/90 max-w-2xl mb-6">
             Browse through our curated list of remote jobs from top companies worldwide. Find the perfect role that
@@ -142,7 +148,7 @@ export default async function JobsPage({
 
           {/* Search and filter bar - Now functional */}
           <JobSearch
-            initialSearch={search || ""}
+            initialSearch={search}
             initialJobTypes={jobTypes}
             initialLocation={location}
             initialSortBy={sortBy}
