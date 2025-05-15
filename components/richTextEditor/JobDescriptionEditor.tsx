@@ -28,7 +28,6 @@ interface JobDescriptionEditorProps {
 export default function JobDescriptionEditor({ field, jobTitle, industry, location }: JobDescriptionEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
       TextStyle,
       FontSize,
       Color,
@@ -40,11 +39,18 @@ export default function JobDescriptionEditor({ field, jobTitle, industry, locati
         types: ["heading", "paragraph"],
       }),
       Typography,
+      StarterKit.configure({
+        paragraph: {
+          HTMLAttributes: {
+            class: 'my-2', // Reduce paragraph margins
+          },
+        },
+      }),
     ],
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-[300px] p-4 max-w-none dark:prose-invert",
+          "prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-[300px] p-4 max-w-none dark:prose-invert prose-p:my-2 prose-li:my-0.5", // Add custom spacing for paragraphs and list items
       },
     },
     onUpdate: ({ editor }) => {
@@ -56,6 +62,7 @@ export default function JobDescriptionEditor({ field, jobTitle, industry, locati
   useEffect(() => {
     if (editor && field.value && editor.getHTML() !== field.value) {
       editor.commands.setContent(JSON.parse(field.value))
+      
     }
   }, [editor, field.value])
 
@@ -96,3 +103,5 @@ export default function JobDescriptionEditor({ field, jobTitle, industry, locati
     </div>
   )
 }
+
+
