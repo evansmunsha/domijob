@@ -8,7 +8,6 @@ import { Building2, MapPin, Clock, Briefcase, Search } from "lucide-react"
 import Image from "next/image"
 import { formatRelativeTime } from "@/app/utils/formatRelativeTime"
 import { formatCurrency } from "@/app/utils/formatCurrency"
-import { JobSearch } from "@/components/jobs/JobSearch"
 
 export const metadata: Metadata = {
   title: "Browse Jobs | DoMiJob",
@@ -135,7 +134,7 @@ export default async function JobsPage({
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
       {/* Hero section with gradient background */}
-      <div className="relative mb-8 rounded-xl overflow-hidden">
+      {/* <div className="relative mb-8 rounded-xl overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-green-700 to-green-600 dark:from-green-800 dark:to-green-700"></div>
         <div className="relative z-10 p-8 md:p-12">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -146,7 +145,7 @@ export default async function JobsPage({
             matches your skills and aspirations.
           </p>
 
-          {/* Search and filter bar - Now functional */}
+          
           <JobSearch
             initialSearch={search}
             initialJobTypes={jobTypes}
@@ -155,10 +154,10 @@ export default async function JobsPage({
           />
         </div>
 
-        {/* Decorative elements */}
+        
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
-      </div>
+      </div> */}
 
       {/* Stats bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
