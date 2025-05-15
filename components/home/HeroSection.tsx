@@ -47,7 +47,7 @@ export function HeroSection() {
 
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % benefits.length)
-    }, 4000) // Change every 4 seconds
+    }, 7000) // Change every 7 seconds
 
     return () => clearInterval(interval)
   }, [isPaused])

@@ -63,9 +63,10 @@ export function JobFilters() {
   }
 
   const clearFilters = () => {
-    router.push("/jobs")
+    router.push("#job-listings")
   }
 
+  
   const handleCompanyClick = (company: string) => {
     // This would typically filter by company, but for now just show a toast
     console.log(`Filtering by company: ${company}`)
