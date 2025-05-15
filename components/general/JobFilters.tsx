@@ -63,7 +63,7 @@ export function JobFilters() {
   }
 
   const clearFilters = () => {
-    router.push("/")
+    router.push("/#job-listings")
   }
 
   
