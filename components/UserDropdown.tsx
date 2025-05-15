@@ -73,12 +73,6 @@ export function UserDropdown({ name, email, image, userType }: UserDropdownProps
             </DropdownMenuItem>
           </>
         )}
-        <DropdownMenuItem asChild>
-          <Link href="/settings" className="cursor-pointer flex w-full">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Link>
-        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" onClick={() => signOut({ callbackUrl: "/" })}>
           <LogOut className="mr-2 h-4 w-4" />
