@@ -219,7 +219,7 @@ export function EnhancedJobListings({ initialJobs, totalPages, currentPage }: Jo
               title="No jobs found"
               description="Try searching for a different job title or location."
               buttonText="Clear all filters"
-              href="/"
+              href="#job-listings"
             />
           )}
         </div>
