@@ -55,15 +55,15 @@ export function JobFilters() {
     }
 
     const newValue = Array.from(current).join(",")
-    router.push(`?${createQueryString("jobTypes", newValue)}`)
+    router.push(`?${createQueryString("jobTypes", newValue)}`, { scroll: false })
   }
 
   const handleLocationChange = (location: string) => {
-    router.push(`?${createQueryString("location", location)}`)
+    router.push(`?${createQueryString("location", location)}`, { scroll: false })
   }
 
   const clearFilters = () => {
-    router.push("/#job-listings")
+    router.push("/", { scroll: false })
   }
 
   
