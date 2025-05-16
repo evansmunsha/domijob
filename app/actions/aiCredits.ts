@@ -24,13 +24,24 @@ export async function purchaseAICredits(packageId: string) {
   if (!selectedPackage) {
     throw new Error("Invalid credit package selected")
   }
+
+  // Get user from database to access stripeCustomerId
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { stripeCustomerId: true, email: true, name: true },
+  })
+
+  if (!user) {
+    throw new Error("User not found")
+  }
+
   // Get or create Stripe customer
-  let stripeCustomerId = session.user.stripeCustomerId
+  let stripeCustomerId = user.stripeCustomerId
 
   if (!stripeCustomerId) {
     const customer = await stripe.customers.create({
-      email: session.user.email!,
-      name: session.user.name || undefined,
+      email: user.email || session.user.email!,
+      name: user.name || session.user.name || undefined,
     })
 
     stripeCustomerId = customer.id

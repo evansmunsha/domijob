@@ -7,12 +7,13 @@ declare module "next-auth" {
    */
   interface Session {
     user: {
-      /** The user's ID. */
-      id?: string
-      /** The user's type (COMPANY or JOB_SEEKER) */
-      userType?: UserType
-      /** The company ID if the user is a company */
-      companyId?: string
+      id: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+    stripeCustomerId?: string | null
+    userType?: string | null
+    companyId?: string | null
     } & DefaultSession["user"]
   }
 
@@ -27,4 +28,3 @@ declare module "next-auth" {
     companyId?: string
   }
 }
-
