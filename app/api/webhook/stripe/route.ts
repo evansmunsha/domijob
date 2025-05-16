@@ -2,7 +2,6 @@ import { prisma } from "@/app/utils/db";
 import { stripe } from "@/app/utils/stripe";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { addCredits } from "@/app/utils/credits";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -30,6 +29,7 @@ export async function POST(req: Request) {
     const metadata = session.metadata || {};
     
     // AI Credits Purchase
+    
     if (metadata.type === "ai_credits") {
       try {
         const userId = metadata.userId;
@@ -40,17 +40,39 @@ export async function POST(req: Request) {
           return new Response("Invalid metadata for AI credits", { status: 400 });
         }
         
-        // Add credits to user's account
-        await addCredits(userId, credits);
-        
-        // Log the transaction
-        await prisma.aIUsageLog.create({
-          data: {
-            userId,
-            endpoint: "credits_purchase",
-            tokenCount: 0,
-            cost: (session.amount_total || 0) / 100, // Convert from cents to dollars
-          }
+        // Use a transaction to ensure both operations succeed or fail together
+        await prisma.$transaction(async (tx) => {
+          // Add credits to user's account
+          await tx.userCredits.upsert({
+            where: { userId },
+            update: {
+              balance: { increment: credits }
+            },
+            create: {
+              userId,
+              balance: credits
+            }
+          });
+          
+          // Log the transaction
+          await tx.creditTransaction.create({
+            data: {
+              userId,
+              amount: credits,
+              type: "purchase",
+              description: `Purchased ${credits} credits`,
+            }
+          });
+          
+          // Log the usage for accounting
+          await tx.aIUsageLog.create({
+            data: {
+              userId,
+              endpoint: "credits_purchase",
+              tokenCount: 0,
+              cost: (session.amount_total || 0) / 100, // Convert from cents to dollars
+            }
+          });
         });
         
         console.log(`Added ${credits} credits to user ${userId}`);
@@ -58,8 +80,6 @@ export async function POST(req: Request) {
         console.error("Error processing AI credits purchase:", error);
         // Continue processing to avoid blocking webhook
       }
-      
-      return new Response(null, { status: 200 });
     }
     
     // Job Post Payment

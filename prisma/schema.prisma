@@ -56,6 +56,8 @@ model User {
   aiCredits UserCredits?
   AIGeneratedContent AIGeneratedContent[]
   AIUsageLog AIUsageLog[]
+
+  CreditTransaction CreditTransaction[]
 }
 
 model SkillGapAnalysis {
@@ -500,5 +502,21 @@ model UserCredits {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+// Add this model to your existing schema.prisma file
+
+// Track individual credit transactions
+model CreditTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Int      // Positive for additions, negative for deductions
+  type        String   // "purchase", "usage", "signup_bonus", "promotional", "refund"
+  description String
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
 }
 

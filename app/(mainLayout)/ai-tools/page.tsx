@@ -1,27 +1,28 @@
-import { Metadata } from "next"
-import { auth } from "@/app/utils/auth"
-import { redirect } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { Sparkles, FileEdit, Search, FileText, ArrowRight } from "lucide-react"
-import { getUserCreditBalance } from "@/app/actions/aiCredits"
-import { use } from "react"
+import { Metadata } from "next";
+import { auth } from "@/app/utils/auth";
+import { redirect } from "next/navigation";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Sparkles, FileEdit, Search, FileText, ArrowRight, Gift } from 'lucide-react';
+import { getUserCreditStatus } from "@/app/actions/aiCredits";
+import { use } from "react";
+import { CreditStatus } from "@/components/credit-status";
 
 export const metadata: Metadata = {
   title: "AI Tools",
   description: "AI-powered tools to enhance your job search and application process",
-}
+};
 
 export default function AIToolsPage() {
-  const session = use(auth())
-  
+  const session = use(auth());
+
   if (!session?.user?.id) {
-    redirect("/login")
+    redirect("/login");
   }
-  
-  const creditsBalance = use(getUserCreditBalance())
+
+  const { balance, isNewUser } = use(getUserCreditStatus());
 
   return (
     <div className="container py-10 max-w-6xl mx-auto">
@@ -34,23 +35,34 @@ export default function AIToolsPage() {
           Powered by OpenAI's technology to enhance your job search and application process
         </p>
       </div>
-      
-      <div className="mb-8 p-4 bg-primary/10 rounded-lg flex justify-between items-center">
-        <div>
-          <h2 className="font-semibold text-lg">Your AI Credits</h2>
-          <p className="text-sm text-muted-foreground">
-            Credits are used to access premium AI features
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold">{creditsBalance}</div>
-          <Button asChild size="sm" className="mt-2">
-            <Link href="/ai-credits">
-              Buy More Credits
-            </Link>
-          </Button>
-        </div>
+
+      {/* Credit Status Component */}
+      <div className="mb-8">
+        <CreditStatus />
       </div>
+
+      {/* New User Welcome Card */}
+      {isNewUser && (
+        <Card className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary" />
+              Welcome to Our AI Tools!
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4">
+              We've given you <span className="font-bold">50 free credits</span> to explore our AI-powered features.
+              Here's what you can do with your credits:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 mb-4">
+              <li>Find the perfect job matches (10 credits per use)</li>
+              <li>Enhance your resume to stand out (15 credits per use)</li>
+              <li>Create compelling job descriptions (20 credits per use)</li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="overflow-hidden">

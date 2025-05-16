@@ -13,6 +13,7 @@ import { request } from "@arcjet/next"
 import { inngest } from "./utils/inngest/client"
 import { auth } from "./utils/auth"
 import { notifyCompanyOfNewApplication } from "./utils/notifications"
+import { addFreeSignupCredits } from "./actions/aiCredits"
 
 const aj = arcjet
   .withRule(
@@ -145,6 +146,17 @@ export async function createJobSeeker(data: z.infer<typeof jobSeekerSchema>) {
   }
 }
 
+export async function registerUser(userData: any) {
+  // Create the user
+  const user = await prisma.user.create({
+    data: userData
+  });
+  
+  // Add free credits
+  await addFreeSignupCredits(user.id);
+  
+  return user;
+}
 export async function createJob(data: z.infer<typeof jobSchema>) {
   const user = await requireUser()
 
