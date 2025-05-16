@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Filter, X, Briefcase, MapPin, Building2, Sparkles } from "lucide-react"
+import { Filter, X, Briefcase, MapPin, Building2,  } from "lucide-react"
 import {
   Select,
   SelectContent,

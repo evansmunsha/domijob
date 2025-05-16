@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "@/components/general/ThemeProvider"
 import { Analytics } from "@vercel/analytics/react"
 import { Suspense } from "react"
-import { constructMetadata } from "@/lib/utils"
+import { useDynamicMetadata } from "@/lib/seo/useDynamicMetadata"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +19,16 @@ const geistMono = Geist_Mono({
   display: "swap",
 })
 
-export const metadata = constructMetadata({})
+
+
+export function generateMetadata({ searchParams }: { searchParams?: Record<string, string> }) {
+  return useDynamicMetadata({
+    title: "Browse Jobs in Berlin",
+    searchParams,
+  })
+}
+
+
 
 export default function RootLayout({
   children,

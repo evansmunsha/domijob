@@ -1,48 +1,45 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { Metadata } from "next";
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
+import { Metadata } from "next"
 
-
-
-export function constructMetadata({
-  title = "Domijob | AI-Powered Job Board for Job Seekers & Recruiters",
-  description = "Domijob is an AI-driven job board connecting job seekers and recruiters. Find your next opportunity or hire top talent efficiently.",
-  image = "/logo.png",
-  icons = "/favicon.ico",
-  noIndex = false,
-  searchParams = {},
-}: {
+export interface ConstructMetadataArgs {
   title?: string
   description?: string
   image?: string
   icons?: string
   noIndex?: boolean
   searchParams?: Record<string, string>
-}): Metadata {
+  ogType?: "article" | "website" | "book" | "profile" | "music.song" | "music.album" | "music.playlist" | "music.radio_station" | "video.movie" | "video.episode" | "video.tv_show" | "video.other"
+}
+
+export function useDynamicMetadata({
+  title = "Domijob | AI-Powered Job Board for Job Seekers & Recruiters",
+  description = "Domijob is an AI-driven job board connecting job seekers and recruiters. Find your next opportunity or hire top talent efficiently.",
+  image = "/logo.png",
+  icons = "/favicon.ico",
+  noIndex = false,
+  searchParams = {},
+  ogType = "website",
+}: ConstructMetadataArgs): Metadata {
   const base = process.env.NEXT_PUBLIC_URL || "https://domijob.vercel.app"
   const metadataBase = new URL(base)
 
-  // Extract query parameters
-  const { ref, page, jobTypes, location } = searchParams
+  const refCode = searchParams?.ref
+  const page = searchParams?.page
+  const jobTypes = searchParams?.jobTypes
+  const location = searchParams?.location
 
-  // Build URL for OG and canonical
   const url = new URL(base)
-  if (ref) url.searchParams.set("ref", ref)
+  if (refCode) url.searchParams.set("ref", refCode)
   if (page) url.searchParams.set("page", page)
   if (jobTypes) url.searchParams.set("jobTypes", jobTypes)
   if (location) url.searchParams.set("location", location)
 
-  // Construct canonical URL with only meaningful params (excluding 'ref' for SEO)
   const canonicalParams = new URLSearchParams({
     ...(page && { page }),
     ...(jobTypes && { jobTypes }),
     ...(location && { location }),
+    ...(refCode && { ref: refCode }),
   }).toString()
 
-  const canonicalUrl = `${base}${canonicalParams ? `?${canonicalParams}` : ""}`
   const imageUrl = new URL(image, metadataBase)
 
   return {
@@ -68,19 +65,14 @@ export function constructMetadata({
       description,
       url: url.toString(),
       siteName: "Domijob",
-      type: "website",
+      type: ogType,
       images: [
         {
           url: imageUrl.toString(),
           width: 1200,
           height: 630,
           alt: "Domijob AI-powered job matching illustration",
-        },{
-        url: "/og/resume-enhancer.png",
-        width: 1200,
-        height: 630,
-        alt: "AI Resume Enhancer",
-      },
+        },
       ],
     },
     twitter: {
@@ -93,11 +85,7 @@ export function constructMetadata({
       icon: icons,
     },
     alternates: {
-      canonical: canonicalUrl,
+      canonical: `${base}${canonicalParams ? `?${canonicalParams}` : ""}`,
     },
   }
 }
-
-
-
- 
