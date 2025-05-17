@@ -1,70 +1,63 @@
-import { NextResponse } from "next/server"
-import { prisma } from "@/app/utils/db"
-import { headers } from "next/headers"
+// File: /app/api/affiliate/track/route.ts
 
-export async function GET(req: Request) {
-  try {
-    const url = new URL(req.url)
-    const code = url.searchParams.get("code")
-    const source = url.searchParams.get("source")
-    const campaign = url.searchParams.get("campaign")
-    const landingPage = url.searchParams.get("landing") || "/"
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers'; // Change if your prisma path is different
+import { prisma } from '@/app/utils/db';
 
-    if (!code) {
-      return NextResponse.json({ error: "Affiliate code is required" }, { status: 400 })
-    }
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const affiliateCode = searchParams.get('ref');
 
-    // Get affiliate by code
-    const affiliate = await prisma.affiliate.findUnique({
-      where: { code },
-      select: { id: true }
-    })
-
-    if (!affiliate) {
-      return NextResponse.json({ error: "Invalid affiliate code" }, { status: 404 })
-    }
-
-    // Get request details
-    const headersList = headers()
-    const ipAddress = (await headersList).get("x-forwarded-for") || "unknown"
-    const userAgent = (await headersList).get("user-agent") || "unknown"
-    const referrer = (await headersList).get("referer") || "direct"
-
-    // Record the click
-    await prisma.affiliateClick.create({
-      data: {
-        affiliateId: affiliate.id,
-        ipAddress,
-        userAgent,
-        referrer,
-        landingPage,
-        source: source || "direct",
-        campaign: campaign || null
-      }
-    })
-
-    // Update affiliate click count
-    await prisma.affiliate.update({
-      where: { id: affiliate.id },
-      data: {
-        clickCount: {
-          increment: 1
-        }
-      }
-    })
-
-    // Set cookie for 30 days
-    const response = NextResponse.redirect(new URL(landingPage, req.url))
-    response.cookies.set("affiliate_code", code, {
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax"
-    })
-
-    return response
-  } catch (error) {
-    console.error("[AFFILIATE_TRACK]", error)
-    return NextResponse.json({ error: "Internal error" }, { status: 500 })
+  // ✅ 1. Make sure ?ref= is provided
+  if (!affiliateCode) {
+    return NextResponse.json({ message: 'Missing affiliate code in URL' }, { status: 400 });
   }
-} 
+
+  // ✅ 2. Find the affiliate by code
+  const affiliate = await prisma.affiliate.findUnique({
+    where: { code: affiliateCode },
+  });
+
+  if (!affiliate) {
+    return NextResponse.json({ message: 'Invalid affiliate code' }, { status: 404 });
+  }
+
+  // ✅ 3. Get some metadata from request headers
+  const headers = new Headers(request.headers);
+  const ipAddress = headers.get('x-forwarded-for') || headers.get('x-real-ip') || 'unknown';
+  const userAgent = headers.get('user-agent') || 'unknown';
+  const referrer = headers.get('referer') || 'direct';
+  const landingPage = request.url;
+
+  // ✅ 4. Store the click in the DB
+  await prisma.affiliateClick.create({
+    data: {
+      affiliateId: affiliate.id,
+      ipAddress,
+      userAgent,
+      referrer,
+      landingPage,
+      source: searchParams.get('source') || undefined,
+      campaign: searchParams.get('campaign') || undefined,
+    },
+  });
+
+  // ✅ 5. Increment click count on Affiliate
+  await prisma.affiliate.update({
+    where: { id: affiliate.id },
+    data: {
+      clickCount: { increment: 1 },
+    },
+  });
+
+  // ✅ 6. Set a cookie to remember the referral
+  (await
+    // ✅ 6. Set a cookie to remember the referral
+    cookies()).set('affiliate_ref', affiliate.code, {
+    httpOnly: true,
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+    path: '/',
+  });
+
+  return NextResponse.json({ success: true, message: 'Affiliate click tracked' });
+}
