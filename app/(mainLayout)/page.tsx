@@ -3,6 +3,7 @@ import JobListings from "@/components/general/JobListings"
 import JobListingsLoading from "@/components/general/JobListingsLoading"
 import { HeroSection } from "@/components/home/HeroSection"
 import { Suspense } from "react"
+import { AffiliateTracker } from "@/components/general/AffiliateTracker" // ✅ add this line
 
 type SearchParamsProps = {
   searchParams: {
@@ -23,6 +24,9 @@ export default function Home({ searchParams }: SearchParamsProps) {
 
   return (
     <>
+      {/* ✅ Track the affiliate click on first load */}
+      {refCode && <AffiliateTracker refCode={refCode} />}
+
       {/* Hero section with benefits carousel */}
       <HeroSection />
 
