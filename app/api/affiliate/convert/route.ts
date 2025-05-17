@@ -1,51 +1,45 @@
-import { NextResponse } from "next/server"
-import { auth } from "@/app/utils/auth"
+import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/app/utils/auth" // ✅ This uses your exported auth()
 import { prisma } from "@/app/utils/db"
-import { cookies } from "next/headers"
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const session = await auth() // ✅ Use this instead of getServerSession()
+
+  if (!session || !session.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const referredUserId = session.user.id
+
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Get affiliate code from cookie
-    const affiliateCode = (await cookies()).get("affiliate_code")?.value
-    if (!affiliateCode) {
-      return NextResponse.json({ error: "No affiliate code found" }, { status: 400 })
-    }
-
-    // Get affiliate
-    const affiliate = await prisma.affiliate.findUnique({
-      where: { code: affiliateCode }
+    // 1. Find the pending referral
+    const referral = await prisma.affiliateReferral.findFirst({
+      where: {
+        referredUserId,
+        status: "PENDING"
+      }
     })
 
-    if (!affiliate) {
-      return NextResponse.json({ error: "Invalid affiliate code" }, { status: 404 })
+    if (!referral) {
+      return NextResponse.json({ message: "No referral found." }, { status: 404 })
     }
 
-    // Calculate commission (example: $10 per conversion)
-    const commissionAmount = 10.00 * affiliate.commissionRate
+    const commissionAmount = 5.0 // ✅ Static for now
 
-    // Create referral record
-    const referral = await prisma.affiliateReferral.create({
+    // 2. Mark referral as converted
+    await prisma.affiliateReferral.update({
+      where: { id: referral.id },
       data: {
-        affiliateId: affiliate.id,
-        referredUserId: session.user.id,
-        commissionAmount,
         status: "CONVERTED",
+        commissionAmount,
         convertedAt: new Date()
       }
     })
 
-    // Update affiliate stats
+    // 3. Update affiliate's stats
     await prisma.affiliate.update({
-      where: { id: affiliate.id },
+      where: { id: referral.affiliateId },
       data: {
-        totalEarnings: {
-          increment: commissionAmount
-        },
         pendingEarnings: {
           increment: commissionAmount
         },
@@ -55,16 +49,21 @@ export async function POST() {
       }
     })
 
-    // Clear affiliate cookie
-    const response = NextResponse.json({
-      message: "Successfully recorded conversion",
-      referralId: referral.id
+    // 4. Optionally mark clicks as converted
+    await prisma.affiliateClick.updateMany({
+      where: {
+        affiliateId: referral.affiliateId,
+        converted: false
+      },
+      data: {
+        converted: true,
+        convertedAt: new Date()
+      }
     })
-    response.cookies.delete("affiliate_code")
 
-    return response
+    return NextResponse.json({ message: "Conversion tracked." }, { status: 200 })
   } catch (error) {
-    console.error("[AFFILIATE_CONVERT]", error)
-    return NextResponse.json({ error: "Internal error" }, { status: 500 })
+    console.error("Conversion error:", error)
+    return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
-} 
+}

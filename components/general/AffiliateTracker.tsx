@@ -2,18 +2,29 @@
 
 import { useEffect } from "react"
 
-export function AffiliateTracker({ refCode }: { refCode: string }) {
-  useEffect(() => {
-    if (!refCode) return
+interface AffiliateTrackerProps {
+  refCode: string
+}
 
-    fetch(`/api/affiliate/track?ref=${refCode}`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Affiliate tracked:", data)
-      })
-      .catch((err) => {
-        console.error("Affiliate tracking failed:", err)
-      })
+export function AffiliateTracker({ refCode }: AffiliateTrackerProps) {
+  useEffect(() => {
+    if (!refCode || typeof window === "undefined") return
+
+    const alreadyTracked = localStorage.getItem(`tracked_referral_${refCode}`)
+    if (alreadyTracked) return
+
+    localStorage.setItem(`tracked_referral_${refCode}`, "true")
+
+    // Send referral to backend
+    fetch("/api/affiliate/click", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ affiliateCode: refCode }) // ✅ Match your existing backend
+    }).catch((err) => {
+      console.error("Affiliate click tracking failed:", err)
+    })
   }, [refCode])
 
   return null

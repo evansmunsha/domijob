@@ -1,3 +1,9 @@
+
+//api/utils/auth.ts
+
+
+
+
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
@@ -64,14 +70,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   events: {
     createUser: async ({ user }) => {
-      if (user.id) {
-        await addFreeSignupCredits(user.id);
-      } else {
+      if (!user.id) {
         console.warn("User ID is undefined in createUser event");
+        return;
+      }
+  
+      try {
+        // 1. Give free signup credits
+        await addFreeSignupCredits(user.id);
+  
+        // 2. Check if user was referred
+        const referredUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { referredByCode: true }
+        });
+  
+        if (!referredUser?.referredByCode) return;
+  
+        // 3. Find the affiliate
+        const affiliate = await prisma.affiliate.findUnique({
+          where: { code: referredUser.referredByCode }
+        });
+  
+        if (!affiliate) return;
+  
+        // 4. Create the referral record
+        await prisma.affiliateReferral.create({
+          data: {
+            affiliateId: affiliate.id,
+            referredUserId: user.id,
+            status: "PENDING",
+            commissionAmount: 0, // Initial amount
+          }
+        });
+  
+      } catch (error) {
+        console.error("Error in createUser event:", error);
       }
     },
-  },
+  }
+  
   
 
 })
-
