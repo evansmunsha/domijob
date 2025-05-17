@@ -2,29 +2,24 @@ import type { DefaultSession } from "next-auth"
 import type { UserType } from "@prisma/client"
 
 declare module "next-auth" {
-  /**
-   * Returned by `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
-   */
   interface Session {
     user: {
       id: string
-    name?: string | null
-    email?: string | null
-    image?: string | null
-    stripeCustomerId?: string | null
-    userType?: string | null
-    companyId?: string | null
+      name?: string | null
+      email?: string | null
+      image?: string | null
+      stripeCustomerId?: string | null
+      userType?: UserType | "COMPANY" | "JOB_SEEKER" | null
+      companyId?: string | null
+      referredByCode?: string | null
     } & DefaultSession["user"]
   }
 
-  /**
-   * The shape of the user object returned in the OAuth providers' `profile` callback,
-   * or the second parameter of the `session` callback, when using a database.
-   */
   interface User {
-    /** The user's type (COMPANY or JOB_SEEKER) */
-    userType?: UserType
-    /** The company ID if the user is a company */
+    id: string
+    userType?: UserType | "COMPANY" | "JOB_SEEKER"
     companyId?: string
+    referredByCode?: string | null
+    stripeCustomerId?: string | null
   }
 }

@@ -1,14 +1,10 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./db";
-import Google from "next-auth/providers/google";
-import { cookies } from "next/headers"
-
-
- 
-
-// Import your authentication providers here
+import { cookies } from "next/headers";
+import { addFreeSignupCredits } from "@/app/actions/aiCredits"; // ✅ Add this
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -25,49 +21,57 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
-        session.user.id = user.id
-        session.user.userType = user.userType
+        session.user.id = user.id;
+        session.user.userType = user.userType;
 
         if (user.userType === "COMPANY") {
           const company = await prisma.company.findUnique({
             where: { userId: user.id },
             select: { id: true },
-          })
+          });
           if (company) {
-            session.user.companyId = company.id
+            session.user.companyId = company.id;
           }
         }
       }
-      return session
+      return session;
     },
     async signIn({ user }) {
-      // Store the affiliate referral code if present
       try {
-        const cookieStore = cookies()
-        const affiliateCode = (await cookieStore).get('affiliate_code')?.value
-        
+        const cookieStore = cookies();
+        const affiliateCode = (await cookieStore).get("affiliate_code")?.value;
+
         if (affiliateCode && user.id) {
-          // Check if user already exists first
           const existingUser = await prisma.user.findUnique({
-            where: { id: user.id }
-          })
-          
-          // Only set referral code for new users
-          if (!existingUser && affiliateCode) {
+            where: { id: user.id },
+            select: { referredByCode: true },
+          });
+
+          if (affiliateCode && existingUser?.referredByCode === null) {
             await prisma.user.update({
               where: { id: user.id },
-              data: { referredByCode: affiliateCode }
-            })
+              data: { referredByCode: affiliateCode },
+            });
           }
         }
       } catch (error) {
-        console.error("Error storing affiliate code:", error)
-        // Continue with sign in even if storing affiliate code fails
+        console.error("Error storing affiliate code:", error);
       }
-      
-      return true
+
+      return true;
     },
   },
-})
 
+  events: {
+    createUser: async ({ user }) => {
+      if (user.id) {
+        await addFreeSignupCredits(user.id);
+      } else {
+        console.warn("User ID is undefined in createUser event");
+      }
+    },
+  },
+  
+
+})
 
