@@ -1,28 +1,91 @@
-// app/api/resume-enhancer/route.ts
 
-import { NextResponse } from "next/server";
-import { openai } from "@/lib/openai";
 
-export async function POST(req: Request) {
+
+
+import { NextRequest, NextResponse } from 'next/server';
+import { PDFExtract } from 'pdf.js-extract';
+import mammoth from 'mammoth';
+import formidable from 'formidable';
+import fs from 'fs/promises';
+import OpenAI from 'openai';
+
+// Disable default body parsing for file upload
+export const config = {
+  api: { bodyParser: false },
+};
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+
+// Parse form using formidable
+const parseForm = async (req: NextRequest) => {
+  const form = formidable({ multiples: false, uploadDir: '/tmp', keepExtensions: true });
+
+  return await new Promise<{ files: formidable.Files }>((resolve, reject) => {
+    form.parse(req as any, (err, _fields, files) => {
+      if (err) reject(err);
+      else resolve({ files });
+    });
+  });
+};
+
+export async function POST(req: NextRequest) {
   try {
-    const { text } = await req.json();
+    const { files } = await parseForm(req);
+    const file = Array.isArray(files.file) ? files.file[0] : files.file;
 
-    const prompt = `
-You are an expert resume coach. Improve this resume to look more professional, highlight impact, fix grammar, and make it ready for top-tier job applications:
+    if (!file || !file.filepath || !file.mimetype) {
+      return NextResponse.json({ error: 'Invalid file' }, { status: 400 });
+    }
 
-"${text}"
-`;
+    const filePath = file.filepath;
+    let text = '';
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
+    // PDF
+    if (file.mimetype === 'application/pdf') {
+      const pdfExtract = new PDFExtract();
+      const data = await pdfExtract.extract(filePath, {});
+      text = data.pages.map((p: any) =>
+        p.content.map((c: any) => c.str).join(' ')
+      ).join('\n');
+    }
+
+    // Word (docx)
+    else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      const buffer = await fs.readFile(filePath);
+    
+      // Create a new Uint8Array copy to ensure a plain ArrayBuffer
+      const arrayBuffer = new Uint8Array(buffer).buffer;
+    
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      text = result.value;
+    }
+    
+    
+    
+
+    // Plain text
+    else if (file.mimetype.startsWith('text/')) {
+      const buffer = await fs.readFile(filePath);
+      text = buffer.toString('utf-8');
+    }
+
+    else {
+      return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
+    }
+
+    const prompt = `You are a professional resume assistant. Improve this resume content:\n\n${text}`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     });
 
-    const result = response.choices[0].message.content;
+    const result = completion.choices[0].message?.content || 'No result.';
     return NextResponse.json({ result });
-  } catch (error) {
-    console.error("Error enhancing resume:", error);
-    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+
+  } catch (err: any) {
+    console.error('Error in resume-enhancer:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }
