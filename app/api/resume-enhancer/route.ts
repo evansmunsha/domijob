@@ -3,7 +3,7 @@
 
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PDFExtract } from 'pdf.js-extract';
+import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import formidable from 'formidable';
 import fs from 'fs/promises';
@@ -42,12 +42,11 @@ export async function POST(req: NextRequest) {
 
     // PDF
     if (file.mimetype === 'application/pdf') {
-      const pdfExtract = new PDFExtract();
-      const data = await pdfExtract.extract(filePath, {});
-      text = data.pages.map((p: any) =>
-        p.content.map((c: any) => c.str).join(' ')
-      ).join('\n');
+      const buffer = await fs.readFile(filePath);
+      const data = await pdfParse(buffer as Buffer);
+      text = data.text;
     }
+    
 
     // Word (docx)
     else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
