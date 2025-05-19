@@ -73,11 +73,12 @@ export default function ResumeEnhancerPage() {
       <h1 className="text-2xl font-bold mb-4">AI Resume Enhancer</h1>
 
       <input
-        type="file"
-        accept=".pdf,.doc,.docx,.txt"
-        onChange={handleFileChange}
-        className="mb-4 block"
-      />
+  type="file"
+  accept=".docx"
+  onChange={handleFileChange}
+  className="mb-4 block"
+/>
+
 
       <button
         onClick={handleEnhance}

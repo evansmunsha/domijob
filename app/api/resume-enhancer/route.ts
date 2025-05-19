@@ -3,6 +3,7 @@
 
 import { OpenAI } from 'openai';
 import { NextRequest } from 'next/server';
+import mammoth from 'mammoth';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -14,8 +15,19 @@ export async function POST(req: NextRequest) {
     return new Response('No file uploaded', { status: 400 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const plainText = buffer.toString('utf-8'); // Simplified parsing
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  // Extract text from DOCX using mammoth
+  let plainText: string;
+try {
+  const result = await mammoth.extractRawText({ buffer: buffer as any });
+  plainText = result.value;
+} catch (error) {
+  console.error('Error parsing DOCX:', error);
+  return new Response('Failed to parse DOCX file.', { status: 500 });
+}
+
 
   const prompt = `Improve this resume:\n\n${plainText}`;
 
@@ -45,3 +57,4 @@ export async function POST(req: NextRequest) {
     },
   });
 }
+
