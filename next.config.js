@@ -2,8 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    serverActions: true,
+    serverActions: {
+      enabled: true // ✅ correct way as of Next.js 15
+    }
   },
+  
   images: {
     domains: ['utfs.io', 'avatar.vercel.sh'],
   },
