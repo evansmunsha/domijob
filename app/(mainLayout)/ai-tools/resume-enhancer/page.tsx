@@ -1,15 +1,25 @@
-//(mainLayout)/ai-tools/resume-enhancer/page.tsx
-
-
 'use client';
 
-import React, { useState } from 'react';
+import SignUpModal from '@/components/SignUpModal';
+import React, { useEffect, useState } from 'react';
 
 export default function ResumeEnhancerPage() {
   const [file, setFile] = useState<File | null>(null);
   const [enhancedText, setEnhancedText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [guestCredits, setGuestCredits] = useState<number | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // Read guest credits from cookie
+  useEffect(() => {
+    const match = document.cookie.match(/domijob_guest_credits=(\d+)/);
+    if (match) {
+      setGuestCredits(parseInt(match[1]));
+    } else {
+      setGuestCredits(50); // Default if not found
+    }
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0] || null;
@@ -24,18 +34,24 @@ export default function ResumeEnhancerPage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     setLoading(true);
     setError('');
     setEnhancedText('');
+
+    const formData = new FormData();
+    formData.append('file', file);
 
     try {
       const res = await fetch('/api/resume-enhancer', {
         method: 'POST',
         body: formData,
       });
+
+      if (res.status === 403) {
+        setShowModal(true);
+        return;
+      }
+      
 
       if (!res.body) throw new Error('No response body.');
 
@@ -49,9 +65,16 @@ export default function ResumeEnhancerPage() {
         const chunk = decoder.decode(value, { stream: true });
         setEnhancedText(prev => prev + chunk);
       }
+
+      // ✅ Update guest credits UI
+      const updatedMatch = document.cookie.match(/domijob_guest_credits=(\d+)/);
+      if (updatedMatch) {
+        setGuestCredits(parseInt(updatedMatch[1]));
+      }
+
     } catch (err: any) {
       console.error('Error enhancing resume:', err.message);
-      setError(err.message);
+      setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -62,6 +85,12 @@ export default function ResumeEnhancerPage() {
       <div className="max-w-3xl mx-auto">
         <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-xl p-6">
           <h1 className="text-3xl font-bold mb-6">🎯 AI Resume Enhancer</h1>
+
+          {guestCredits !== null && (
+            <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+              You have <span className="font-bold">{guestCredits}</span> free {guestCredits === 1 ? 'credit' : 'credits'} left.
+            </div>
+          )}
 
           <div className="mb-4">
             <label className="block mb-1 font-medium">Upload DOCX Resume</label>
@@ -75,8 +104,8 @@ export default function ResumeEnhancerPage() {
 
           <button
             onClick={handleEnhance}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md transition"
-            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md transition disabled:opacity-60"
+            disabled={loading || (guestCredits !== null && guestCredits <= 0)}
           >
             {loading ? 'Enhancing...' : 'Enhance Resume'}
           </button>
@@ -119,6 +148,8 @@ export default function ResumeEnhancerPage() {
           )}
         </div>
       </div>
+      <SignUpModal isOpen={showModal} onClose={() => setShowModal(false)} />
+
     </div>
   );
 }

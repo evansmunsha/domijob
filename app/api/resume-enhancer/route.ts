@@ -1,11 +1,11 @@
-//pages/api/resume-enhancer/route.ts
-
-
-import { OpenAI } from 'openai';
+import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
+import { OpenAI } from 'openai';
 import mammoth from 'mammoth';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const GUEST_CREDIT_COOKIE = 'domijob_guest_credits';
+const MAX_GUEST_CREDITS = 50;
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -15,19 +15,36 @@ export async function POST(req: NextRequest) {
     return new Response('No file uploaded', { status: 400 });
   }
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  // ✅ Handle guest credits
+  const cookieStore = cookies();
+  const cookie = (await cookieStore).get(GUEST_CREDIT_COOKIE);
+  let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
 
-  // Extract text from DOCX using mammoth
+  if (guestCredits <= 0) {
+    return new Response('No guest credits remaining. Please sign up to continue.', {
+      status: 403,
+    });
+  }
+
+  // ✅ Decrement credits and update cookie
+  guestCredits -= 1;
+  (await cookieStore).set(GUEST_CREDIT_COOKIE, guestCredits.toString(), {
+    path: '/',
+    httpOnly: false, // Client can read
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+  });
+
+  // ✅ Extract text from DOCX
   let plainText: string;
-try {
-  const result = await mammoth.extractRawText({ buffer: buffer as any });
-  plainText = result.value;
-} catch (error) {
-  console.error('Error parsing DOCX:', error);
-  return new Response('Failed to parse DOCX file.', { status: 500 });
-}
-
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const result = await mammoth.extractRawText({ buffer: buffer as any });
+    plainText = result.value;
+  } catch (error) {
+    console.error('Error parsing DOCX:', error);
+    return new Response('Failed to parse DOCX file.', { status: 500 });
+  }
 
   const prompt = `Improve this resume:\n\n${plainText}`;
 
@@ -57,4 +74,3 @@ try {
     },
   });
 }
-

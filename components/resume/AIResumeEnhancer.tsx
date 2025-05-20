@@ -98,7 +98,7 @@ export function AIResumeEnhancer() {
             )}
             
             <div className="flex items-center justify-between">
-              {/* <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 {isUploading ? (
                   <Button variant="outline" size="sm" disabled>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -143,7 +143,7 @@ export function AIResumeEnhancer() {
                   />
                 )}
                 <span className="text-xs text-muted-foreground">Accepts PDF or Word</span>
-              </div> */}
+              </div>
               <Button 
                 onClick={enhanceResume} 
                 disabled={isLoading || isUploading || !resumeText.trim()}
