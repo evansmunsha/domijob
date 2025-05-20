@@ -1,3 +1,6 @@
+//(mainLayout)/ai-tools/resume-enhancer/page.tsx
+
+
 'use client';
 
 import React, { useState } from 'react';

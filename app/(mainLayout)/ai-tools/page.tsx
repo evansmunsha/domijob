@@ -1,3 +1,7 @@
+//(mainLayout)/ai-tools/page.tsx
+
+
+
 import { Metadata } from "next";
 import { auth } from "@/app/utils/auth";
 import { redirect } from "next/navigation";

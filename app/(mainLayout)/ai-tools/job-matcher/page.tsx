@@ -1,3 +1,6 @@
+//(mainLayout)/ai-tools/job-matcher/page.tsx
+
+
 import { Metadata } from "next"
 import { auth } from "@/app/utils/auth"
 import { redirect } from "next/navigation"
