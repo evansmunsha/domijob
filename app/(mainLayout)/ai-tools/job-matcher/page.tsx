@@ -1,6 +1,5 @@
 "use client"
 
-import { Metadata } from "next"
 import { auth } from "@/app/utils/auth"
 import { redirect } from "next/navigation"
 import {
@@ -14,10 +13,6 @@ import { CREDIT_COSTS } from "@/app/utils/credits"
 import { use } from "react"// ⬅️ Make sure this path is correct
 import SignUpModal from "@/components/SignUpModal"
 
-export const metadata: Metadata = {
-  title: "AI Job Matcher",
-  description: "Match your resume with available jobs using AI"
-}
 
 export default function JobMatcherPage() {
   const session = use(auth())
