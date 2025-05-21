@@ -1,5 +1,6 @@
+"use client"
 
-
+import { Metadata } from "next"
 import { auth } from "@/app/utils/auth"
 import { redirect } from "next/navigation"
 import {
@@ -11,13 +12,16 @@ import Link from "next/link"
 import { getUserCreditBalance } from "@/app/actions/aiCredits"
 import { CREDIT_COSTS } from "@/app/utils/credits"
 import { use } from "react"// ⬅️ Make sure this path is correct
-import SignUpModal from "@/components/SignUpModal"
 
+
+export const metadata: Metadata = {
+  title: "AI Job Matcher",
+  description: "Match your resume with available jobs using AI"
+}
 
 export default function JobMatcherPage() {
   const session = use(auth())
   const creditsBalance = use(getUserCreditBalance())
-  const showSignupModal = !session?.user || creditsBalance === 0
 
   if (!session?.user?.id) {
     redirect("/login")
@@ -25,9 +29,7 @@ export default function JobMatcherPage() {
 
   return (
     <div className="container py-10 max-w-6xl mx-auto">
-      {showSignupModal && <SignUpModal isOpen={false} onClose={function (): void {
-        throw new Error("Function not implemented.")
-      } } />}
+      
       
       <div className="mb-8 space-y-2">
         <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
