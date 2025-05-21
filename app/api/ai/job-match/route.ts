@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/app/utils/auth";
+import { cookies } from "next/headers";
 import { prisma } from "@/app/utils/db";
 import { generateAIResponse } from "@/app/utils/openai";
 import { JobPost } from "@prisma/client";
 
-// Type for the job match results from AI
+const GUEST_CREDIT_COOKIE = "domijob_guest_credits";
+const MAX_GUEST_CREDITS = 50;
+const COST_PER_REQUEST = 10;
+
 type JobMatch = {
   jobId: string;
   score: number;
   reason: string;
 };
 
-// Type for jobs with company info included
 type JobWithCompany = JobPost & {
   company: {
     name: string;
@@ -21,22 +23,33 @@ type JobWithCompany = JobPost & {
 
 export async function POST(req: Request) {
   try {
-    // Get authenticated user
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // ✅ Guest credits
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get(GUEST_CREDIT_COOKIE);
+    let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
+
+    if (guestCredits < COST_PER_REQUEST) {
+      return NextResponse.json(
+        { error: "You have 0 credits left. Please sign up to continue." },
+        { status: 403 }
+      );
     }
 
-    const userId = session.user.id ?? null;
+    // ✅ Deduct credits and update cookie
+    guestCredits -= COST_PER_REQUEST;
+    cookieStore.set(GUEST_CREDIT_COOKIE, guestCredits.toString(), {
+      path: "/",
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
     const { resumeText, jobIds } = await req.json();
 
     if (!resumeText) {
       return NextResponse.json({ error: "Resume text is required" }, { status: 400 });
     }
 
-    // If specific job IDs are provided, match against those
-    // Otherwise fetch recent active jobs
-    const jobs = jobIds?.length > 0
+    const jobs: JobWithCompany[] = jobIds?.length > 0
       ? await prisma.jobPost.findMany({
           where: {
             id: { in: jobIds },
@@ -44,27 +57,17 @@ export async function POST(req: Request) {
           },
           include: {
             company: {
-              select: {
-                name: true,
-                location: true
-              }
+              select: { name: true, location: true }
             }
           }
         })
       : await prisma.jobPost.findMany({
-          where: {
-            status: "ACTIVE",
-          },
+          where: { status: "ACTIVE" },
           take: 20,
-          orderBy: {
-            createdAt: 'desc'
-          },
+          orderBy: { createdAt: 'desc' },
           include: {
             company: {
-              select: {
-                name: true,
-                location: true
-              }
+              select: { name: true, location: true }
             }
           }
         });
@@ -73,9 +76,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ matches: [] });
     }
 
-    // Create a prompt for the AI
     const systemPrompt = `You are an expert job matching system. Analyze the resume and job descriptions to find the best matches based on skills, experience, and qualifications. Return a JSON object with an array of matches, each containing jobId and score (0-100) and brief reason for the match.`;
-    
+
     const userPrompt = `Resume:
 ${resumeText}
 
@@ -95,38 +97,20 @@ Return JSON in the following format:
       "jobId": "job-id-1",
       "score": 85,
       "reason": "Strong match in [specific skills] with 5+ years relevant experience"
-    },
-    ...more matches sorted by score
+    }
   ]
 }`;
 
-    // Call OpenAI
     const result = await generateAIResponse(
-      userId,
+      "guest",
       "job_match",
       systemPrompt,
       userPrompt,
-      { cache: true }
+      { cache: true, skipCreditCheck: true }
     );
 
-    // Store user's resume for future use if they don't have one
-    if (userId) {
-      const userProfile = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { JobSeeker: true }
-      });
-
-      if (userProfile?.JobSeeker && !userProfile.JobSeeker.resume) {
-        await prisma.jobSeeker.update({
-          where: { userId: userId },
-          data: { resume: resumeText }
-        });
-      }
-    }
-
-    // Enhance the results with full job details
-    const enhancedMatches = result.matches.map((match: JobMatch) => {
-      const job = jobs.find((j: JobWithCompany) => j.id === match.jobId);
+    const enhancedMatches = result.matches?.map((match: JobMatch) => {
+      const job = jobs.find((j) => j.id === match.jobId);
       return {
         ...match,
         job: job ? {
@@ -137,9 +121,14 @@ Return JSON in the following format:
           createdAt: job.createdAt
         } : null
       };
-    }).filter((match: { job: any }) => match.job !== null);
+    }).filter((match: { job: any }) => match.job !== null) || [];
 
-    return NextResponse.json({ matches: enhancedMatches });
+    return NextResponse.json({
+      matches: enhancedMatches,
+      creditsUsed: COST_PER_REQUEST,
+      remainingCredits: guestCredits
+    });
+
   } catch (error) {
     console.error("Job matching error:", error);
     return NextResponse.json(

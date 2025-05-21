@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ✅ Decrement credits and update cookie
-  guestCredits -= 1;
+  guestCredits -= 10;
   (await cookieStore).set(GUEST_CREDIT_COOKIE, guestCredits.toString(), {
     path: '/',
     httpOnly: false, // Client can read

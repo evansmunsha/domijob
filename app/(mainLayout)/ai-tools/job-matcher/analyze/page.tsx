@@ -33,6 +33,11 @@ export default function JobMatcherAnalyzePage() {
   
   // Fetch user credits on page load
   useEffect(() => {
+
+    
+    if (activeTab === "results") {
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      }
     // Check if user is logged in
     fetch("/api/auth/session")
       .then(res => res.json())
@@ -74,7 +79,7 @@ export default function JobMatcherAnalyzePage() {
             id: ""
         })
       })
-  }, [router])
+  }, [router,activeTab])
   
   async function handleAnalyzeResume() {
     if (!resumeText.trim()) {
@@ -319,7 +324,8 @@ export default function JobMatcherAnalyzePage() {
                               </h4>
                               <ul className="list-disc pl-5 space-y-1">
                                 {match.missingSkills.map((skill: string, idx: number) => (
-                                  <li key={idx} className="text-sm">{skill}</li>
+                                  <Badge key={idx} variant="destructive" className="mr-2 text-sm">{skill}</Badge>
+
                                 ))}
                               </ul>
                             </div>

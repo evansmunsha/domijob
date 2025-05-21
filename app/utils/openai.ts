@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { prisma } from "@/app/utils/db";
-import { checkUserCredits, deductCredits } from "./credits";
+import { checkUserCredits, deductCredits, useCredits } from "./credits";
+
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -102,17 +103,15 @@ export async function generateAIResponse(
       }
     }
     
-    // Check and deduct credits if user is authenticated and credit check is not skipped
-    if (userId && !options.skipCreditCheck) {
-      const hasEnoughCredits = await checkUserCredits(userId, endpoint);
-      
-      if (!hasEnoughCredits) {
-        throw new Error("Insufficient credits to use this AI feature. Please purchase more credits.");
+    // Check and deduct credits for both anonymous and signed-in users
+    if (!options.skipCreditCheck) {
+      const didDeduct = await useCredits(userId, endpoint);
+
+      if (!didDeduct) {
+        throw new Error("You’ve used all your free credits. Please sign up or buy more credits.");
       }
-      
-      // Deduct credits before processing
-      await deductCredits(userId, endpoint);
     }
+
 
     // Use faster model for job_description_enhancement to speed up response
     const modelName = endpoint === 'job_description_enhancement' ? 'gpt-3.5-turbo' : settings.model;
