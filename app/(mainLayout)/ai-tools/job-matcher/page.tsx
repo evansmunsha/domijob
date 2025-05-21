@@ -1,4 +1,4 @@
-"use client"
+
 
 import { auth } from "@/app/utils/auth"
 import { redirect } from "next/navigation"
