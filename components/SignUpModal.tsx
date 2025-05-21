@@ -26,7 +26,7 @@ export default function SignUpModal({ isOpen, onClose }: SignUpModalProps) {
             Maybe Later
           </button>
           <a
-            href="/sign-up"
+            href="/login"
             className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white"
           >
             Sign Up
