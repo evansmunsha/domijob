@@ -27,7 +27,7 @@ export function AIResumeEnhancer() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/ai/resume-enhance", {
+      const response = await fetch("/api/ai/resume-enhancer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
