@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { generateAIResponse } from "@/app/utils/openai";
+import { auth } from "@/app/utils/auth";
+import { prisma } from "@/app/utils/db";
+import { cookies } from "next/headers";
 import { CREDIT_COSTS } from "@/app/utils/credits";
-import { handleCreditCharge } from "@/app/utils/credits/credit-handler";
+
+// Constants
+const GUEST_CREDIT_COOKIE = "domijob_guest_credits";
+const MAX_GUEST_CREDITS = 50;
 
 // Helpers
 function convertTiptapToText(doc: any): string {
@@ -46,6 +52,87 @@ function flattenEnhancedDescription(obj: any): string {
   return lines.join('\n');
 }
 
+/**
+ * Handles credit charging for both authenticated and anonymous users
+ */
+async function handleCreditCharge(featureType: keyof typeof CREDIT_COSTS | string) {
+  // Get credit cost for this feature
+  const creditCost = CREDIT_COSTS[featureType as keyof typeof CREDIT_COSTS] || 10;
+
+  // Check if user is authenticated
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  // Handle authenticated user
+  if (userId) {
+    const userCredits = await prisma.userCredits.findUnique({
+      where: { userId },
+    });
+
+    if (!userCredits || userCredits.balance < creditCost) {
+      throw new Error("Insufficient credits. Please purchase more credits to continue.");
+    }
+
+    // Deduct credits using a transaction
+    await prisma.$transaction(async (tx) => {
+      // Update user's credit balance
+      await tx.userCredits.update({
+        where: { userId },
+        data: { balance: userCredits.balance - creditCost }
+      });
+      
+      // Log the transaction if the table exists
+      try {
+        await tx.creditTransaction.create({
+          data: {
+            userId,
+            amount: -creditCost,
+            type: "usage",
+            description: `Used ${creditCost} credits for ${featureType}`
+          }
+        });
+      } catch (error) {
+        // If creditTransaction table doesn't exist, just continue
+        console.log("Note: Credit transaction logging skipped");
+      }
+    });
+    
+    return {
+      userId,
+      isGuest: false,
+      creditsUsed: creditCost,
+      remainingCredits: userCredits.balance - creditCost
+    };
+  } else {
+    // Anonymous user - use cookie credits
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get(GUEST_CREDIT_COOKIE);
+    let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
+    
+    // Validate guest credits
+    if (isNaN(guestCredits)) guestCredits = MAX_GUEST_CREDITS;
+    
+    if (guestCredits < creditCost) {
+      throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
+    }
+    
+    // Update guest credits
+    const updatedCredits = guestCredits - creditCost;
+    cookieStore.set(GUEST_CREDIT_COOKIE, updatedCredits.toString(), {
+      path: "/",
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
+    
+    return {
+      userId: "guest",
+      isGuest: true,
+      creditsUsed: creditCost,
+      remainingCredits: updatedCredits
+    };
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { jobTitle, jobDescription, industry, location } = await req.json();
@@ -58,7 +145,13 @@ export async function POST(req: Request) {
     try {
       creditInfo = await handleCreditCharge("job_description_enhancement");
     } catch (error) {
-      return NextResponse.json({ error: error.message }, { status: 402 });
+      if (error instanceof Error) {
+        return NextResponse.json({ 
+          error: error.message,
+          requiresSignup: error.message.includes("Sign up to get")
+        }, { status: 402 });
+      }
+      return NextResponse.json({ error: "Credit check failed" }, { status: 402 });
     }
 
     const systemPrompt = `You are an expert job description writer...`; // Keep the rest as-is
@@ -92,16 +185,22 @@ export async function POST(req: Request) {
             if (parsedDoc?.type === 'doc') {
               result.enhancedDescription = convertTiptapToText(parsedDoc);
             }
-          } catch {}
+          } catch (parseError) {
+            // Parsing error, but we can continue with the string as-is
+          }
         }
-      } catch {}
+      } catch (formatError) {
+        console.error("Error formatting description:", formatError);
+        // Continue with the original result
+      }
 
       return NextResponse.json({
         debugRaw,
         enhancedDescription: result.enhancedDescription,
         titleSuggestion: result.titleSuggestion,
         creditsUsed: creditInfo.creditsUsed,
-        ...(creditInfo.isGuest && { remainingCredits: creditInfo.remainingCredits })
+        remainingCredits: creditInfo.remainingCredits,
+        isGuest: creditInfo.isGuest
       });
     } catch (error) {
       clearTimeout(timeout);

@@ -2,36 +2,108 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/app/utils/db";
 import { generateAIResponse } from "@/app/utils/openai";
 import { cookies } from "next/headers";
+import { auth } from "@/app/utils/auth";
+import { CREDIT_COSTS } from "@/app/utils/credits";
 
 const GUEST_CREDIT_COOKIE = 'domijob_guest_credits';
 const MAX_GUEST_CREDITS = 50;
-const GUEST_CREDIT_COST = 10;
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = cookies();
-    const cookie = (await cookieStore).get(GUEST_CREDIT_COOKIE);
-    let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
-
-    if (guestCredits < GUEST_CREDIT_COST) {
-      return NextResponse.json(
-        { error: "Insufficient guest credits. Please sign up to continue." },
-        { status: 403 }
-      );
+    // Get the feature cost
+    const featureCost = CREDIT_COSTS.job_match || 10;
+    
+    // Check authentication status
+    const session = await auth();
+    const userId = session?.user?.id;
+    
+    // Handle credits based on authentication status
+    let creditInfo: {
+      isGuest: boolean;
+      creditsUsed: number;
+      remainingCredits: number;
+    };
+    
+    if (userId) {
+      // Authenticated user - use database credits
+      const userCredits = await prisma.userCredits.findUnique({
+        where: { userId }
+      });
+      
+      if (!userCredits || userCredits.balance < featureCost) {
+        return NextResponse.json(
+          { error: "Insufficient credits. Please purchase more credits to continue." },
+          { status: 402 }
+        );
+      }
+      
+      // Deduct credits using a transaction
+      await prisma.$transaction(async (tx) => {
+        // Update user's credit balance
+        await tx.userCredits.update({
+          where: { userId },
+          data: { balance: userCredits.balance - featureCost }
+        });
+        
+        // Log the transaction if the table exists
+        try {
+          await tx.creditTransaction.create({
+            data: {
+              userId,
+              amount: -featureCost,
+              type: "usage",
+              description: `Used ${featureCost} credits for resume analysis`
+            }
+          });
+        } catch (error) {
+          // If creditTransaction table doesn't exist, just continue
+          console.log("Note: Credit transaction logging skipped");
+        }
+      });
+      
+      creditInfo = {
+        isGuest: false,
+        creditsUsed: featureCost,
+        remainingCredits: userCredits.balance - featureCost
+      };
+    } else {
+      // Anonymous user - use cookie credits
+      const cookieStore = await cookies();
+      const cookie = cookieStore.get(GUEST_CREDIT_COOKIE);
+      let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
+      
+      // Validate guest credits
+      if (isNaN(guestCredits)) guestCredits = MAX_GUEST_CREDITS;
+      
+      if (guestCredits < featureCost) {
+        return NextResponse.json(
+          { 
+            error: "You've used all your free credits. Sign up to get 50 more free credits!",
+            requiresSignup: true
+          },
+          { status: 403 }
+        );
+      }
+      
+      // Update guest credits
+      const updatedCredits = guestCredits - featureCost;
+      cookieStore.set(GUEST_CREDIT_COOKIE, updatedCredits.toString(), {
+        path: "/",
+        httpOnly: false,
+        maxAge: 60 * 60 * 24 * 7 // 7 days
+      });
+      
+      creditInfo = {
+        isGuest: true,
+        creditsUsed: featureCost,
+        remainingCredits: updatedCredits
+      };
     }
 
     const { resumeText } = await req.json();
     if (!resumeText || typeof resumeText !== "string") {
       return NextResponse.json({ error: "Resume text is required" }, { status: 400 });
     }
-
-    // ✅ Deduct 10 guest credits
-    guestCredits -= GUEST_CREDIT_COST;
-    (await cookieStore).set(GUEST_CREDIT_COOKIE, guestCredits.toString(), {
-      path: "/",
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
 
     const systemPrompt = `You are an expert resume analyzer. Extract key skills, experience, job titles, and other relevant information from the resume text provided.`;
 
@@ -49,7 +121,7 @@ Resume:
 ${resumeText}`;
 
     const resumeAnalysis = await generateAIResponse(
-      "guest",
+      userId || "guest",
       "job_match",
       systemPrompt,
       userPrompt,
@@ -65,7 +137,11 @@ ${resumeText}`;
     });
 
     if (activeJobs.length === 0) {
-      return NextResponse.json({ matches: [], message: "No active jobs found." });
+      return NextResponse.json({ 
+        matches: [], 
+        message: "No active jobs found.",
+        ...creditInfo
+      });
     }
 
     const matchPrompt = `Match the candidate with jobs based on this analysis:
@@ -85,7 +161,7 @@ Respond with a JSON array like:
 Only include matches with score >= 50.`;
 
     const jobMatches = await generateAIResponse(
-      "guest",
+      userId || "guest",
       "job_match",
       "You are an expert job matching assistant.",
       matchPrompt,
@@ -117,8 +193,9 @@ Only include matches with score >= 50.`;
 
     return NextResponse.json({
       matches: enhancedMatches,
-      creditsUsed: GUEST_CREDIT_COST,
-      remainingCredits: guestCredits
+      creditsUsed: creditInfo.creditsUsed,
+      remainingCredits: creditInfo.remainingCredits,
+      isGuest: creditInfo.isGuest
     });
 
   } catch (error) {

@@ -1,36 +1,53 @@
 "use client"
 
-import { Metadata } from "next"
-import { auth } from "@/app/utils/auth"
-import { redirect } from "next/navigation"
-import {
-  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
-} from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Sparkles, CheckCircle } from "lucide-react"
+import { Sparkles, CheckCircle } from 'lucide-react'
 import Link from "next/link"
-import { getUserCreditBalance } from "@/app/actions/aiCredits"
 import { CREDIT_COSTS } from "@/app/utils/credits"
-import { use } from "react"// ⬅️ Make sure this path is correct
-
-
-export const metadata: Metadata = {
-  title: "AI Job Matcher",
-  description: "Match your resume with available jobs using AI"
-}
+import { useRouter } from "next/navigation"
 
 export default function JobMatcherPage() {
-  const session = use(auth())
-  const creditsBalance = use(getUserCreditBalance())
+  const router = useRouter()
+  const [creditInfo, setCreditInfo] = useState<{
+    isGuest: boolean;
+    credits: number;
+  } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  if (!session?.user?.id) {
-    redirect("/login")
+  useEffect(() => {
+    // Fetch credit information for both authenticated and anonymous users
+    async function fetchCredits() {
+      try {
+        const response = await fetch("/api/credits")
+        if (!response.ok) throw new Error("Failed to fetch credits")
+        const data = await response.json()
+        setCreditInfo(data)
+      } catch (error) {
+        console.error("Error fetching credits:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCredits()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="container py-10 max-w-6xl mx-auto">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="container py-10 max-w-6xl mx-auto">
-      
-      
       <div className="mb-8 space-y-2">
         <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
           <Sparkles className="h-8 w-8 text-primary" />
@@ -57,11 +74,17 @@ export default function JobMatcherPage() {
               </p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold">{creditsBalance}</div>
-              {creditsBalance < CREDIT_COSTS.job_match && (
-                <Button asChild size="sm" className="mt-2">
-                  <Link href="/ai-credits">Buy More Credits</Link>
-                </Button>
+              <div className="text-2xl font-bold">{creditInfo?.credits || 0}</div>
+              {creditInfo && creditInfo.credits < CREDIT_COSTS.job_match && (
+                creditInfo.isGuest ? (
+                  <Button asChild size="sm" className="mt-2">
+                    <Link href="/signup">Sign Up for 50 Free Credits</Link>
+                  </Button>
+                ) : (
+                  <Button asChild size="sm" className="mt-2">
+                    <Link href="/ai-credits">Buy More Credits</Link>
+                  </Button>
+                )
               )}
             </div>
           </div>
@@ -70,7 +93,7 @@ export default function JobMatcherPage() {
           <Button variant="outline" asChild>
             <Link href="/ai-tools">Back to AI Tools</Link>
           </Button>
-          {creditsBalance >= CREDIT_COSTS.job_match ? (
+          {creditInfo && creditInfo.credits >= CREDIT_COSTS.job_match ? (
             <Button asChild>
               <Link href="/ai-tools/job-matcher/analyze">
                 <Sparkles className="mr-2 h-4 w-4" />

@@ -1,17 +1,18 @@
+// app/utils/auth.ts
 
-//api/utils/auth.ts
-
-
-
-
+import { PrismaClient } from "@prisma/client"
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "./db";
 import { cookies } from "next/headers";
-import { addFreeSignupCredits } from "@/app/actions/aiCredits"; // ✅ Add this
+import { User } from "@prisma/client";
 
+// Constants for anonymous credits
+const GUEST_CREDIT_COOKIE = "domijob_guest_credits";
+const MAX_GUEST_CREDITS = 50;
+
+const prisma = new PrismaClient()
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -76,10 +77,43 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
   
       try {
-        // 1. Give free signup credits
-        await addFreeSignupCredits(user.id);
+        // 1. Check for anonymous credits in cookie
+        const cookieStore = await cookies();
+        const guestCreditCookie = cookieStore.get(GUEST_CREDIT_COOKIE);
+        let guestCredits = 0;
+        
+        if (guestCreditCookie) {
+          const parsedCredits = parseInt(guestCreditCookie.value);
+          if (!isNaN(parsedCredits) && parsedCredits > 0) {
+            guestCredits = parsedCredits;
+            
+            // Log the transfer of guest credits if you have a transaction table
+            try {
+              await prisma.creditTransaction.create({
+                data: {
+                  userId: user.id,
+                  amount: guestCredits,
+                  type: "guest_transfer",
+                  description: `Transferred ${guestCredits} remaining guest credits`,
+                }
+              });
+            } catch (error) {
+              // If creditTransaction table doesn't exist, just continue
+              console.log("Note: Guest credit transfer logging skipped");
+            }
+            
+            // Clear the guest credits cookie
+            cookieStore.set(GUEST_CREDIT_COOKIE, "", {
+              path: "/",
+              maxAge: 0, // Expire immediately
+            });
+          }
+        }
+        
+        // 2. Give free signup credits (plus any guest credits)
+        await addFreeSignupCredits(user.id, guestCredits);
   
-        // 2. Check if user was referred
+        // 3. Check if user was referred
         const referredUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { referredByCode: true }
@@ -87,14 +121,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   
         if (!referredUser?.referredByCode) return;
   
-        // 3. Find the affiliate
+        // 4. Find the affiliate
         const affiliate = await prisma.affiliate.findUnique({
           where: { code: referredUser.referredByCode }
         });
   
         if (!affiliate) return;
   
-        // 4. Create the referral record
+        // 5. Create the referral record
         await prisma.affiliateReferral.create({
           data: {
             affiliateId: affiliate.id,
@@ -109,7 +143,84 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
     },
   }
-  
-  
+});
 
-})
+
+
+
+
+// Function to add free signup credits to a user
+async function addFreeSignupCredits(userId: string, guestCredits: number) {
+  try {
+    await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        aiCredits: {
+          update: {
+            balance: {
+              increment: guestCredits,
+            },
+          },
+        },
+      },
+    })
+
+    await prisma.creditTransaction.create({
+      data: {
+        userId: userId,
+        amount: guestCredits,
+        type: "signup_bonus",
+        description: "Free signup credits",
+      },
+    })
+
+    console.log(`Successfully added ${guestCredits} signup credits to user ${userId}`)
+  } catch (error) {
+    console.error("Error adding signup credits:", error)
+  }
+}
+
+
+// Function to add free signup credits to a user
+
+
+// Function to handle user creation event
+export async function createUser(user: User, guestCredits = 0) {
+  try {
+    // 1. Create the user in the database
+    await prisma.user.create({
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      },
+    })
+
+    // 2. Give free signup credits (MAX_GUEST_CREDITS = 50, plus any guest credits)
+    await addFreeSignupCredits(user.id, guestCredits)
+
+    if (guestCredits > 0) {
+      try {
+        await prisma.creditTransaction.create({
+          data: {
+            userId: user.id,
+            amount: guestCredits,
+            type: "guest_transfer",
+            description: `Transferred ${guestCredits} remaining guest credits out of ${MAX_GUEST_CREDITS} initial credits`,
+          },
+        })
+      } catch (error) {
+        // If creditTransaction table doesn't exist, just continue
+        console.log("Note: Guest credit transfer logging skipped")
+      }
+    }
+
+    console.log(`Successfully created user ${user.id} and added signup credits.`)
+  } catch (error) {
+    console.error("Error creating user:", error)
+  }
+}
+

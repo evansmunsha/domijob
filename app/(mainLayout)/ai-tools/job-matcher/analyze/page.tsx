@@ -1,6 +1,3 @@
-//(mainLayout)/ai-tools/job-matcher/analyze/page.tsx
-
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -12,14 +9,11 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { 
-  Sparkles, Loader2, AlertCircle, CheckCircle, 
-  Building, MapPin, Clock, DollarSign, ThumbsUp,
-  ArrowLeft, AlertTriangle
-} from "lucide-react"
+import { Sparkles, Loader2, AlertCircle, CheckCircle, Building, MapPin, Clock, DollarSign, ThumbsUp, ArrowLeft, AlertTriangle } from 'lucide-react'
 import { CREDIT_COSTS } from "@/app/utils/credits"
 import Link from "next/link"
 import { toast } from "@/components/ui/use-toast"
+import SignUpModal from "@/components/SignUpModal"
 
 export default function JobMatcherAnalyzePage() {
   const router = useRouter()
@@ -29,57 +23,61 @@ export default function JobMatcherAnalyzePage() {
   const [error, setError] = useState("")
   const [creditsUsed, setCreditsUsed] = useState(0)
   const [activeTab, setActiveTab] = useState("input")
-  const [remainingCredits, setRemainingCredits] = useState(0)
+  const [creditInfo, setCreditInfo] = useState<{
+    isGuest: boolean;
+    credits: number;
+  } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [showSignUpModal, setShowSignUpModal] = useState(false)
   
-  // Fetch user credits on page load
+  // Fetch credit information on page load
   useEffect(() => {
-
-    
     if (activeTab === "results") {
-        window.scrollTo({ top: 0, behavior: "smooth" })
-      }
-    // Check if user is logged in
-    fetch("/api/auth/session")
-      .then(res => res.json())
-      .then(data => {
-        if (!data?.user) {
-          router.push("/login")
-        }
-      })
-      .catch(err => {
-        console.error("Error checking session:", err)
-        router.push("/login")
-      })
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
     
-    // Fetch user's credit balance
-    fetch("/api/user/credits")
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch credits")
-        return res.json()
-      })
-      .then(data => {
-        setRemainingCredits(data.balance || 0)
+    // Fetch credit information for both authenticated and anonymous users
+    async function fetchCredits() {
+      try {
+        const response = await fetch("/api/credits")
+        if (!response.ok) throw new Error("Failed to fetch credits")
+        const data = await response.json()
+        setCreditInfo(data)
         
-        if ((data.balance || 0) < CREDIT_COSTS.job_match) {
-          toast({
+        // Check if user has enough credits
+        if (data.credits < CREDIT_COSTS.job_match) {
+          if (data.isGuest) {
+            toast({
+              title: "Insufficient Credits",
+              description: "Sign up to get 50 more free credits!",
+              variant: "destructive",
+              id: ""
+            })
+          } else {
+            toast({
               title: "Insufficient Credits",
               description: `You need ${CREDIT_COSTS.job_match} credits to use this feature.`,
               variant: "destructive",
               id: ""
-          })
-          router.push("/ai-credits")
+            })
+            router.push("/ai-credits")
+          }
         }
-      })
-      .catch(err => {
-        console.error("Error fetching credits:", err)
+      } catch (error) {
+        console.error("Error fetching credits:", error)
         toast({
-            title: "Error",
-            description: "Failed to fetch your credit balance",
-            variant: "destructive",
-            id: ""
+          title: "Error",
+          description: "Failed to fetch your credit balance",
+          variant: "destructive",
+          id: ""
         })
-      })
-  }, [router,activeTab])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCredits()
+  }, [router, activeTab])
   
   async function handleAnalyzeResume() {
     if (!resumeText.trim()) {
@@ -102,28 +100,40 @@ export default function JobMatcherAnalyzePage() {
       const data = await response.json()
       
       if (!response.ok) {
+        // Handle insufficient credits with signup prompt for guests
+        if (response.status === 403 && data.requiresSignup) {
+          setShowSignUpModal(true)
+          throw new Error("You've used all your free credits. Sign up to get 50 more free credits!")
+        }
+        
         throw new Error(data.error || "Failed to analyze resume")
       }
       
       setMatches(data.matches || [])
       setCreditsUsed(data.creditsUsed || CREDIT_COSTS.job_match)
-      setRemainingCredits(prev => prev - (data.creditsUsed || CREDIT_COSTS.job_match))
+      
+      // Update credit info with the new balance
+      setCreditInfo(prev => prev ? {
+        ...prev,
+        credits: data.remainingCredits
+      } : null)
+      
       setActiveTab("results")
       
       toast({
-          title: "Analysis Complete",
-          description: `Found ${data.matches?.length || 0} job matches for your profile.`,
-          id: ""
+        title: "Analysis Complete",
+        description: `Found ${data.matches?.length || 0} job matches for your profile.`,
+        id: ""
       })
     } catch (error: any) {
       console.error("Error analyzing resume:", error)
       setError(error.message || "An error occurred while analyzing your resume")
       
       toast({
-          title: "Error",
-          description: error.message || "An error occurred while analyzing your resume",
-          variant: "destructive",
-          id: ""
+        title: "Error",
+        description: error.message || "An error occurred while analyzing your resume",
+        variant: "destructive",
+        id: ""
       })
     } finally {
       setIsAnalyzing(false)
@@ -148,6 +158,18 @@ export default function JobMatcherAnalyzePage() {
     if (diffDays < 7) return `${diffDays} days ago`
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
     return `${Math.floor(diffDays / 30)} months ago`
+  }
+  
+  if (isLoading) {
+    return (
+      <div className="container py-10 max-w-6xl mx-auto">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    )
   }
   
   return (
@@ -217,8 +239,11 @@ export default function JobMatcherAnalyzePage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-lg font-bold">{remainingCredits}</span>
+                    <span className="text-lg font-bold">{creditInfo?.credits || 0}</span>
                     <span className="text-muted-foreground ml-1">credits</span>
+                    {creditInfo?.isGuest && (
+                      <p className="text-xs text-green-600">Guest credits</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -229,7 +254,7 @@ export default function JobMatcherAnalyzePage() {
               </Button>
               <Button 
                 onClick={handleAnalyzeResume} 
-                disabled={isAnalyzing || !resumeText.trim() || remainingCredits < CREDIT_COSTS.job_match}
+                disabled={isAnalyzing || !resumeText.trim() || (creditInfo?.credits || 0) < CREDIT_COSTS.job_match}
               >
                 {isAnalyzing ? (
                   <>
@@ -266,7 +291,8 @@ export default function JobMatcherAnalyzePage() {
                     <CheckCircle className="h-4 w-4" />
                     <AlertTitle>Analysis Complete</AlertTitle>
                     <AlertDescription>
-                      Used {creditsUsed} credits for this analysis. Your remaining balance: {remainingCredits} credits.
+                      Used {creditsUsed} credits for this analysis. Your remaining balance: {creditInfo?.credits || 0} credits.
+                      {creditInfo?.isGuest && " Sign up to get 50 more free credits!"}
                     </AlertDescription>
                   </Alert>
                   
@@ -276,10 +302,10 @@ export default function JobMatcherAnalyzePage() {
                         <div className="bg-primary/5 px-6 py-3 flex justify-between items-center">
                           <div className="font-medium">Match Score</div>
                           <Badge 
-                            variant={match.matchScore >= 80 ? "default" : "outline"}
-                            className={match.matchScore >= 80 ? "bg-green-600" : ""}
+                            variant={match.score >= 80 ? "default" : "outline"}
+                            className={match.score >= 80 ? "bg-green-600" : ""}
                           >
-                            {match.matchScore}%
+                            {match.score}%
                           </Badge>
                         </div>
                         <CardHeader className="pb-2">
@@ -295,11 +321,11 @@ export default function JobMatcherAnalyzePage() {
                             </span>
                             <span className="flex items-center">
                               <Clock className="h-4 w-4 mr-1" />
-                              {formatDate(match.job?.postedAt)}
+                              {formatDate(match.job?.createdAt)}
                             </span>
                             <span className="flex items-center">
                               <DollarSign className="h-4 w-4 mr-1" />
-                              {formatSalary(match.job?.salary)}
+                              {formatSalary(match.job?.salaryRange)}
                             </span>
                           </CardDescription>
                         </CardHeader>
@@ -322,12 +348,13 @@ export default function JobMatcherAnalyzePage() {
                                 <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
                                 Areas for Improvement
                               </h4>
-                              <ul className="list-disc pl-5 space-y-1">
+                              <div className="flex flex-wrap gap-2">
                                 {match.missingSkills.map((skill: string, idx: number) => (
-                                  <Badge key={idx} variant="destructive" className="mr-2 text-sm">{skill}</Badge>
-
+                                  <Badge key={idx} variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                    {skill}
+                                  </Badge>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
                           )}
                           
@@ -363,6 +390,12 @@ export default function JobMatcherAnalyzePage() {
           </TabsContent>
         </Tabs>
       </Card>
+      
+      {/* Sign Up Modal */}
+      <SignUpModal 
+        isOpen={showSignUpModal} 
+        onClose={() => setShowSignUpModal(false)} 
+      />
     </div>
   )
-} 
+}
