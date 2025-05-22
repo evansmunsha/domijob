@@ -1,6 +1,4 @@
 "use client"
-
-import type React from "react"
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,9 +10,9 @@ import { CREDIT_COSTS } from "@/app/utils/credits"
 import Link from "next/link"
 import { toast } from "@/components/ui/use-toast"
 import SignUpModal from "@/components/SignUpModal"
+import { UploadButton } from "@/components/general/UploadThingReExport"
 
 export default function FileParserPage() {
-  const [file, setFile] = useState<File | null>(null)
   const [parsedText, setParsedText] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -25,6 +23,7 @@ export default function FileParserPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
   const [activeTab, setActiveTab] = useState("upload")
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null)
 
   // Fetch credit information on page load
   useEffect(() => {
@@ -37,10 +36,10 @@ export default function FileParserPage() {
       } catch (error) {
         console.error("Error fetching credits:", error)
         toast({
-            title: "Error",
-            description: "Failed to fetch your credit balance",
-            variant: "destructive",
-            id: ""
+          title: "Error",
+          description: "Failed to fetch your credit balance",
+          variant: "destructive",
+          id: ""
         })
       } finally {
         setIsLoading(false)
@@ -50,29 +49,17 @@ export default function FileParserPage() {
     fetchCredits()
   }, [])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null
-    setFile(selectedFile)
-    setParsedText("")
-    setError("")
-  }
-
-  const handleParse = async () => {
-    if (!file) {
-      setError("Please upload a DOCX or PDF file.")
-      return
-    }
-
+  const handleParse = async (fileUrl: string) => {
     // Check if user has enough credits
     if (creditInfo && creditInfo.credits < CREDIT_COSTS.file_parsing) {
       if (creditInfo.isGuest) {
         setShowSignUpModal(true)
       } else {
         toast({
-            title: "Insufficient Credits",
-            description: `You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`,
-            variant: "destructive",
-            id: ""
+          title: "Insufficient Credits",
+          description: `You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`,
+          variant: "destructive",
+          id: ""
         })
       }
       return
@@ -82,18 +69,18 @@ export default function FileParserPage() {
     setError("")
     setParsedText("")
 
-    const formData = new FormData()
-    formData.append("file", file)
-
     try {
       const res = await fetch("/api/ai/resume-parse", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ fileUrl }),
       })
 
       if (!res.ok) {
         // Handle insufficient credits with signup prompt for guests
-        if (res.status === 403) {
+        if (res.status === 402) {
           const data = await res.json()
           if (data.requiresSignup) {
             setShowSignUpModal(true)
@@ -123,19 +110,19 @@ export default function FileParserPage() {
       setActiveTab("result")
 
       toast({
-          title: "File Parsed",
-          description: "Your file has been successfully parsed.",
-          id: ""
+        title: "File Parsed",
+        description: "Your file has been successfully parsed.",
+        id: ""
       })
     } catch (err: any) {
       console.error("Error parsing file:", err.message)
       setError(err.message || "An error occurred. Please try again.")
 
       toast({
-          title: "Error",
-          description: err.message || "An error occurred while parsing your file",
-          variant: "destructive",
-          id: ""
+        title: "Error",
+        description: err.message || "An error occurred while parsing your file",
+        variant: "destructive",
+        id: ""
       })
     } finally {
       setLoading(false)
@@ -145,9 +132,9 @@ export default function FileParserPage() {
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(parsedText)
     toast({
-        title: "Copied",
-        description: "Text copied to clipboard",
-        id: ""
+      title: "Copied",
+      description: "Text copied to clipboard",
+      id: ""
     })
   }
 
@@ -159,9 +146,9 @@ export default function FileParserPage() {
     link.click()
 
     toast({
-        title: "Downloaded",
-        description: "Text saved as file",
-        id: ""
+      title: "Downloaded",
+      description: "Text saved as file",
+      id: ""
     })
   }
 
@@ -191,7 +178,7 @@ export default function FileParserPage() {
           <FileText className="h-8 w-8 text-primary" />
           Document Parser
         </h1>
-        <p className="text-muted-foreground">Extract text from PDF and DOCX files for easy editing and analysis</p>
+        <p className="text-muted-foreground">Extract text from DOCX files for easy editing and analysis</p>
       </div>
 
       <Card className="mb-8">
@@ -207,8 +194,7 @@ export default function FileParserPage() {
             <CardHeader>
               <CardTitle>Upload Your Document</CardTitle>
               <CardDescription>
-                Upload a PDF or DOCX file to extract its text content. This will use {CREDIT_COSTS.file_parsing}{" "}
-                credits.
+                Upload a DOCX file to extract its text content. This will use {CREDIT_COSTS.file_parsing} credits.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -223,29 +209,56 @@ export default function FileParserPage() {
               <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center">
                 <FileUp className="h-10 w-10 text-muted-foreground/50 mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">Upload Your Document</h3>
-                <p className="text-sm text-muted-foreground mb-4">Drag and drop your file here, or click to browse</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Drag and drop your DOCX file here, or click to browse
+                </p>
 
-                <input
-                  id="file-upload"
-                  type="file"
-                  accept=".pdf,.docx"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
+                <div className="flex flex-col items-center gap-2">
+                  {loading ? (
+                    <Button disabled>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Parsing...
+                    </Button>
+                  ) : (
+                    <UploadButton
+                      endpoint="resumeUploader"
+                      onClientUploadComplete={async (res) => {
+                        if (res && res.length > 0) {
+                          setUploadedFile({ name: res[0].name, size: res[0].size })
+                          await handleParse(res[0].url)
+                        }
+                      }}
+                      onUploadError={(error: Error) => {
+                        toast({
+                          title: "Upload Error",
+                          description: error.message,
+                          variant: "destructive",
+                          id: ""
+                        })
+                      }}
+                      content={{
+                        button({ isUploading }) {
+                          if (isUploading) {
+                            return (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Uploading...
+                              </>
+                            )
+                          }
+                          return "Upload DOCX File"
+                        },
+                      }}
+                    />
+                  )}
+                  <p className="text-xs text-muted-foreground">Only DOCX files are supported</p>
+                </div>
 
-                <Button
-                  variant="outline"
-                  onClick={() => document.getElementById("file-upload")?.click()}
-                  className="mx-auto"
-                >
-                  Browse Files
-                </Button>
-
-                {file && (
+                {uploadedFile && (
                   <div className="mt-4 flex items-center justify-center gap-2 text-sm">
                     <FileText className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{file.name}</span>
-                    <span className="text-muted-foreground">({Math.round(file.size / 1024)} KB)</span>
+                    <span className="font-medium">{uploadedFile.name}</span>
+                    <span className="text-muted-foreground">({Math.round(uploadedFile.size / 1024)} KB)</span>
                   </div>
                 )}
               </div>
@@ -269,22 +282,6 @@ export default function FileParserPage() {
             <CardFooter className="flex justify-between">
               <Button variant="outline" asChild>
                 <Link href="/ai-tools">Cancel</Link>
-              </Button>
-              <Button
-                onClick={handleParse}
-                disabled={loading || !file || (creditInfo?.credits || 0) < CREDIT_COSTS.file_parsing}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Parsing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Parse Document
-                  </>
-                )}
               </Button>
             </CardFooter>
           </TabsContent>
@@ -336,9 +333,7 @@ export default function FileParserPage() {
                 <FileUp className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-medium mb-2">1. Upload Your Document</h3>
-              <p className="text-sm text-muted-foreground">
-                Upload a PDF or DOCX file that you want to extract text from.
-              </p>
+              <p className="text-sm text-muted-foreground">Upload a DOCX file that you want to extract text from.</p>
             </div>
 
             <div className="flex flex-col items-center text-center p-4">
@@ -369,7 +364,7 @@ export default function FileParserPage() {
                 <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
                   ✓
                 </div>
-                <span className="text-sm">Extract text from scanned PDFs for editing</span>
+                <span className="text-sm">Extract text from Word documents for editing</span>
               </li>
               <li className="flex items-start gap-2">
                 <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
