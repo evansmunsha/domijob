@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
-import { CREDIT_COSTS, deductCredits, getUserCredits } from "@/app/utils/credits"
 import { auth } from "@/app/utils/auth"
+import { CREDIT_COSTS, deductCredits, getUserCredits } from "@/app/utils/credits"
 import { cookies } from "next/headers"
 import mammoth from "mammoth"
+import { PDFExtract } from "pdf.js-extract"
 
 // Constants for anonymous credits
 const GUEST_CREDIT_COOKIE = "domijob_guest_credits"
@@ -74,8 +75,11 @@ export async function POST(req: Request) {
     }
 
     // Validate file type
-    if (!fileUrl.toLowerCase().endsWith(".docx")) {
-      return NextResponse.json({ error: "Only DOCX files are supported" }, { status: 400 })
+    const isDocx = fileUrl.toLowerCase().endsWith(".docx")
+    const isPdf = fileUrl.toLowerCase().endsWith(".pdf")
+
+    if (!isDocx && !isPdf) {
+      return NextResponse.json({ error: "Only PDF and DOCX files are supported" }, { status: 400 })
     }
 
     // Handle credit charging for both authenticated and anonymous users
@@ -97,15 +101,32 @@ export async function POST(req: Request) {
     const fileResponse = await fetch(fileUrl)
 
     if (!fileResponse.ok) {
+      console.error(`Failed to fetch file: ${fileResponse.status} ${fileResponse.statusText}`)
       throw new Error(`Failed to fetch file: ${fileResponse.statusText}`)
     }
 
     // Get file as ArrayBuffer
     const fileBuffer = await fileResponse.arrayBuffer()
+    let text = ""
 
-    // Use mammoth to extract text from DOCX
-    const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer })
-    const text = result.value
+    // Process based on file type
+    if (isDocx) {
+      // Use mammoth to extract text from DOCX
+      const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer })
+      text = result.value
+    } else if (isPdf) {
+      // For PDF files, we'll use a simpler approach for now
+      try {
+        const pdfExtract = new PDFExtract()
+        const data = await pdfExtract.extractBuffer(Buffer.from(fileBuffer))
+
+        // Combine all page content
+        text = data.pages.map((page) => page.content.map((item) => item.str).join(" ")).join("\n\n")
+      } catch (pdfError) {
+        console.error("PDF parsing error:", pdfError)
+        throw new Error("Failed to parse PDF file. The file might be corrupted or password-protected.")
+      }
+    }
 
     if (!text.trim()) {
       throw new Error("Could not extract text from the file. The file might be empty or corrupted.")

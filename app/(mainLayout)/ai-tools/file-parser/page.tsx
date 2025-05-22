@@ -100,7 +100,7 @@ export default function FileParserPage() {
           <FileText className="h-8 w-8 text-primary" />
           Document Parser
         </h1>
-        <p className="text-muted-foreground">Extract text from DOCX files for easy editing and analysis</p>
+        <p className="text-muted-foreground">Extract text from PDF and DOCX files for easy editing and analysis</p>
       </div>
 
       <Card className="mb-8">
@@ -116,7 +116,8 @@ export default function FileParserPage() {
             <CardHeader>
               <CardTitle>Upload Your Document</CardTitle>
               <CardDescription>
-                Upload a DOCX file to extract its text content. This will use {CREDIT_COSTS.file_parsing} credits.
+                Upload a PDF or DOCX file to extract its text content. This will use {CREDIT_COSTS.file_parsing}{" "}
+                credits.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -132,7 +133,7 @@ export default function FileParserPage() {
                 <FileUp className="h-10 w-10 text-muted-foreground/50 mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">Upload Your Document</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Drag and drop your DOCX file here, or click to browse
+                  Drag and drop your PDF or DOCX file here, or click to browse
                 </p>
 
                 <div className="flex flex-col items-center gap-2">
@@ -160,13 +161,23 @@ export default function FileParserPage() {
                               }
                             }
 
+                            // Log the file URL for debugging
+                            console.log("File uploaded successfully:", res[0])
+
+                            // Get the file URL from the response - use ufsUrl as in your implementation
+                            const fileUrl = res[0].ufsUrl || res[0].url
+
+                            if (!fileUrl) {
+                              throw new Error("File URL not found in upload response")
+                            }
+
                             const response = await fetch("/api/ai/resume-parse", {
                               method: "POST",
                               headers: {
                                 "Content-Type": "application/json",
                               },
                               body: JSON.stringify({
-                                fileUrl: res[0].ufsUrl,
+                                fileUrl: fileUrl,
                               }),
                             })
 
@@ -221,6 +232,8 @@ export default function FileParserPage() {
                         }
                       }}
                       onUploadError={(error: Error) => {
+                        console.error("Upload error:", error)
+                        setError(error.message)
                         toast({
                           title: "Upload Error",
                           description: error.message,
@@ -230,7 +243,7 @@ export default function FileParserPage() {
                       }}
                     />
                   )}
-                  <p className="text-xs text-muted-foreground">Only DOCX files are supported</p>
+                  <p className="text-xs text-muted-foreground">PDF and DOCX files supported (max 2MB)</p>
                 </div>
 
                 {uploadedFile && (
@@ -312,7 +325,9 @@ export default function FileParserPage() {
                 <FileUp className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-medium mb-2">1. Upload Your Document</h3>
-              <p className="text-sm text-muted-foreground">Upload a DOCX file that you want to extract text from.</p>
+              <p className="text-sm text-muted-foreground">
+                Upload a PDF or DOCX file that you want to extract text from.
+              </p>
             </div>
 
             <div className="flex flex-col items-center text-center p-4">
@@ -343,7 +358,7 @@ export default function FileParserPage() {
                 <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
                   ✓
                 </div>
-                <span className="text-sm">Extract text from Word documents for editing</span>
+                <span className="text-sm">Extract text from documents for editing</span>
               </li>
               <li className="flex items-start gap-2">
                 <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
