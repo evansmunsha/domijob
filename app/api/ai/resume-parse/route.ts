@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     }
 
     // Validate file type
-    if (!fileUrl.toLowerCase().endsWith(".docx")) {
+    if (fileUrl.toLowerCase().endsWith(".docx")) {
       return NextResponse.json({ error: "Only DOCX files are supported" }, { status: 400 })
     }
 
