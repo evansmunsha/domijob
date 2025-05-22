@@ -78,7 +78,7 @@ export default function JobMatcherPage() {
               {creditInfo && creditInfo.credits < CREDIT_COSTS.job_match && (
                 creditInfo.isGuest ? (
                   <Button asChild size="sm" className="mt-2">
-                    <Link href="/signup">Sign Up for 50 Free Credits</Link>
+                    <Link href="/login">Sign Up for 50 Free Credits</Link>
                   </Button>
                 ) : (
                   <Button asChild size="sm" className="mt-2">
