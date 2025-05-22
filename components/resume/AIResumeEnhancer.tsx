@@ -28,17 +28,16 @@ import {
 import { toast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
 import { UploadButton } from "@/components/general/UploadThingReExport"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { CREDIT_COSTS } from "@/app/utils/credits"
-import SignUpModal from "../SignUpModal"
 // Remove the SignUpModal import for now
-// import SignUpModal from "@/components/SignUpModal"
+import SignUpModal from "@/components/SignUpModal"
 
 // 2. Add a simple SignUpModal component implementation if it doesn't exist
+
 
 export function AIResumeEnhancer() {
   const [resumeText, setResumeText] = useState("")
@@ -330,7 +329,12 @@ export function AIResumeEnhancer() {
                         <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
                         <div className="text-sm font-medium">Analyzing your resume...</div>
                         <div className="w-48 mt-4">
-                          <Progress value={processingProgress} className="h-2" />
+                          <div className="h-2 w-full bg-gray-200 rounded-full">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all duration-300"
+                              style={{ width: `${processingProgress}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -356,7 +360,12 @@ export function AIResumeEnhancer() {
                             <span>Parsing document...</span>
                             <span>{Math.round(processingProgress)}%</span>
                           </div>
-                          <Progress value={processingProgress} className="h-2" />
+                          <div className="h-2 w-full bg-gray-200 rounded-full">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all duration-300"
+                              style={{ width: `${processingProgress}%` }}
+                            />
+                          </div>
                         </div>
                       ) : (
                         <UploadButton
@@ -598,23 +607,26 @@ export function AIResumeEnhancer() {
                         {enhancementResult.atsScore}/100
                       </span>
                     </div>
-                    <Progress
-                      value={enhancementResult.atsScore}
-                      className={`h-2 ${
+                    <div
+                      className={`h-2 w-full rounded-full ${
                         enhancementResult.atsScore >= 80
                           ? "bg-green-100"
                           : enhancementResult.atsScore >= 60
                             ? "bg-amber-100"
                             : "bg-red-100"
                       }`}
-                      indicatorClassName={
-                        enhancementResult.atsScore >= 80
-                          ? "bg-green-600"
-                          : enhancementResult.atsScore >= 60
-                            ? "bg-amber-600"
-                            : "bg-red-600"
-                      }
-                    />
+                    >
+                      <div
+                        className={`h-full rounded-full ${
+                          enhancementResult.atsScore >= 80
+                            ? "bg-green-600"
+                            : enhancementResult.atsScore >= 60
+                              ? "bg-amber-600"
+                              : "bg-red-600"
+                        }`}
+                        style={{ width: `${enhancementResult.atsScore}%` }}
+                      />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {enhancementResult.atsScore >= 80
                         ? "Excellent! Your resume is well-optimized for ATS systems."
