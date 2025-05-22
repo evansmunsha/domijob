@@ -123,7 +123,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <Link href="#job-listings">
+            <Link href="/ai-tools">
               <Button
                 size="lg"
                 className="bg-white font-semibold text-blue-700 hover:bg-gray-100 dark:bg-white dark:text-blue-700"
@@ -132,7 +132,7 @@ export function HeroSection() {
               </Button>
             </Link>
             <Link href="/post-job">
-              <Button size="lg" variant="outline" className="border-white font-medium text-white hover:bg-white/10">
+              <Button size="lg" variant="outline" className="border-white font-medium  text-red-700 hover:bg-white/10">
                 Post a Job
               </Button>
             </Link>
