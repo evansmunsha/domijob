@@ -1,4 +1,5 @@
 "use client"
+
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,7 @@ export default function FileParserPage() {
     credits: number
   } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isUploading, setIsUploading] = useState(false)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
   const [activeTab, setActiveTab] = useState("upload")
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null)
@@ -48,86 +50,6 @@ export default function FileParserPage() {
 
     fetchCredits()
   }, [])
-
-  const handleParse = async (fileUrl: string) => {
-    // Check if user has enough credits
-    if (creditInfo && creditInfo.credits < CREDIT_COSTS.file_parsing) {
-      if (creditInfo.isGuest) {
-        setShowSignUpModal(true)
-      } else {
-        toast({
-          title: "Insufficient Credits",
-          description: `You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`,
-          variant: "destructive",
-          id: ""
-        })
-      }
-      return
-    }
-
-    setLoading(true)
-    setError("")
-    setParsedText("")
-
-    try {
-      const res = await fetch("/api/ai/resume-parse", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ fileUrl }),
-      })
-
-      if (!res.ok) {
-        // Handle insufficient credits with signup prompt for guests
-        if (res.status === 402) {
-          const data = await res.json()
-          if (data.requiresSignup) {
-            setShowSignUpModal(true)
-            throw new Error("You've used all your free credits. Sign up to get 50 more free credits!")
-          }
-        }
-
-        const errorData = await res.json()
-        throw new Error(errorData.error || "Failed to parse file")
-      }
-
-      const data = await res.json()
-
-      // Update credit info
-      if (data.remainingCredits !== undefined) {
-        setCreditInfo((prev) =>
-          prev
-            ? {
-                ...prev,
-                credits: data.remainingCredits,
-              }
-            : null,
-        )
-      }
-
-      setParsedText(data.text || "")
-      setActiveTab("result")
-
-      toast({
-        title: "File Parsed",
-        description: "Your file has been successfully parsed.",
-        id: ""
-      })
-    } catch (err: any) {
-      console.error("Error parsing file:", err.message)
-      setError(err.message || "An error occurred. Please try again.")
-
-      toast({
-        title: "Error",
-        description: err.message || "An error occurred while parsing your file",
-        variant: "destructive",
-        id: ""
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(parsedText)
@@ -214,9 +136,9 @@ export default function FileParserPage() {
                 </p>
 
                 <div className="flex flex-col items-center gap-2">
-                  {loading ? (
-                    <Button disabled>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isUploading ? (
+                    <Button variant="outline" size="sm" disabled>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Parsing...
                     </Button>
                   ) : (
@@ -224,8 +146,78 @@ export default function FileParserPage() {
                       endpoint="resumeUploader"
                       onClientUploadComplete={async (res) => {
                         if (res && res.length > 0) {
-                          setUploadedFile({ name: res[0].name, size: res[0].size })
-                          await handleParse(res[0].url)
+                          setIsUploading(true)
+                          try {
+                            // Check if user has enough credits
+                            if (creditInfo && creditInfo.credits < CREDIT_COSTS.file_parsing) {
+                              if (creditInfo.isGuest) {
+                                setShowSignUpModal(true)
+                                throw new Error(
+                                  "You've used all your free credits. Sign up to get 50 more free credits!",
+                                )
+                              } else {
+                                throw new Error(`You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`)
+                              }
+                            }
+
+                            const response = await fetch("/api/ai/resume-parse", {
+                              method: "POST",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                fileUrl: res[0].ufsUrl,
+                              }),
+                            })
+
+                            if (!response.ok) {
+                              if (response.status === 402) {
+                                const data = await response.json()
+                                if (data.requiresSignup) {
+                                  setShowSignUpModal(true)
+                                  throw new Error(
+                                    "You've used all your free credits. Sign up to get 50 more free credits!",
+                                  )
+                                }
+                              }
+                              const errorData = await response.json()
+                              throw new Error(errorData.error || "Failed to parse file")
+                            }
+
+                            const data = await response.json()
+                            setParsedText(data.text)
+                            setUploadedFile({ name: res[0].name, size: res[0].size })
+                            setActiveTab("result")
+
+                            // Update credit info
+                            if (data.remainingCredits !== undefined) {
+                              setCreditInfo((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      credits: data.remainingCredits,
+                                    }
+                                  : null,
+                              )
+                            }
+
+                            toast({
+                              title: "Success",
+                              description: "Document parsed successfully!",
+                              id: ""
+                            })
+                          } catch (error) {
+                            console.error("Error parsing file:", error)
+                            setError(error instanceof Error ? error.message : "Failed to parse file")
+                            toast({
+                              title: "Error",
+                              description: error instanceof Error ? error.message : "Failed to parse file",
+                              variant: "destructive",
+                              id: ""
+                            })
+                          } finally {
+                            setIsUploading(false)
+                          }
                         }
                       }}
                       onUploadError={(error: Error) => {
@@ -235,19 +227,6 @@ export default function FileParserPage() {
                           variant: "destructive",
                           id: ""
                         })
-                      }}
-                      content={{
-                        button({ isUploading }) {
-                          if (isUploading) {
-                            return (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Uploading...
-                              </>
-                            )
-                          }
-                          return "Upload DOCX File"
-                        },
                       }}
                     />
                   )}
