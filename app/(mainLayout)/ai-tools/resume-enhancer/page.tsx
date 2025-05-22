@@ -84,7 +84,7 @@ export default function ResumeEnhancerPage() {
     formData.append("file", file)
 
     try {
-      const res = await fetch("/api/ai/enhance-resume", {
+      const res = await fetch("/api/ai/resume-enhance", {
         method: "POST",
         body: formData,
       })
