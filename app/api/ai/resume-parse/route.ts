@@ -1,170 +1,125 @@
-import { NextResponse } from "next/server";
-import { UTApi } from "uploadthing/server";
-import { cookies } from "next/headers";
-import { prisma } from "@/app/utils/db";
-import { auth } from "@/app/utils/auth";
-import { CREDIT_COSTS } from "@/app/utils/credits";
+import { NextResponse } from "next/server"
+import { CREDIT_COSTS, deductCredits, getUserCredits } from "@/app/utils/credits"
+import { auth } from "@/app/utils/auth"
+import { cookies } from "next/headers"
+import mammoth from "mammoth"
 
-const utapi = new UTApi();
-const GUEST_CREDIT_COOKIE = "domijob_guest_credits";
-const MAX_GUEST_CREDITS = 50;export async function POST(req: Request) {
+// Constants for anonymous credits
+const GUEST_CREDIT_COOKIE = "domijob_guest_credits"
+const MAX_GUEST_CREDITS = 50
+
+// Simple function to handle credit charging for both authenticated and anonymous users
+async function handleCreditCharge(featureType: string) {
+  // Get credit cost for this feature
+  const creditCost = CREDIT_COSTS[featureType as keyof typeof CREDIT_COSTS] || 5
+
+  // Check if user is authenticated
+  const session = await auth()
+  const userId = session?.user?.id
+
+  // Handle authenticated user
+  if (userId) {
+    const userCredits = await getUserCredits(userId)
+
+    if (userCredits < creditCost) {
+      throw new Error("Insufficient credits. Please purchase more credits to continue.")
+    }
+
+    // Deduct credits
+    await deductCredits(userId, featureType)
+
+    return {
+      userId,
+      isGuest: false,
+      creditsUsed: creditCost,
+      remainingCredits: userCredits - creditCost,
+    }
+  }
+
+  // Handle anonymous user
+  const cookieStore = await cookies()
+  const cookie = cookieStore.get(GUEST_CREDIT_COOKIE)
+  let guestCredits = cookie ? Number.parseInt(cookie.value) : MAX_GUEST_CREDITS
+
+  // Validate guest credits
+  if (isNaN(guestCredits)) guestCredits = MAX_GUEST_CREDITS
+
+  if (guestCredits < creditCost) {
+    throw new Error("You've used all your free credits. Sign up to get 50 more free credits!")
+  }
+
+  // Update guest credits
+  const updatedCredits = guestCredits - creditCost
+  cookieStore.set(GUEST_CREDIT_COOKIE, updatedCredits.toString(), {
+    path: "/",
+    httpOnly: false, // Allow client-side access
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+  })
+
+  return {
+    userId: "guest",
+    isGuest: true,
+    creditsUsed: creditCost,
+    remainingCredits: updatedCredits,
+  }
+}
+
+export async function POST(req: Request) {
   try {
-    // Get the feature cost
-    const featureCost = CREDIT_COSTS.file_parsing || 10;
-    
-    // Check authentication status
-    const session = await auth();
-    const userId = session?.user?.id;
-    
-    // Handle credits based on authentication status
-    let creditInfo: {
-      isGuest: boolean;
-      creditsUsed: number;
-      remainingCredits: number;
-    };
-    
-    if (userId) {
-      // Authenticated user - use database credits
-      const userCredits = await prisma.userCredits.findUnique({
-        where: { userId }
-      });
-      
-      if (!userCredits || userCredits.balance < featureCost) {
-        return NextResponse.json(
-          { error: "Insufficient credits. Please purchase more credits to continue." },
-          { status: 402 }
-        );
-      }
-      
-      // Deduct credits using a transaction
-      await prisma.$transaction(async (tx) => {
-        // Update user's credit balance
-        await tx.userCredits.update({
-          where: { userId },
-          data: { balance: userCredits.balance - featureCost }
-        });
-        
-        // Log the transaction if the table exists
-        try {
-          await tx.creditTransaction.create({
-            data: {
-              userId,
-              amount: -featureCost,
-              type: "usage",
-              description: `Used ${featureCost} credits for file parsing`
-            }
-          });
-        } catch (error) {
-          // If creditTransaction table doesn't exist, just continue
-          console.log("Note: Credit transaction logging skipped");
-        }
-      });
-      
-      creditInfo = {
-        isGuest: false,
-        creditsUsed: featureCost,
-        remainingCredits: userCredits.balance - featureCost
-      };
-    } else {
-      // Anonymous user - use cookie credits
-      const cookieStore = await cookies();
-      const cookie = cookieStore.get(GUEST_CREDIT_COOKIE);
-      let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
-      
-      // Validate guest credits
-      if (isNaN(guestCredits)) guestCredits = MAX_GUEST_CREDITS;
-      
-      if (guestCredits < featureCost) {
-        return NextResponse.json(
-          { 
-            error: "You've used all your free credits. Sign up to get 50 more free credits!",
-            requiresSignup: true
-          },
-          { status: 403 }
-        );
-      }
-      
-      // Update guest credits
-      const updatedCredits = guestCredits - featureCost;
-      cookieStore.set(GUEST_CREDIT_COOKIE, updatedCredits.toString(), {
-        path: "/",
-        httpOnly: false,
-        maxAge: 60 * 60 * 24 * 7 // 7 days
-      });
-      
-      creditInfo = {
-        isGuest: true,
-        creditsUsed: featureCost,
-        remainingCredits: updatedCredits
-      };
+    // Parse request body
+    const { fileUrl } = await req.json()
+
+    if (!fileUrl) {
+      return NextResponse.json({ error: "No file URL provided" }, { status: 400 })
     }
 
-    // Handle file upload and parsing
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    // Validate file type
+    if (!fileUrl.toLowerCase().endsWith(".docx")) {
+      return NextResponse.json({ error: "Only DOCX files are supported" }, { status: 400 })
     }
 
-    const fileType = file.type;
-    if (
-      ![
-        "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ].includes(fileType)
-    ) {
-      return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
-    }
-
-    const uploadResponse = await utapi.uploadFiles(file);
-    if (!uploadResponse?.data?.ufsUrl) {
-      console.error("Upload failed - no ufsUrl:", uploadResponse);
+    // Handle credit charging for both authenticated and anonymous users
+    let creditInfo
+    try {
+      creditInfo = await handleCreditCharge("file_parsing")
+    } catch (error: any) {
       return NextResponse.json(
-        { error: "Failed to upload file - no URL returned" },
-        { status: 500 }
-      );
+        {
+          error: error.message,
+          requiresSignup: error.message.includes("Sign up to get"),
+        },
+        { status: 402 },
+      )
     }
 
-    const fileUrl = uploadResponse.data.ufsUrl;
-    const fileResponse = await fetch(fileUrl);
-    const fileBuffer: ArrayBuffer = await fileResponse.arrayBuffer();
+    // Fetch the file from the URL
+    console.log("Fetching file from URL:", fileUrl)
+    const fileResponse = await fetch(fileUrl)
 
-    let parsedText: string;
-
-    if (fileType === "application/pdf") {
-      try {
-        const { default: pdfParse } = await import("pdf-parse");
-        const pdfData = await pdfParse(Buffer.from(fileBuffer));
-        parsedText = pdfData.text;
-      } catch (error) {
-        console.error("PDF parse error:", error);
-        const msg = error instanceof Error ? error.message : String(error);
-        return NextResponse.json({ error: msg }, { status: 500 });
-      }
-    } else {
-      try {
-        const { extractRawText } = await import("mammoth");
-        const result = await extractRawText({ arrayBuffer: fileBuffer });
-        parsedText = result.value;
-      } catch (error) {
-        console.error("DOCX parse error:", error);
-        const msg = error instanceof Error ? error.message : String(error);
-        return NextResponse.json({ error: msg }, { status: 500 });
-      }
+    if (!fileResponse.ok) {
+      throw new Error(`Failed to fetch file: ${fileResponse.statusText}`)
     }
 
-    parsedText = parsedText.replace(/\s+/g, " ").trim();
+    // Get file as ArrayBuffer
+    const fileBuffer = await fileResponse.arrayBuffer()
 
+    // Use mammoth to extract text from DOCX
+    const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer })
+    const text = result.value
+
+    if (!text.trim()) {
+      throw new Error("Could not extract text from the file. The file might be empty or corrupted.")
+    }
+
+    // Return the parsed text with credit information
     return NextResponse.json({
-      text: parsedText,
+      text,
       creditsUsed: creditInfo.creditsUsed,
       remainingCredits: creditInfo.remainingCredits,
-      isGuest: creditInfo.isGuest
-    });
-  } catch (error: unknown) {
-    console.error("Top-level error:", error);
-    const msg = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: msg }, { status: 500 });
+      isGuest: creditInfo.isGuest,
+    })
+  } catch (error: any) {
+    console.error("Resume parsing error:", error)
+    return NextResponse.json({ error: error.message || "Failed to parse resume file" }, { status: 500 })
   }
 }
