@@ -24,7 +24,6 @@ import {
   CreditCard,
   User,
   UserPlus,
-  Info,
 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
@@ -35,29 +34,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { CREDIT_COSTS } from "@/app/utils/credits"
 // Remove the SignUpModal import for now
-// import SignUpModal from "@/components/SignUpModal"
+import SignUpModal from "@/components/SignUpModal"
 
 // 2. Add a simple SignUpModal component implementation if it doesn't exist
-function SimpleSignUpModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-background p-6 rounded-lg max-w-md w-full">
-        <h2 className="text-xl font-bold mb-4">Sign Up for More Credits</h2>
-        <p className="mb-4">You've used all your free credits. Sign up to get 50 more free credits!</p>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button asChild>
-            <Link href="/signup">Sign Up</Link>
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export function AIResumeEnhancer() {
   const [resumeText, setResumeText] = useState("")
@@ -75,7 +55,6 @@ export function AIResumeEnhancer() {
   } | null>(null)
   const [isLoadingCredits, setIsLoadingCredits] = useState(true)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
-  const [fileError, setFileError] = useState("")
 
   // Fetch credit information on component mount
   useEffect(() => {
@@ -222,14 +201,7 @@ export function AIResumeEnhancer() {
     if (inputMethod === "paste" && uploadedFile) {
       setUploadedFile(null)
     }
-    // Clear any file errors when switching methods
-    setFileError("")
   }, [inputMethod])
-
-  // Function to check if a file is a DOCX
-  const isDocxFile = (fileName: string) => {
-    return fileName.toLowerCase().endsWith(".docx")
-  }
 
   return (
     <div className="space-y-8">
@@ -261,7 +233,7 @@ export function AIResumeEnhancer() {
                   Guest Credits
                 </Badge>
                 <Button asChild variant="ghost" size="sm" className="h-6 text-xs ml-2 text-primary">
-                  <Link href="/signup">
+                  <Link href="/login">
                     <UserPlus className="h-3 w-3 mr-1" />
                     Sign Up for 50 More
                   </Link>
@@ -374,22 +346,6 @@ export function AIResumeEnhancer() {
                     <FileUp className="h-4 w-4 text-primary" />
                     Upload Resume
                   </Label>
-
-                  {/* File format notice */}
-                  <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-blue-700">
-                    <Info className="h-4 w-4 flex-shrink-0" />
-                    <p className="text-xs">
-                      <strong>Important:</strong> Only DOCX files are supported. PDF files cannot be processed.
-                    </p>
-                  </div>
-
-                  {fileError && (
-                    <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded-md text-red-700">
-                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                      <p className="text-xs">{fileError}</p>
-                    </div>
-                  )}
-
                   <div className="border-2 border-dashed border-primary/20 rounded-lg p-6 text-center bg-muted/10">
                     <FileUp className="h-10 w-10 text-primary/50 mx-auto mb-4" />
                     <h3 className="text-base font-medium mb-2">Upload Your Resume</h3>
@@ -416,18 +372,6 @@ export function AIResumeEnhancer() {
                           endpoint="resumeUploader"
                           onClientUploadComplete={async (res) => {
                             if (res && res.length > 0) {
-                              // Check if the file is a DOCX
-                              if (!isDocxFile(res[0].name)) {
-                                setFileError("Only DOCX files are supported. Please upload a .docx file.")
-                                toast({
-                                  title: "Invalid File Format",
-                                  description: "Only DOCX files are supported. Please upload a .docx file.",
-                                  variant: "destructive",
-                                })
-                                return
-                              }
-
-                              setFileError("") // Clear any previous errors
                               setIsUploading(true)
                               const cleanup = simulateProgress()
 
@@ -452,7 +396,7 @@ export function AIResumeEnhancer() {
                                     "Content-Type": "application/json",
                                   },
                                   body: JSON.stringify({
-                                    fileUrl: res[0].ufsUrl || res[0].url,
+                                    fileUrl: res[0].ufsUrl,
                                   }),
                                 })
 
@@ -493,7 +437,6 @@ export function AIResumeEnhancer() {
                                 })
                               } catch (error) {
                                 console.error(error)
-                                setFileError(error instanceof Error ? error.message : "Failed to parse resume")
                                 toast({
                                   title: "Error",
                                   description: `Failed to parse resume: ${
@@ -508,7 +451,6 @@ export function AIResumeEnhancer() {
                             }
                           }}
                           onUploadError={(error: Error) => {
-                            setFileError(error.message)
                             toast({
                               title: "Upload Error",
                               description: error.message,
@@ -517,9 +459,7 @@ export function AIResumeEnhancer() {
                           }}
                         />
                       )}
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Only DOCX files are supported (max 2MB)
-                      </p>
+                      <p className="text-xs text-muted-foreground">Accepts DOCX files (max 2MB)</p>
                     </div>
 
                     {uploadedFile && !isUploading && (
@@ -802,7 +742,7 @@ export function AIResumeEnhancer() {
       </Card>
 
       {/* Use our simple modal implementation */}
-      <SimpleSignUpModal isOpen={showSignUpModal} onClose={() => setShowSignUpModal(false)} />
+      <SignUpModal isOpen={showSignUpModal} onClose={() => setShowSignUpModal(false)} />
     </div>
   )
 }
