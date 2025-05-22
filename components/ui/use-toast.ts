@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 const TOAST_TIMEOUT = 5000
 
 type ToastProps = {
-  id: string
+  icon?: string | React.ReactElement;
+  id?: string
   title?: string
   description?: string
   variant?: "default" | "destructive" | "success"
@@ -14,9 +15,13 @@ export function useToast() {
   const [toasts, setToasts] = useState<ToastProps[]>([])
 
   const toast = (props: ToastProps) => {
+
     const id = Math.random().toString(36).substring(2, 9)
+
     const newToast = { ...props, id }
+
     setToasts((prevToasts) => [...prevToasts, newToast])
+
 
     // Auto-dismiss after timeout
     setTimeout(() => {
@@ -58,6 +63,7 @@ export const toast = (props: ToastProps) => {
   // Create toast content
   const content = `
     ${props.title ? `<h3 class="font-medium">${props.title}</h3>` : ''}
+    ${props.icon ? `<div class="icon">${props.icon}</div>` : ''}
     ${props.description ? `<p class="text-sm mt-1">${props.description}</p>` : ''}
   `
   toastEl.innerHTML = content

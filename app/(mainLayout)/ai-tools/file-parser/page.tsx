@@ -6,12 +6,26 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Sparkles, Loader2, AlertCircle, FileText, Download, Copy, ArrowLeft, FileUp, Clipboard } from "lucide-react"
+import {
+  Sparkles,
+  Loader2,
+  AlertCircle,
+  FileText,
+  Download,
+  Copy,
+  ArrowLeft,
+  FileUp,
+  Clipboard,
+  CheckCircle2,
+  ChevronRight,
+} from "lucide-react"
 import { CREDIT_COSTS } from "@/app/utils/credits"
 import Link from "next/link"
 import { toast } from "@/components/ui/use-toast"
 import SignUpModal from "@/components/SignUpModal"
 import { UploadButton } from "@/components/general/UploadThingReExport"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 
 export default function FileParserPage() {
   const [parsedText, setParsedText] = useState("")
@@ -28,6 +42,9 @@ export default function FileParserPage() {
   const [activeTab, setActiveTab] = useState("upload")
   const [inputMethod, setInputMethod] = useState<"upload" | "paste">("upload")
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null)
+  const [processingProgress, setProcessingProgress] = useState(0)
+  const [wordCount, setWordCount] = useState(0)
+  const [charCount, setCharCount] = useState(0)
 
   // Fetch credit information on page load
   useEffect(() => {
@@ -53,6 +70,28 @@ export default function FileParserPage() {
     fetchCredits()
   }, [])
 
+  // Calculate word and character counts when parsed text changes
+  useEffect(() => {
+    if (parsedText) {
+      setWordCount(parsedText.split(/\s+/).filter(Boolean).length)
+      setCharCount(parsedText.length)
+    }
+  }, [parsedText])
+
+  const simulateProgress = () => {
+    setProcessingProgress(0)
+    const interval = setInterval(() => {
+      setProcessingProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval)
+          return 100
+        }
+        return prev + 5
+      })
+    }, 100)
+    return () => clearInterval(interval)
+  }
+
   const handleManualTextSubmit = () => {
     if (!manualText.trim()) {
       toast({
@@ -64,13 +103,26 @@ export default function FileParserPage() {
       return
     }
 
-    setParsedText(manualText)
-    setActiveTab("result")
-    toast({
-      title: "Success",
-      description: "Text processed successfully!",
-      id: ""
-    })
+    setIsUploading(true)
+    const cleanup = simulateProgress()
+
+    // Simulate processing delay for better UX
+    setTimeout(() => {
+      setParsedText(manualText)
+      setActiveTab("result")
+      setIsUploading(false)
+      cleanup()
+
+      toast({
+        title: "Success",
+        description: "Text processed successfully!",
+        id: ""
+      })
+
+      // Calculate stats
+      setWordCount(manualText.split(/\s+/).filter(Boolean).length)
+      setCharCount(manualText.length)
+    }, 1500)
   }
 
   const handleCopyToClipboard = () => {
@@ -118,30 +170,50 @@ export default function FileParserPage() {
           </Link>
         </Button>
 
-        <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
-          <FileText className="h-8 w-8 text-primary" />
-          Document Parser
-        </h1>
-        <p className="text-muted-foreground">Extract text from documents for easy editing and analysis</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
+              <FileText className="h-8 w-8 text-primary" />
+              Document Parser
+            </h1>
+            <p className="text-muted-foreground">
+              Extract and process text from documents for easy editing and analysis
+            </p>
+          </div>
+          {creditInfo && (
+            <div className="bg-muted/40 px-4 py-2 rounded-lg">
+              <div className="text-sm font-medium text-muted-foreground">Credit Balance</div>
+              <div className="text-2xl font-bold">{creditInfo.credits}</div>
+              {creditInfo.isGuest && <div className="text-xs text-green-600">Free trial credits</div>}
+            </div>
+          )}
+        </div>
       </div>
 
-      <Card className="mb-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Card className="mb-8 overflow-hidden border-primary/10">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upload">Input Text</TabsTrigger>
-            <TabsTrigger value="result" disabled={!parsedText}>
-              Parsed Text
+            <TabsTrigger value="upload" className="rounded-none">
+              <FileUp className="h-4 w-4 mr-2" />
+              Input Text
+            </TabsTrigger>
+            <TabsTrigger value="result" disabled={!parsedText} className="rounded-none">
+              <FileText className="h-4 w-4 mr-2" />
+              Processed Text
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="upload">
-            <CardHeader>
-              <CardTitle>Get Text from Your Document</CardTitle>
+          <TabsContent value="upload" className="m-0">
+            <CardHeader className="bg-muted/20">
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Get Text from Your Document
+              </CardTitle>
               <CardDescription>
                 Upload a DOCX file or paste text directly. File parsing will use {CREDIT_COSTS.file_parsing} credits.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-6 space-y-6">
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -155,6 +227,7 @@ export default function FileParserPage() {
                   variant={inputMethod === "upload" ? "default" : "outline"}
                   onClick={() => setInputMethod("upload")}
                   size="sm"
+                  className="rounded-full"
                 >
                   <FileUp className="h-4 w-4 mr-2" />
                   Upload File
@@ -163,6 +236,7 @@ export default function FileParserPage() {
                   variant={inputMethod === "paste" ? "default" : "outline"}
                   onClick={() => setInputMethod("paste")}
                   size="sm"
+                  className="rounded-full"
                 >
                   <Clipboard className="h-4 w-4 mr-2" />
                   Paste Text
@@ -170,25 +244,30 @@ export default function FileParserPage() {
               </div>
 
               {inputMethod === "upload" ? (
-                <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center">
-                  <FileUp className="h-10 w-10 text-muted-foreground/50 mx-auto mb-4" />
+                <div className="border-2 border-dashed border-primary/20 rounded-lg p-8 text-center bg-muted/10">
+                  <FileUp className="h-12 w-12 text-primary/50 mx-auto mb-4" />
                   <h3 className="text-lg font-medium mb-2">Upload Your Document</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-6">
                     Drag and drop your DOCX file here, or click to browse
                   </p>
 
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-3">
                     {isUploading ? (
-                      <Button variant="outline" size="sm" disabled>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Parsing...
-                      </Button>
+                      <div className="w-full max-w-xs space-y-4">
+                        <div className="flex items-center justify-between mb-1 text-sm">
+                          <span>Processing document...</span>
+                          <span>{processingProgress}%</span>
+                        </div>
+                        <Progress value={processingProgress} className="h-2" />
+                      </div>
                     ) : (
                       <UploadButton
                         endpoint="resumeUploader"
                         onClientUploadComplete={async (res) => {
                           if (res && res.length > 0) {
                             setIsUploading(true)
+                            const cleanup = simulateProgress()
+
                             try {
                               // Check if user has enough credits
                               if (creditInfo && creditInfo.credits < CREDIT_COSTS.file_parsing) {
@@ -239,7 +318,6 @@ export default function FileParserPage() {
                               const data = await response.json()
                               setParsedText(data.text)
                               setUploadedFile({ name: res[0].name, size: res[0].size })
-                              setActiveTab("result")
 
                               // Update credit info
                               if (data.remainingCredits !== undefined) {
@@ -253,10 +331,13 @@ export default function FileParserPage() {
                                 )
                               }
 
+                              // Important: Navigate to result tab after successful parsing
+                              setActiveTab("result")
+
                               toast({
                                 title: "Success",
                                 description: "Document parsed successfully!",
-                                id: ""
+                                icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
                               })
                             } catch (error) {
                               console.error("Error parsing file:", error)
@@ -269,6 +350,7 @@ export default function FileParserPage() {
                               })
                             } finally {
                               setIsUploading(false)
+                              cleanup()
                             }
                           }
                         }}
@@ -284,44 +366,62 @@ export default function FileParserPage() {
                         }}
                       />
                     )}
-                    <p className="text-xs text-muted-foreground">Only DOCX files are supported (max 2MB)</p>
+                    <p className="text-xs text-muted-foreground mt-2">Only DOCX files are supported (max 2MB)</p>
                   </div>
 
-                  {uploadedFile && (
-                    <div className="mt-4 flex items-center justify-center gap-2 text-sm">
-                      <FileText className="h-4 w-4 text-primary" />
-                      <span className="font-medium">{uploadedFile.name}</span>
-                      <span className="text-muted-foreground">({Math.round(uploadedFile.size / 1024)} KB)</span>
+                  {uploadedFile && !isUploading && (
+                    <div className="mt-6 flex items-center justify-center gap-2 text-sm">
+                      <Badge variant="outline" className="bg-primary/5 text-primary">
+                        <FileText className="h-3.5 w-3.5 mr-1" />
+                        {uploadedFile.name} ({Math.round(uploadedFile.size / 1024)} KB)
+                      </Badge>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <Textarea
-                    placeholder="Paste your resume or document text here..."
-                    className="min-h-[300px]"
-                    value={manualText}
-                    onChange={(e) => setManualText(e.target.value)}
-                  />
-                  <div className="flex justify-end">
-                    <Button onClick={handleManualTextSubmit} disabled={!manualText.trim()}>
-                      Process Text
-                    </Button>
+                  <div className="relative">
+                    <Textarea
+                      placeholder="Paste your resume or document text here..."
+                      className="min-h-[300px] resize-none border-primary/20 focus-visible:ring-primary"
+                      value={manualText}
+                      onChange={(e) => setManualText(e.target.value)}
+                    />
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center">
+                        <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
+                        <div className="text-sm font-medium">Processing text...</div>
+                        <div className="w-48 mt-4">
+                          <Progress value={processingProgress} className="h-2" />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    <p>
-                      <strong>Tip:</strong> If you have a PDF file, you can copy the text from the PDF and paste it
-                      here.
-                    </p>
+
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-muted-foreground">
+                      <strong>Tip:</strong> If you have a PDF file, copy the text and paste it here.
+                    </div>
+                    <Button
+                      onClick={handleManualTextSubmit}
+                      disabled={!manualText.trim() || isUploading}
+                      className="gap-1"
+                    >
+                      Process Text
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               )}
 
               {inputMethod === "upload" && (
-                <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="bg-muted/30 p-4 rounded-lg mt-6 border border-primary/10">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium">Your credit balance</p>
+                      <p className="font-medium flex items-center">
+                        <Sparkles className="h-4 w-4 text-primary mr-2" />
+                        Credit Information
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         File parsing will cost {CREDIT_COSTS.file_parsing} credits
                       </p>
@@ -335,31 +435,58 @@ export default function FileParserPage() {
                 </div>
               )}
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex justify-between bg-muted/20 py-4 px-6">
               <Button variant="outline" asChild>
                 <Link href="/ai-tools">Cancel</Link>
               </Button>
             </CardFooter>
           </TabsContent>
 
-          <TabsContent value="result">
-            <CardHeader>
-              <CardTitle>Parsed Text</CardTitle>
-              <CardDescription>
-                The text content has been extracted from your document. You can copy or download it below.
-              </CardDescription>
+          <TabsContent value="result" className="m-0">
+            <CardHeader className="bg-muted/20">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    Processed Text
+                  </CardTitle>
+                  <CardDescription>The text content has been extracted and is ready to use</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="bg-muted/50">
+                    {wordCount} words
+                  </Badge>
+                  <Badge variant="outline" className="bg-muted/50">
+                    {charCount} characters
+                  </Badge>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              <Textarea value={parsedText} readOnly className="min-h-[300px] font-mono text-sm" />
+            <CardContent className="p-6">
+              <div className="relative">
+                <Textarea
+                  value={parsedText}
+                  readOnly
+                  className="min-h-[350px] font-mono text-sm resize-none border-primary/20 bg-muted/10"
+                />
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <Button size="icon" variant="ghost" onClick={handleCopyToClipboard} className="h-8 w-8">
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={handleDownload} className="h-8 w-8">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
-              <div className="mt-4 flex items-center gap-2 text-sm">
-                <AlertCircle className="h-4 w-4 text-amber-500" />
-                <span className="text-muted-foreground">
+              <div className="mt-6 flex items-center gap-2 text-sm p-3 bg-amber-50 border border-amber-200 rounded-md">
+                <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                <span className="text-amber-800">
                   Some formatting may be lost during extraction. Review the text before using it.
                 </span>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex justify-between bg-muted/20 py-4 px-6">
               <Button variant="outline" onClick={() => setActiveTab("upload")}>
                 Process Another Document
               </Button>
@@ -378,13 +505,13 @@ export default function FileParserPage() {
         </Tabs>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <Card className="border-primary/10">
+        <CardHeader className="bg-muted/10">
           <CardTitle>How It Works</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="p-6 space-y-8">
           <div className="grid gap-6 md:grid-cols-3">
-            <div className="flex flex-col items-center text-center p-4">
+            <div className="flex flex-col items-center text-center p-4 bg-muted/10 rounded-lg border border-primary/10">
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <FileUp className="h-6 w-6 text-primary" />
               </div>
@@ -394,7 +521,7 @@ export default function FileParserPage() {
               </p>
             </div>
 
-            <div className="flex flex-col items-center text-center p-4">
+            <div className="flex flex-col items-center text-center p-4 bg-muted/10 rounded-lg border border-primary/10">
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <Sparkles className="h-6 w-6 text-primary" />
               </div>
@@ -404,7 +531,7 @@ export default function FileParserPage() {
               </p>
             </div>
 
-            <div className="flex flex-col items-center text-center p-4">
+            <div className="flex flex-col items-center text-center p-4 bg-muted/10 rounded-lg border border-primary/10">
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <Download className="h-6 w-6 text-primary" />
               </div>
@@ -415,9 +542,12 @@ export default function FileParserPage() {
             </div>
           </div>
 
-          <div className="bg-muted/30 p-4 rounded-lg">
-            <h3 className="font-medium mb-2">Common Uses</h3>
-            <ul className="grid gap-2 md:grid-cols-2">
+          <div className="bg-muted/20 p-6 rounded-lg border border-primary/10">
+            <h3 className="font-medium mb-4 flex items-center">
+              <Sparkles className="h-5 w-5 text-primary mr-2" />
+              Common Uses
+            </h3>
+            <ul className="grid gap-3 md:grid-cols-2">
               <li className="flex items-start gap-2">
                 <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
                   ✓
