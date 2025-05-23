@@ -201,20 +201,26 @@ export function AIResumeEnhancer() {
       // Parse final enhanced text (which should be valid JSON)
           // Parse final enhanced text (which should be valid JSON)
           let parsedResult;
-          try {
-            let safeText = textBuffer.trim();
-          
-            // Try to find last valid closing brace
-            const lastIndex = safeText.lastIndexOf("}");
-            if (lastIndex !== -1) {
-              safeText = safeText.slice(0, lastIndex + 1);
-            }
-          
-            parsedResult = JSON.parse(safeText);
-          } catch (err) {
-            console.error("🛑 Failed to parse AI response:\n", textBuffer);
-            throw new Error("AI response was incomplete or malformed.");
+        try {
+          let safeText = textBuffer.trim();
+
+          // Slice to last closing brace (safest way to fix cut-off JSON)
+          const lastBrace = safeText.lastIndexOf("}");
+          if (lastBrace !== -1) {
+            safeText = safeText.slice(0, lastBrace + 1);
           }
+
+          parsedResult = JSON.parse(safeText);
+        } catch (err) {
+          console.error("🛑 Failed to parse AI response:\n", textBuffer);
+          toast({
+            title: "AI Response Error",
+            description: "The AI response was incomplete or broken. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
           
 
     setEnhancementResult(parsedResult);
