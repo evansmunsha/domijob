@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // Get request body
+    // Get body
     const body = await req.json();
     const { resumeText, targetJobTitle } = body;
 
@@ -88,45 +88,34 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = `
-You are a professional resume analyst.
+Given this resume text, respond with a compact, valid JSON object:
 
-Analyze this resume and return only a valid, compact JSON object (under 750 tokens) with the following keys:
-
-- overview
+- overview (string)
 - atsScore (0–100)
-- strengths (array)
-- weaknesses (array)
-- suggestions (array of sections + improvements)
-- keywords (array)
-
-Do NOT include markdown, explanation, or commentary. Output strictly valid JSON only.
+- strengths (array of strings)
+- weaknesses (array of strings)
+- suggestions (array of { section, improvements[] })
+- keywords (array of strings)
 
 Resume:
 ${resumeText}
 
 Target Job Title: ${targetJobTitle || "Not provided"}
-
-Example JSON:
-{
-  "overview": "...",
-  "atsScore": 92,
-  "strengths": ["...", "..."],
-  "weaknesses": ["...", "..."],
-  "suggestions": [
-    { "section": "Experience", "improvements": ["...", "..."] }
-  ],
-  "keywords": ["...", "..."]
-}
 `;
 
-    // Stream GPT-4 response
     const stream = await openai.chat.completions.create({
       model: "gpt-4",
       stream: true,
-      max_tokens: 750,
+      max_tokens: 600, // Keep small to prevent cutoff
       messages: [
-        { role: "system", content: "You return only valid JSON. Do not include markdown or explanations." },
-        { role: "user", content: prompt },
+        {
+          role: "system",
+          content: "Respond with valid JSON only. No markdown, headers, or commentary.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
       ],
     });
 
@@ -148,7 +137,7 @@ Example JSON:
       },
     });
   } catch (err) {
-    console.error("Enhancer API error:", err);
+    console.error("Resume enhancer error:", err);
     return new Response(JSON.stringify({ error: "Failed to enhance resume." }), { status: 500 });
   }
 }
