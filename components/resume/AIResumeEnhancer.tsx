@@ -37,7 +37,7 @@ import { CREDIT_COSTS } from "@/app/utils/credits"
 import SignUpModal from "@/components/SignUpModal"
 
 // 2. Add a simple SignUpModal component implementation if it doesn't exist
-onClientUploadComplete
+
 
 export function AIResumeEnhancer() {
   const [resumeText, setResumeText] = useState("")
