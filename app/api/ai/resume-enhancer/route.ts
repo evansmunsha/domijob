@@ -126,7 +126,8 @@ Respond ONLY with a JSON object in this format:
       model: "gpt-4",
       stream: true,
       messages: [
-        { role: "system", content: "You return JSON only. No explanation or commentary." },
+        { role: "system", content: "You must respond with strict valid JSON only. Do not use markdown, quotes, or commentary. The entire response must be a valid JSON object that can be parsed without errors." },
+
         { role: "user", content: prompt },
       ],
     });

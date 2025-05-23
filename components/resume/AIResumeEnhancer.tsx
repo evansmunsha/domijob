@@ -200,25 +200,22 @@ export function AIResumeEnhancer() {
   
       // Parse final enhanced text (which should be valid JSON)
           // Parse final enhanced text (which should be valid JSON)
-    let parsedResult;
-    try {
-      // Try to repair common formatting issues
-      const trimmed = textBuffer.trim();
-
-      if (!trimmed.startsWith("{")) {
-        throw new Error("Response did not start with a JSON object.");
-      }
-
-      // Optionally, try to auto-close the last brace (last resort):
-      const maybeFixed = trimmed.endsWith("}")
-        ? trimmed
-        : trimmed + "}"; // crude fix — only if minor truncation
-
-      parsedResult = JSON.parse(maybeFixed);
-    } catch (e) {
-      console.error("🛑 Failed to parse AI response:\n", textBuffer);
-      throw new Error("AI response could not be parsed. Please try again.");
-    }
+          let parsedResult;
+          try {
+            let safeText = textBuffer.trim();
+          
+            // Try to find last valid closing brace
+            const lastIndex = safeText.lastIndexOf("}");
+            if (lastIndex !== -1) {
+              safeText = safeText.slice(0, lastIndex + 1);
+            }
+          
+            parsedResult = JSON.parse(safeText);
+          } catch (err) {
+            console.error("🛑 Failed to parse AI response:\n", textBuffer);
+            throw new Error("AI response was incomplete or malformed.");
+          }
+          
 
     setEnhancementResult(parsedResult);
 
