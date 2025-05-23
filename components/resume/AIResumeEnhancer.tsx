@@ -459,15 +459,17 @@ export function AIResumeEnhancer() {
                                   }
                                 }
                           
-                                const response = await fetch("/api/ai/resume-parse", {
+                                const formData = new FormData();
+                                const response = await fetch(uploaded.ufsUrl);
+                                const blob = await response.blob();
+
+                                formData.append("file", blob, uploaded.name);
+
+                                await fetch("/api/ai/resume-parse", {
                                   method: "POST",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                    fileUrl: uploaded.ufsUrl,
-                                  }),
+                                  body: formData,
                                 });
+
                           
                                 if (!response.ok) {
                                   if (response.status === 402) {
