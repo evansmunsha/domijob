@@ -265,95 +265,88 @@ export default function FileParserPage() {
                         endpoint="resumeUploader"
                         onClientUploadComplete={async (res) => {
                           if (res && res.length > 0) {
-                            setIsUploading(true)
-                            const cleanup = simulateProgress()
-
+                            const uploaded = res[0];
+                            const fileName = uploaded.name.toLowerCase();
+                        
+                            // ✅ Check file extension before calling the API
+                            if (!fileName.endsWith(".docx")) {
+                              setError("Only DOCX files are supported. Please upload a valid .docx file.");
+                              toast({
+                                title: "Unsupported File Type",
+                                description: "Only DOCX files are supported. Please upload a valid .docx file.",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                        
+                            setIsUploading(true);
+                            const cleanup = simulateProgress();
+                        
                             try {
-                              // Check if user has enough credits
                               if (creditInfo && creditInfo.credits < CREDIT_COSTS.file_parsing) {
                                 if (creditInfo.isGuest) {
-                                  setShowSignUpModal(true)
-                                  throw new Error(
-                                    "You've used all your free credits. Sign up to get 50 more free credits!",
-                                  )
+                                  setShowSignUpModal(true);
+                                  throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
                                 } else {
-                                  throw new Error(`You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`)
+                                  throw new Error(`You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`);
                                 }
                               }
-
-                              // Log the file URL for debugging
-                              console.log("File uploaded successfully:", res[0])
-
-                              // Get the file URL from the response - use ufsUrl as in your implementation
-                              const fileUrl = res[0].ufsUrl || res[0].url
-
-                              if (!fileUrl) {
-                                throw new Error("File URL not found in upload response")
-                              }
-
+                        
+                              const fileUrl = uploaded.ufsUrl || uploaded.url;
+                              if (!fileUrl) throw new Error("File URL not found in upload response");
+                        
                               const response = await fetch("/api/ai/resume-parse", {
                                 method: "POST",
                                 headers: {
                                   "Content-Type": "application/json",
                                 },
-                                body: JSON.stringify({
-                                  fileUrl: fileUrl,
-                                }),
-                              })
-
+                                body: JSON.stringify({ fileUrl }),
+                              });
+                        
                               if (!response.ok) {
                                 if (response.status === 402) {
-                                  const data = await response.json()
+                                  const data = await response.json();
                                   if (data.requiresSignup) {
-                                    setShowSignUpModal(true)
-                                    throw new Error(
-                                      "You've used all your free credits. Sign up to get 50 more free credits!",
-                                    )
+                                    setShowSignUpModal(true);
+                                    throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
                                   }
                                 }
-                                const errorData = await response.json()
-                                throw new Error(errorData.error || "Failed to parse file")
+                                const errorData = await response.json();
+                                throw new Error(errorData.error || "Failed to parse file");
                               }
-
-                              const data = await response.json()
-                              setParsedText(data.text)
-                              setUploadedFile({ name: res[0].name, size: res[0].size })
-
-                              // Update credit info
+                        
+                              const data = await response.json();
+                              setParsedText(data.text);
+                              setUploadedFile({ name: uploaded.name, size: uploaded.size });
+                        
                               if (data.remainingCredits !== undefined) {
                                 setCreditInfo((prev) =>
-                                  prev
-                                    ? {
-                                        ...prev,
-                                        credits: data.remainingCredits,
-                                      }
-                                    : null,
-                                )
+                                  prev ? { ...prev, credits: data.remainingCredits } : null
+                                );
                               }
-
-                              // Important: Navigate to result tab after successful parsing
-                              setActiveTab("result")
-
+                        
+                              setActiveTab("result");
+                        
                               toast({
                                 title: "Success",
                                 description: "Document parsed successfully!",
                                 icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-                              })
+                              });
                             } catch (error) {
-                              console.error("Error parsing file:", error)
-                              setError(error instanceof Error ? error.message : "Failed to parse file")
+                              console.error("Error parsing file:", error);
+                              setError(error instanceof Error ? error.message : "Failed to parse file");
                               toast({
                                 title: "Error",
                                 description: error instanceof Error ? error.message : "Failed to parse file",
                                 variant: "destructive",
-                                id: ""
-                              })
+                              });
                             } finally {
-                              setIsUploading(false)
-                              cleanup()
+                              setIsUploading(false);
+                              cleanup();
                             }
                           }
                         }}
+                        
                         onUploadError={(error: Error) => {
                           console.error("Upload error:", error)
                           setError(error.message)
