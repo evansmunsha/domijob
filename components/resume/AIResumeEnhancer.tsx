@@ -120,28 +120,30 @@ export function AIResumeEnhancer() {
         title: "Error",
         description: "Please enter your resume text or upload a resume",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
-    // Check if user has enough credits
+  
+    // Check credits
     if (creditInfo && creditInfo.credits < CREDIT_COSTS.resume_enhancement) {
       if (creditInfo.isGuest) {
-        setShowSignUpModal(true)
-        return
+        setShowSignUpModal(true);
+        return;
       } else {
         toast({
           title: "Insufficient Credits",
           description: `You need ${CREDIT_COSTS.resume_enhancement} credits to use this feature.`,
           variant: "destructive",
-        })
-        return
+        });
+        return;
       }
     }
-
-    setIsLoading(true)
-    const cleanup = simulateProgress()
-
+  
+    setIsLoading(true);
+    const cleanup = simulateProgress();
+    setEnhancementResult(null);
+    setActiveTab("results");
+  
     try {
       const response = await fetch("/api/ai/resume-enhancer", {
         method: "POST",
@@ -152,54 +154,78 @@ export function AIResumeEnhancer() {
           resumeText,
           targetJobTitle: targetJobTitle.trim() || undefined,
         }),
-      })
-
+      });
+  
       if (!response.ok) {
-        // Handle insufficient credits with signup prompt for guests
         if (response.status === 402) {
-          const data = await response.json()
-          if (data.requiresSignup) {
-            setShowSignUpModal(true)
-            throw new Error("You've used all your free credits. Sign up to get 50 more free credits!")
+          const errData = await response.json();
+          if (errData.requiresSignup) {
+            setShowSignUpModal(true);
+          }
+          throw new Error(errData.error || "Insufficient credits.");
+        }
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to enhance resume.");
+      }
+  
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let isFirstChunk = true;
+      let creditInfoData = null;
+      let textBuffer = "";
+  
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+  
+        const chunk = decoder.decode(value, { stream: true });
+  
+        if (isFirstChunk) {
+          isFirstChunk = false;
+          if (chunk.startsWith("CREDIT_INFO:")) {
+            const [infoLine, ...rest] = chunk.split("\n\n");
+            try {
+              creditInfoData = JSON.parse(infoLine.replace("CREDIT_INFO:", "").trim());
+              setCreditInfo(creditInfoData);
+            } catch (err) {
+              console.error("Failed to parse CREDIT_INFO:", err);
+            }
+            textBuffer += rest.join("\n\n");
+            continue;
           }
         }
-        const error = await response.json()
-        throw new Error(error.error || "Failed to enhance resume")
+  
+        textBuffer += chunk;
       }
-
-      const data = await response.json()
-      setEnhancementResult(data)
-      setActiveTab("results")
-
-      // Update credit info if returned from API
-      if (data.remainingCredits !== undefined) {
-        setCreditInfo((prev) =>
-          prev
-            ? {
-                ...prev,
-                credits: data.remainingCredits,
-              }
-            : null,
-        )
+  
+      // Parse final enhanced text (which should be valid JSON)
+      let parsedResult;
+      try {
+        parsedResult = JSON.parse(textBuffer);
+      } catch (e) {
+        throw new Error("AI response could not be parsed.");
       }
-
+  
+      setEnhancementResult(parsedResult);
+  
       toast({
         title: "Success",
         description: "Resume analysis complete!",
         icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-      })
+      });
     } catch (error) {
-      console.error(error)
+      console.error("Enhancement failed:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to analyze resume",
+        description: error instanceof Error ? error.message : "Failed to enhance resume.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
-      cleanup()
+      setIsLoading(false);
+      cleanup();
     }
-  }
+  };
+  
 
   // Reset form when switching input methods
   useEffect(() => {
