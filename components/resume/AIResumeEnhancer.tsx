@@ -37,7 +37,7 @@ import { CREDIT_COSTS } from "@/app/utils/credits"
 import SignUpModal from "@/components/SignUpModal"
 
 // 2. Add a simple SignUpModal component implementation if it doesn't exist
-
+onClientUploadComplete
 
 export function AIResumeEnhancer() {
   const [resumeText, setResumeText] = useState("")
@@ -372,53 +372,59 @@ export function AIResumeEnhancer() {
                           endpoint="resumeUploader"
                           onClientUploadComplete={async (res) => {
                             if (res && res.length > 0) {
-                              setIsUploading(true)
-                              const cleanup = simulateProgress()
-
+                              const uploaded = res[0];
+                          
+                              // ✅ Check if the uploaded filename ends with .docx
+                              const fileName = uploaded.name.toLowerCase();
+                              if (!fileName.endsWith(".docx")) {
+                                toast({
+                                  title: "Unsupported File Type",
+                                  description: "Only DOCX files are supported. Please upload a valid .docx resume.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                          
+                              setIsUploading(true);
+                              const cleanup = simulateProgress();
+                          
                               try {
-                                // Check if user has enough credits for parsing
+                                // ✅ Check credit before parsing
                                 if (creditInfo && creditInfo.credits < CREDIT_COSTS.file_parsing) {
                                   if (creditInfo.isGuest) {
-                                    setShowSignUpModal(true)
-                                    throw new Error(
-                                      "You've used all your free credits. Sign up to get 50 more free credits!",
-                                    )
+                                    setShowSignUpModal(true);
+                                    throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
                                   } else {
-                                    throw new Error(
-                                      `You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`,
-                                    )
+                                    throw new Error(`You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`);
                                   }
                                 }
-
+                          
                                 const response = await fetch("/api/ai/resume-parse", {
                                   method: "POST",
                                   headers: {
                                     "Content-Type": "application/json",
                                   },
                                   body: JSON.stringify({
-                                    fileUrl: res[0].ufsUrl,
+                                    fileUrl: uploaded.ufsUrl,
                                   }),
-                                })
-
+                                });
+                          
                                 if (!response.ok) {
                                   if (response.status === 402) {
-                                    const data = await response.json()
+                                    const data = await response.json();
                                     if (data.requiresSignup) {
-                                      setShowSignUpModal(true)
-                                      throw new Error(
-                                        "You've used all your free credits. Sign up to get 50 more free credits!",
-                                      )
+                                      setShowSignUpModal(true);
+                                      throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
                                     }
                                   }
-                                  const errorData = await response.json()
-                                  throw new Error(errorData.error || "Failed to parse resume")
+                                  const errorData = await response.json();
+                                  throw new Error(errorData.error || "Failed to parse resume");
                                 }
-
-                                const data = await response.json()
-                                setResumeText(data.text)
-                                setUploadedFile({ name: res[0].name, size: res[0].size })
-
-                                // Update credit info
+                          
+                                const data = await response.json();
+                                setResumeText(data.text);
+                                setUploadedFile({ name: uploaded.name, size: uploaded.size });
+                          
                                 if (data.remainingCredits !== undefined) {
                                   setCreditInfo((prev) =>
                                     prev
@@ -426,30 +432,30 @@ export function AIResumeEnhancer() {
                                           ...prev,
                                           credits: data.remainingCredits,
                                         }
-                                      : null,
-                                  )
+                                      : null
+                                  );
                                 }
-
+                          
                                 toast({
                                   title: "Success",
                                   description: "Resume parsed successfully!",
                                   icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-                                })
+                                });
                               } catch (error) {
-                                console.error(error)
+                                console.error(error);
                                 toast({
                                   title: "Error",
-                                  description: `Failed to parse resume: ${
-                                    error instanceof Error ? error.message : "Unknown error"
-                                  }`,
+                                  description:
+                                    error instanceof Error ? error.message : "Unknown error occurred while parsing resume",
                                   variant: "destructive",
-                                })
+                                });
                               } finally {
-                                setIsUploading(false)
-                                cleanup()
+                                setIsUploading(false);
+                                cleanup();
                               }
                             }
                           }}
+                          
                           onUploadError={(error: Error) => {
                             toast({
                               title: "Upload Error",
