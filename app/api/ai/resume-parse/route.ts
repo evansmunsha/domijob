@@ -53,6 +53,7 @@ async function handleCreditCharge(featureType: string) {
 export async function POST(req: Request) {
   try {
     const { fileUrl } = await req.json()
+    console.log("Received file URL:", fileUrl);
 
     // ✅ Check that fileUrl is provided
     if (!fileUrl) {
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
 
     // ✅ Extract filename from UploadThing URL and validate .docx
     const fileName = new URL(fileUrl).searchParams.get("filename")
+    console.log("Extracted filename from URL:", fileName);
     if (!fileName?.toLowerCase().endsWith(".docx")) {
       return NextResponse.json({ error: "Only DOCX files are supported" }, { status: 400 })
     }

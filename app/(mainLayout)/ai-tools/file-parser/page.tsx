@@ -292,8 +292,11 @@ export default function FileParserPage() {
                                 }
                               }
                         
-                              const fileUrl = uploaded.ufsUrl || uploaded.url;
+                              const fileUrl = uploaded.ufsUrl || uploaded.ufsUrl
+                              console.log("Resume Parse fileUrl:", fileUrl);
+
                               if (!fileUrl) throw new Error("File URL not found in upload response");
+                              
                         
                               const response = await fetch("/api/ai/resume-parse", {
                                 method: "POST",
