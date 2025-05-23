@@ -199,14 +199,29 @@ export function AIResumeEnhancer() {
       }
   
       // Parse final enhanced text (which should be valid JSON)
-      let parsedResult;
-      try {
-        parsedResult = JSON.parse(textBuffer);
-      } catch (e) {
-        throw new Error("AI response could not be parsed.");
+          // Parse final enhanced text (which should be valid JSON)
+    let parsedResult;
+    try {
+      // Try to repair common formatting issues
+      const trimmed = textBuffer.trim();
+
+      if (!trimmed.startsWith("{")) {
+        throw new Error("Response did not start with a JSON object.");
       }
-  
-      setEnhancementResult(parsedResult);
+
+      // Optionally, try to auto-close the last brace (last resort):
+      const maybeFixed = trimmed.endsWith("}")
+        ? trimmed
+        : trimmed + "}"; // crude fix — only if minor truncation
+
+      parsedResult = JSON.parse(maybeFixed);
+    } catch (e) {
+      console.error("🛑 Failed to parse AI response:\n", textBuffer);
+      throw new Error("AI response could not be parsed. Please try again.");
+    }
+
+    setEnhancementResult(parsedResult);
+
   
       toast({
         title: "Success",
@@ -226,7 +241,7 @@ export function AIResumeEnhancer() {
     }
   };
   
-
+  
   // Reset form when switching input methods
   useEffect(() => {
     if (inputMethod === "paste" && uploadedFile) {
