@@ -7,7 +7,9 @@ import { CREDIT_COSTS } from "@/app/utils/credits";
 
 const utapi = new UTApi();
 const GUEST_CREDIT_COOKIE = "domijob_guest_credits";
-const MAX_GUEST_CREDITS = 50;export async function POST(req: Request) {
+const MAX_GUEST_CREDITS = 50;
+
+export async function POST(req: Request) {
   try {
     // Get the feature cost
     const featureCost = CREDIT_COSTS.file_parsing || 10;
@@ -67,8 +69,8 @@ const MAX_GUEST_CREDITS = 50;export async function POST(req: Request) {
       };
     } else {
       // Anonymous user - use cookie credits
-      const cookieStore = await cookies();
-      const cookie = cookieStore.get(GUEST_CREDIT_COOKIE);
+      const cookieStore = cookies();
+      const cookie = (await cookieStore).get(GUEST_CREDIT_COOKIE);
       let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
       
       // Validate guest credits
@@ -86,7 +88,7 @@ const MAX_GUEST_CREDITS = 50;export async function POST(req: Request) {
       
       // Update guest credits
       const updatedCredits = guestCredits - featureCost;
-      cookieStore.set(GUEST_CREDIT_COOKIE, updatedCredits.toString(), {
+      (await cookieStore).set(GUEST_CREDIT_COOKIE, updatedCredits.toString(), {
         path: "/",
         httpOnly: false,
         maxAge: 60 * 60 * 24 * 7 // 7 days
