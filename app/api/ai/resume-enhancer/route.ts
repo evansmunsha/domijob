@@ -21,13 +21,11 @@ export async function POST(req: NextRequest) {
       remainingCredits: number;
     };
 
-    // Authenticated user
+    // Handle credits
     if (userId) {
       const userCredits = await prisma.userCredits.findUnique({ where: { userId } });
       if (!userCredits || userCredits.balance < featureCost) {
-        return new Response(JSON.stringify({
-          error: "Insufficient credits. Please purchase more credits to continue.",
-        }), { status: 402 });
+        return new Response(JSON.stringify({ error: "Insufficient credits." }), { status: 402 });
       }
 
       await prisma.$transaction(async (tx) => {
@@ -55,16 +53,14 @@ export async function POST(req: NextRequest) {
         remainingCredits: userCredits.balance - featureCost,
       };
     } else {
-      // Guest user
       const cookieStore = await cookies();
       const cookie = cookieStore.get(GUEST_CREDIT_COOKIE);
       let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
-
       if (isNaN(guestCredits)) guestCredits = MAX_GUEST_CREDITS;
 
       if (guestCredits < featureCost) {
         return new Response(JSON.stringify({
-          error: "You've used all your free credits. Sign up to get 50 more free credits!",
+          error: "You've used all your free credits. Sign up to get 50 more!",
           requiresSignup: true,
         }), { status: 402 });
       }
@@ -73,7 +69,7 @@ export async function POST(req: NextRequest) {
       cookieStore.set(GUEST_CREDIT_COOKIE, updatedCredits.toString(), {
         path: "/",
         httpOnly: false,
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: 60 * 60 * 24 * 7,
       });
 
       creditInfo = {
@@ -83,36 +79,37 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // Read body
+    // Get request body
     const body = await req.json();
     const { resumeText, targetJobTitle } = body;
 
     if (!resumeText || resumeText.trim().length < 50) {
-      return new Response(JSON.stringify({ error: "Please provide a valid resume text." }), {
-        status: 400,
-      });
+      return new Response(JSON.stringify({ error: "Please provide a valid resume text." }), { status: 400 });
     }
 
     const prompt = `
-You are a professional resume analyst and ATS optimization expert.
+You are a professional resume analyst.
 
-Analyze this resume and provide a detailed structured JSON response with:
+Analyze this resume and return only a valid, compact JSON object (under 750 tokens) with the following keys:
+
 - overview
-- atsScore
-- strengths
-- weaknesses
-- suggestions
-- keywords
+- atsScore (0–100)
+- strengths (array)
+- weaknesses (array)
+- suggestions (array of sections + improvements)
+- keywords (array)
 
-Resume Text:
+Do NOT include markdown, explanation, or commentary. Output strictly valid JSON only.
+
+Resume:
 ${resumeText}
 
 Target Job Title: ${targetJobTitle || "Not provided"}
 
-Respond ONLY with a JSON object in this format:
+Example JSON:
 {
   "overview": "...",
-  "atsScore": 85,
+  "atsScore": 92,
   "strengths": ["...", "..."],
   "weaknesses": ["...", "..."],
   "suggestions": [
@@ -122,12 +119,13 @@ Respond ONLY with a JSON object in this format:
 }
 `;
 
+    // Stream GPT-4 response
     const stream = await openai.chat.completions.create({
       model: "gpt-4",
       stream: true,
+      max_tokens: 750,
       messages: [
-        { role: "system", content: "You must respond with strict valid JSON only. Do not use markdown, quotes, or commentary. The entire response must be a valid JSON object that can be parsed without errors." },
-
+        { role: "system", content: "You return only valid JSON. Do not include markdown or explanations." },
         { role: "user", content: prompt },
       ],
     });
@@ -135,14 +133,11 @@ Respond ONLY with a JSON object in this format:
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
-        // 👇 First send credit info as a line
         controller.enqueue(encoder.encode(`CREDIT_INFO:${JSON.stringify(creditInfo)}\n\n`));
-
         for await (const chunk of stream) {
           const text = chunk.choices?.[0]?.delta?.content;
           if (text) controller.enqueue(encoder.encode(text));
         }
-
         controller.close();
       },
     });
@@ -153,7 +148,7 @@ Respond ONLY with a JSON object in this format:
       },
     });
   } catch (err) {
-    console.error("Error in resume enhancer API:", err);
-    return new Response(JSON.stringify({ error: "Failed to enhance resume" }), { status: 500 });
+    console.error("Enhancer API error:", err);
+    return new Response(JSON.stringify({ error: "Failed to enhance resume." }), { status: 500 });
   }
 }
