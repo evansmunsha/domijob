@@ -55,6 +55,12 @@ export function AIResumeEnhancer() {
   const [isLoadingCredits, setIsLoadingCredits] = useState(true)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
 
+
+  
+  
+
+
+
   // Fetch credit information on component mount
   useEffect(() => {
     async function fetchCredits() {
@@ -260,7 +266,67 @@ export function AIResumeEnhancer() {
       .save();
   };
   
-
+  const parseUploadedResume = async (file: File) => {
+    setIsUploading(true);
+    const cleanup = simulateProgress();
+  
+    try {
+      // Check credit before parsing
+      if (creditInfo && creditInfo.credits < CREDIT_COSTS.file_parsing) {
+        if (creditInfo.isGuest) {
+          setShowSignUpModal(true);
+          throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
+        } else {
+          throw new Error(`You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`);
+        }
+      }
+  
+      const formData = new FormData();
+      formData.append("file", file);
+  
+      const response = await fetch("/api/ai/resume-parse", {
+        method: "POST",
+        body: formData,
+      });
+  
+      const text = await response.text();
+      const data = JSON.parse(text);
+  
+      if (!response.ok) {
+        if (response.status === 402 && data.requiresSignup) {
+          setShowSignUpModal(true);
+          throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
+        }
+        throw new Error(data.error || "Failed to parse resume");
+      }
+  
+      setResumeText(data.text);
+      setUploadedFile({ name: file.name, size: file.size });
+  
+      if (data.remainingCredits !== undefined) {
+        setCreditInfo((prev) =>
+          prev ? { ...prev, credits: data.remainingCredits } : null
+        );
+      }
+  
+      toast({
+        title: "Success",
+        description: "Resume parsed successfully!",
+        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+      });
+    } catch (err) {
+      console.error("Resume parse failed:", err);
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Resume parse failed.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      cleanup();
+    }
+  };
+  
   
 
   return (
@@ -433,8 +499,7 @@ export function AIResumeEnhancer() {
                           onClientUploadComplete={async (res) => {
                             if (res && res.length > 0) {
                               const uploaded = res[0];
-                          
-                              // ✅ Check if the uploaded filename ends with .docx
+
                               const fileName = uploaded.name.toLowerCase();
                               if (!fileName.endsWith(".docx")) {
                                 toast({
@@ -444,86 +509,27 @@ export function AIResumeEnhancer() {
                                 });
                                 return;
                               }
-                          
-                              setIsUploading(true);
-                              const cleanup = simulateProgress();
-                          
+
                               try {
-                                // ✅ Check credit before parsing
-                                if (creditInfo && creditInfo.credits < CREDIT_COSTS.file_parsing) {
-                                  if (creditInfo.isGuest) {
-                                    setShowSignUpModal(true);
-                                    throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
-                                  } else {
-                                    throw new Error(`You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`);
-                                  }
-                                }
-                          
-                                const formData = new FormData();
-                                const response = await fetch(uploaded.ufsUrl);
-                                const blob = await response.blob();
-
-                                formData.append("file", blob, uploaded.name);
-
-                                await fetch("/api/ai/resume-parse", {
-                                  method: "POST",
-                                  body: formData,
-                                });
-
-                          
-                                if (!response.ok) {
-                                  if (response.status === 402) {
-                                    const data = await response.json();
-                                    if (data.requiresSignup) {
-                                      setShowSignUpModal(true);
-                                      throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
-                                    }
-                                  }
-                                  const errorData = await response.json();
-                                  throw new Error(errorData.error || "Failed to parse resume");
-                                }
-                          
-                                const data = await response.json();
-                                setResumeText(data.text);
-                                setUploadedFile({ name: uploaded.name, size: uploaded.size });
-                          
-                                if (data.remainingCredits !== undefined) {
-                                  setCreditInfo((prev) =>
-                                    prev
-                                      ? {
-                                          ...prev,
-                                          credits: data.remainingCredits,
-                                        }
-                                      : null
-                                  );
-                                }
-                          
-                                toast({
-                                  title: "Success",
-                                  description: "Resume parsed successfully!",
-                                  icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-                                });
+                                const fileResponse = await fetch(uploaded.ufsUrl);
+                                const blob = await fileResponse.blob();
+                                const file = new File([blob], uploaded.name, { type: blob.type });
+                                await parseUploadedResume(file); // ✅ Use shared logic
                               } catch (error) {
-                                console.error(error);
                                 toast({
                                   title: "Error",
-                                  description:
-                                    error instanceof Error ? error.message : "Unknown error occurred while parsing resume",
+                                  description: "Failed to fetch uploaded file.",
                                   variant: "destructive",
                                 });
-                              } finally {
-                                setIsUploading(false);
-                                cleanup();
                               }
                             }
                           }}
-                          
                           onUploadError={(error: Error) => {
                             toast({
                               title: "Upload Error",
                               description: error.message,
                               variant: "destructive",
-                            })
+                            });
                           }}
                         />
                       )}
