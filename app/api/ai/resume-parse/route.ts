@@ -16,6 +16,7 @@ export async function POST(req: Request) {
     if (!file || file.type !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
       return NextResponse.json({ error: "Only DOCX files are supported" }, { status: 400 });
     }
+    console.log("Received file:", file?.name, "type:", file?.type);
 
     // Step 1: Handle credits
     const creditCost = CREDIT_COSTS.file_parsing || 5;
@@ -79,7 +80,8 @@ export async function POST(req: Request) {
       remainingCredits,
     });
   } catch (err: any) {
-    console.error("Resume parsing error:", err);
-    return NextResponse.json({ error: "Something went wrong while parsing the resume." }, { status: 500 });
+    console.error("Resume parsing error:", err.message || err);
+    return NextResponse.json({ error: err.message || "Something went wrong while parsing the resume." }, { status: 500 });
   }
+  
 }
