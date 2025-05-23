@@ -35,7 +35,6 @@ import Link from "next/link"
 import { CREDIT_COSTS } from "@/app/utils/credits"
 // Remove the SignUpModal import for now
 import SignUpModal from "@/components/SignUpModal"
-import html2pdf from "html2pdf.js";
 // 2. Add a simple SignUpModal component implementation if it doesn't exist
 
 
@@ -244,21 +243,23 @@ export function AIResumeEnhancer() {
   
   
 
-const handleDownloadPdf = () => {
-  const element = document.getElementById("pdf-content");
-  if (!element) return;
-
-  html2pdf()
-  .from(element)
-  .set({
-    margin: 0.5,
-    filename: "resume-analysis.pdf",
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-  })
-  .save();
-
-};
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById("pdf-content");
+    if (!element) return;
+  
+    const html2pdf = (await import("html2pdf.js")).default;
+  
+    html2pdf()
+      .from(element)
+      .set({
+        margin: 0.5,
+        filename: "resume-analysis.pdf",
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+      })
+      .save();
+  };
+  
 
   
 
