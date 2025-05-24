@@ -117,13 +117,24 @@ export function AIResumeEnhancer() {
     if (!resumeText.trim()) {
       toast({
         title: "Error",
-        description: "Please enter your resume text or upload a resume",
+        description: "Please enter your resume text or upload a resume.",
         variant: "destructive",
       });
       return;
     }
   
-    // Check credits
+    // ✅ Limit input to ~1000 words
+    const wordCount = resumeText.trim().split(/\s+/).length;
+    if (wordCount > 1000) {
+      toast({
+        title: "Resume Too Long",
+        description: "Please shorten your resume to under 1000 words for best results.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    // ✅ Credit check
     if (creditInfo && creditInfo.credits < CREDIT_COSTS.resume_enhancement) {
       if (creditInfo.isGuest) {
         setShowSignUpModal(true);
@@ -141,14 +152,11 @@ export function AIResumeEnhancer() {
     setIsLoading(true);
     const cleanup = simulateProgress();
     setEnhancementResult(null);
-    setActiveTab("results");
   
     try {
       const response = await fetch("/api/ai/resume-enhancer", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           resumeText,
           targetJobTitle: targetJobTitle.trim() || undefined,
@@ -157,77 +165,65 @@ export function AIResumeEnhancer() {
   
       if (!response.ok) {
         if (response.status === 402) {
-          const errData = await response.json();
-          if (errData.requiresSignup) {
+          const data = await response.json();
+          if (data.requiresSignup) {
             setShowSignUpModal(true);
+            throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
           }
-          throw new Error(errData.error || "Insufficient credits.");
         }
-        const errData = await response.json();
-        throw new Error(errData.error || "Failed to enhance resume.");
+        const error = await response.json();
+        throw new Error(error.error || "Failed to enhance resume.");
       }
   
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      let isFirstChunk = true;
-      let creditInfoData = null;
       let textBuffer = "";
   
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
   
-        const chunk = decoder.decode(value, { stream: true });
-  
-        if (isFirstChunk) {
-          isFirstChunk = false;
-          if (chunk.startsWith("CREDIT_INFO:")) {
-            const [infoLine, ...rest] = chunk.split("\n\n");
-            try {
-              creditInfoData = JSON.parse(infoLine.replace("CREDIT_INFO:", "").trim());
-              setCreditInfo(creditInfoData);
-            } catch (err) {
-              console.error("Failed to parse CREDIT_INFO:", err);
-            }
-            textBuffer += rest.join("\n\n");
-            continue;
-          }
+          const chunk = decoder.decode(value, { stream: true });
+          textBuffer += chunk;
         }
-  
-        textBuffer += chunk;
       }
   
-      // Parse final enhanced text (which should be valid JSON)
-          // Parse final enhanced text (which should be valid JSON)
-          let parsedResult;
-        try {
-          let safeText = textBuffer.trim();
-
-          // Slice to last closing brace (safest way to fix cut-off JSON)
-          const lastBrace = safeText.lastIndexOf("}");
-          if (lastBrace !== -1) {
-            safeText = safeText.slice(0, lastBrace + 1);
-          }
-
-          parsedResult = JSON.parse(safeText);
-        } catch (err) {
-          console.error("🛑 Failed to parse AI response:\n", textBuffer);
-          if (resumeText.trim().split(/\s+/).length > 1000) {
-            toast({
-              title: "Resume Too Long",
-              description: "Please shorten your resume to under 1000 words for best results.",
-              variant: "destructive",
-            });
-            return;
-          }          
-          
-          return;
+      // ✅ Strip CREDIT_INFO: header if present
+      const creditPrefix = "CREDIT_INFO:";
+      if (textBuffer.startsWith(creditPrefix)) {
+        const split = textBuffer.split("\n\n");
+        if (split.length > 1) {
+          const creditMeta = JSON.parse(split[0].replace(creditPrefix, ""));
+          setCreditInfo((prev) =>
+            prev ? { ...prev, credits: creditMeta.remainingCredits } : null
+          );
+          textBuffer = split.slice(1).join("\n\n");
         }
-
-          
-
-    setEnhancementResult(parsedResult);
-
+      }
+  
+      // ✅ Safe parse logic with fallback
+      let safeText = textBuffer.trim();
+      const lastBrace = safeText.lastIndexOf("}");
+      if (lastBrace !== -1) {
+        safeText = safeText.slice(0, lastBrace + 1);
+      }
+  
+      let parsedResult;
+      try {
+        parsedResult = JSON.parse(safeText);
+      } catch {
+        console.error("🛑 Failed to parse AI response:\n", safeText);
+        toast({
+          title: "AI Response Too Long",
+          description: "The resume may be too long. Try submitting a shorter version (under 1000 words).",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      setEnhancementResult(parsedResult);
+      setActiveTab("results");
   
       toast({
         title: "Success",
@@ -235,10 +231,11 @@ export function AIResumeEnhancer() {
         icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
       });
     } catch (error) {
-      console.error("Enhancement failed:", error);
+      console.error(error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to enhance resume.",
+        description:
+          error instanceof Error ? error.message : "An unexpected error occurred.",
         variant: "destructive",
       });
     } finally {
@@ -246,6 +243,7 @@ export function AIResumeEnhancer() {
       cleanup();
     }
   };
+  
   
   
   // Reset form when switching input methods
