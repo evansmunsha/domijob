@@ -886,17 +886,17 @@ export function AIResumeEnhancer() {
                 <CardContent className="p-1">
                 <div
                   id="pdf-content"
-                  className="p-6 text-[12px] font-sans text-black w-[600px] space-y-4"
+                  className="w-full max-w-[100%] sm:w-[600px] px-4 sm:px-6 py-6 text-[14px] sm:text-[12px] font-sans text-black space-y-4"
                 >
                   {enhancementResult && (
                     <div>
                       {/* Logo + Header */}
-                      <div className="flex items-center justify-between mb-4 border-b pb-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 border-b pb-2">
                         <div className="flex items-center gap-2">
                           <img src="/logo.png" alt="Domijob Logo" className="h-8 w-8" />
-                          <h1 className="text-lg font-bold">Domijob Resume Report</h1>
+                          <h1 className="text-base sm:text-lg font-bold">Domijob Resume Report</h1>
                         </div>
-                        <div className="text-xs text-right text-gray-500">
+                        <div className="text-xs text-gray-500 mt-2 sm:mt-0 text-left sm:text-right">
                           {new Date().toLocaleDateString()}
                         </div>
                       </div>
@@ -943,6 +943,7 @@ export function AIResumeEnhancer() {
                     </div>
                   )}
                 </div>
+
 
 
                 </CardContent>
