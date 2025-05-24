@@ -915,54 +915,65 @@ export function AIResumeEnhancer() {
                 </div>
 
                 {rawAIOutput && (
-        <div className="mt-6 border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10 rounded-xl p-4 space-y-3">
-          <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">⚠️ Partial AI Output</h2>
-          <p className="text-sm text-muted-foreground">
-            The response was too long and got cut off. You can copy it or try again with a shorter resume.
-          </p>
-          <textarea
-            value={rawAIOutput}
-            readOnly
-            className="w-full h-60 p-2 bg-white dark:bg-black border border-gray-300 dark:border-gray-600 rounded-md text-sm font-mono"
-          />
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigator.clipboard.writeText(rawAIOutput)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm"
-            >
-              📋 Copy to Clipboard
-            </button>
-            <button
-              onClick={() => {
-                setRawAIOutput(null);
-                enhanceResume(); // retry
-              }}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm"
-            >
-              🔁 Retry
-            </button>
-          </div>
-        </div>
-      )}
+                  <div className="mt-6 border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10 rounded-xl p-4 space-y-3">
+                    <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">⚠️ Partial AI Output</h2>
+                    <p className="text-sm text-muted-foreground">
+                      The response was too long and got cut off. You can copy it or try again with a shorter resume.
+                    </p>
+                    <textarea
+                      value={rawAIOutput}
+                      readOnly
+                      className="w-full h-60 p-2 bg-white dark:bg-black border border-gray-300 dark:border-gray-600 rounded-md text-sm font-mono"
+                    />
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => navigator.clipboard.writeText(rawAIOutput)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm"
+                      >
+                        📋 Copy to Clipboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRawAIOutput(null);
+                          enhanceResume(); // retry
+                        }}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm"
+                      >
+                        🔁 Retry
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 </CardContent>
-                <CardFooter className="flex justify-between bg-muted/20 py-4 px-6">
-                  <Button variant="outline" onClick={() => setActiveTab("input")}>
+                <CardFooter className="flex flex-col gap-3 md:flex-row md:justify-between bg-muted/20 py-4 px-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab("input")}
+                    className="w-full md:w-auto"
+                  >
                     <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
                     Edit Resume
                   </Button>
-                  <Button onClick={handleDownload}>
+
+                  <Button
+                    onClick={handleDownload}
+                    className="w-full md:w-auto"
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Download Analysis
                   </Button>
 
-                  <Button variant="secondary" onClick={handleDownloadPdf}>
+                  <Button
+                    variant="secondary"
+                    onClick={handleDownloadPdf}
+                    className="w-full md:w-auto"
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Download PDF
                   </Button>
-
-
                 </CardFooter>
+
               </>
             )}
           </TabsContent>
