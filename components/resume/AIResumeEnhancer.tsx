@@ -57,7 +57,6 @@ export function AIResumeEnhancer() {
 
 
   
-   
 
 
 
@@ -583,38 +582,74 @@ export function AIResumeEnhancer() {
                           onClientUploadComplete={async (res) => {
                             if (res && res.length > 0) {
                               const uploaded = res[0];
-
+                              const fileUrl = uploaded.ufsUrl;
+                          
+                              // Basic validation
                               const fileName = uploaded.name.toLowerCase();
-                              if (!fileName.endsWith(".docx")) {
+                              if (!fileName.endsWith(".docx") && !fileName.endsWith(".pdf")) {
                                 toast({
                                   title: "Unsupported File Type",
-                                  description: "Only DOCX files are supported. Please upload a valid .docx resume.",
+                                  description: "Only .docx or .pdf files are supported.",
                                   variant: "destructive",
                                 });
                                 return;
                               }
-
+                          
+                              setIsUploading(true);
+                              const cleanup = simulateProgress();
+                          
                               try {
-                                const fileResponse = await fetch(uploaded.ufsUrl);
-                                const blob = await fileResponse.blob();
-                                const file = new File([blob], uploaded.name, { type: blob.type });
-                                await parseUploadedResume(file); // ✅ Use shared logic
-                              } catch (error) {
+                                // Fetch the uploaded file from UploadThing
+                                const response = await fetch(fileUrl);
+                                if (!response.ok) throw new Error("Failed to fetch uploaded file blob.");
+                          
+                                const blob = await response.blob();
+                                const formData = new FormData();
+                                formData.append("file", blob, uploaded.name); // ✅ Required for req.formData()
+                          
+                                const apiRes = await fetch("/api/ai/resume-parse", {
+                                  method: "POST",
+                                  body: formData,
+                                });
+                          
+                                const text = await apiRes.text();
+                                const data = JSON.parse(text);
+                          
+                                if (!apiRes.ok) {
+                                  if (apiRes.status === 402 && data.requiresSignup) {
+                                    setShowSignUpModal(true);
+                                  }
+                                  throw new Error(data.error || "Failed to parse resume");
+                                }
+                          
+                                setResumeText(data.text);
+                                setUploadedFile({ name: uploaded.name, size: uploaded.size });
+                          
+                                if (data.remainingCredits !== undefined) {
+                                  setCreditInfo((prev) =>
+                                    prev ? { ...prev, credits: data.remainingCredits } : null
+                                  );
+                                }
+                          
+                                toast({
+                                  title: "Success",
+                                  description: "Resume parsed successfully!",
+                                  icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+                                });
+                              } catch (error: any) {
+                                console.error(error);
                                 toast({
                                   title: "Error",
-                                  description: "Failed to fetch uploaded file.",
+                                  description: error.message || "Something went wrong during resume parsing.",
                                   variant: "destructive",
                                 });
+                              } finally {
+                                setIsUploading(false);
+                                cleanup();
                               }
                             }
                           }}
-                          onUploadError={(error: Error) => {
-                            toast({
-                              title: "Upload Error",
-                              description: error.message,
-                              variant: "destructive",
-                            });
-                          }}
+                          
                         />
                       )}
                       <p className="text-xs text-muted-foreground">Accepts DOCX files (max 2MB)</p>
