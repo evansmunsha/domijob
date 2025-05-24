@@ -122,7 +122,7 @@ export async function generateAIResponse(
   }
 
   // Use faster model for job_description_enhancement to speed up response
-  const modelName = endpoint === "job_description_enhancement" ? "gpt-3.5-turbo" : settings.model
+  const modelName = endpoint === "job_description_enhancement" ? "gpt-4o-mini" : settings.model
   const response = await openai.chat.completions.create(
     {
       model: modelName,

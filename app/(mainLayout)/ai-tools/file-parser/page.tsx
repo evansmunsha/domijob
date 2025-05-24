@@ -1,4 +1,4 @@
-'use client';
+/* 'use client';
 
 import SignUpModal from '@/components/SignUpModal';
 import React, { useEffect, useState } from 'react';
@@ -152,4 +152,4 @@ export default function ResumeEnhancerPage() {
 
     </div>
   );
-}
+} */
