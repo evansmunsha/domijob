@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
     
 
     const stream = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4.1-mini",
       stream: true,
       max_tokens: 600, // Keep small to prevent cutoff
       messages: [
