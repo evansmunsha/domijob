@@ -580,75 +580,77 @@ export function AIResumeEnhancer() {
                         <UploadButton
                           endpoint="resumeUploader"
                           onClientUploadComplete={async (res) => {
-                            if (res && res.length > 0) {
-                              const uploaded = res[0];
-                              const fileUrl = uploaded.ufsUrl;
+                            if (!res || res.length === 0) return;
                           
-                              // Basic validation
-                              const fileName = uploaded.name.toLowerCase();
-                              if (!fileName.endsWith(".docx") && !fileName.endsWith(".pdf")) {
-                                toast({
-                                  title: "Unsupported File Type",
-                                  description: "Only .docx or .pdf files are supported.",
-                                  variant: "destructive",
-                                });
-                                return;
+                            const uploaded = res[0];
+                            const fileUrl = uploaded.ufsUrl;
+                            const fileName = uploaded.name.toLowerCase();
+                          
+                            if (!fileName.endsWith(".docx") && !fileName.endsWith(".pdf")) {
+                              toast({
+                                title: "Unsupported File Type",
+                                description: "Only .docx or .pdf files are supported.",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                          
+                            setIsUploading(true);
+                            const cleanup = simulateProgress();
+                          
+                            try {
+                              // Step 1: Download file from UploadThing
+                              const fetchRes = await fetch(fileUrl);
+                              if (!fetchRes.ok) throw new Error("Failed to fetch uploaded file blob.");
+                          
+                              const blob = await fetchRes.blob();
+                          
+                              // Step 2: Build form data correctly
+                              const formData = new FormData();
+                              formData.append("file", blob, uploaded.name); // ✅ KEY LINE
+                          
+                              // Step 3: Send to backend
+                              const parseRes = await fetch("/api/ai/resume-parse", {
+                                method: "POST",
+                                body: formData,
+                              });
+                          
+                              const text = await parseRes.text();
+                              const data = JSON.parse(text);
+                          
+                              if (!parseRes.ok) {
+                                if (parseRes.status === 402 && data.requiresSignup) {
+                                  setShowSignUpModal(true);
+                                }
+                                throw new Error(data.error || "Failed to parse resume");
                               }
                           
-                              setIsUploading(true);
-                              const cleanup = simulateProgress();
-                          
-                              try {
-                                // Fetch the uploaded file from UploadThing
-                                const response = await fetch(fileUrl);
-                                if (!response.ok) throw new Error("Failed to fetch uploaded file blob.");
-                          
-                                const blob = await response.blob();
-                                const formData = new FormData();
-                                formData.append("file", blob, uploaded.name); // ✅ Required for req.formData()
-                          
-                                const apiRes = await fetch("/api/ai/resume-parse", {
-                                  method: "POST",
-                                  body: formData,
-                                });
-                          
-                                const text = await apiRes.text();
-                                const data = JSON.parse(text);
-                          
-                                if (!apiRes.ok) {
-                                  if (apiRes.status === 402 && data.requiresSignup) {
-                                    setShowSignUpModal(true);
-                                  }
-                                  throw new Error(data.error || "Failed to parse resume");
-                                }
-                          
-                                setResumeText(data.text);
-                                setUploadedFile({ name: uploaded.name, size: uploaded.size });
-                          
-                                if (data.remainingCredits !== undefined) {
-                                  setCreditInfo((prev) =>
-                                    prev ? { ...prev, credits: data.remainingCredits } : null
-                                  );
-                                }
-                          
-                                toast({
-                                  title: "Success",
-                                  description: "Resume parsed successfully!",
-                                  icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-                                });
-                              } catch (error: any) {
-                                console.error(error);
-                                toast({
-                                  title: "Error",
-                                  description: error.message || "Something went wrong during resume parsing.",
-                                  variant: "destructive",
-                                });
-                              } finally {
-                                setIsUploading(false);
-                                cleanup();
+                              // ✅ Success
+                              setResumeText(data.text);
+                              setUploadedFile({ name: uploaded.name, size: uploaded.size });
+                              if (data.remainingCredits !== undefined) {
+                                setCreditInfo((prev) =>
+                                  prev ? { ...prev, credits: data.remainingCredits } : null
+                                );
                               }
+                          
+                              toast({
+                                title: "Success",
+                                description: "Resume parsed successfully!",
+                                icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+                              });
+                            } catch (err: any) {
+                              toast({
+                                title: "Error",
+                                description: err.message || "Something went wrong.",
+                                variant: "destructive",
+                              });
+                            } finally {
+                              setIsUploading(false);
+                              cleanup();
                             }
                           }}
+                          
                           
                         />
                       )}
