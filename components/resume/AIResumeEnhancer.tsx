@@ -914,31 +914,7 @@ export function AIResumeEnhancer() {
                   )}
                 </div>
 
-
-                </CardContent>
-                <CardFooter className="flex justify-between bg-muted/20 py-4 px-6">
-                  <Button variant="outline" onClick={() => setActiveTab("input")}>
-                    <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
-                    Edit Resume
-                  </Button>
-                  <Button onClick={handleDownload}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Analysis
-                  </Button>
-
-                  <Button variant="secondary" onClick={handleDownloadPdf}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                  </Button>
-
-
-                </CardFooter>
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
-      </Card>
-      {rawAIOutput && (
+                {rawAIOutput && (
         <div className="mt-6 border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10 rounded-xl p-4 space-y-3">
           <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">⚠️ Partial AI Output</h2>
           <p className="text-sm text-muted-foreground">
@@ -968,6 +944,30 @@ export function AIResumeEnhancer() {
           </div>
         </div>
       )}
+
+                </CardContent>
+                <CardFooter className="flex justify-between bg-muted/20 py-4 px-6">
+                  <Button variant="outline" onClick={() => setActiveTab("input")}>
+                    <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
+                    Edit Resume
+                  </Button>
+                  <Button onClick={handleDownload}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Analysis
+                  </Button>
+
+                  <Button variant="secondary" onClick={handleDownloadPdf}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </Button>
+
+
+                </CardFooter>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
+      </Card>
 
       {/* Use our simple modal implementation */}
       <SignUpModal isOpen={showSignUpModal} onClose={() => setShowSignUpModal(false)} />
