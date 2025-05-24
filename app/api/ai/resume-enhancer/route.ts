@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
     Respond only with a valid JSON object. No commentary or markdown. Be concise, structured, and complete.
     `;
     
+    
 
     const stream = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
