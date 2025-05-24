@@ -88,20 +88,31 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = `
-Given this resume text, respond with a compact, valid JSON object:
-
-- overview (string)
-- atsScore (0–100)
-- strengths (array of strings)
-- weaknesses (array of strings)
-- suggestions (array of { section, improvements[] })
-- keywords (array of strings)
-
-Resume:
-${resumeText}
-
-Target Job Title: ${targetJobTitle || "Not provided"}
-`;
+    You are a professional resume reviewer and ATS optimization expert.
+    
+    Analyze the following resume content and return a detailed report in JSON format. The report should be optimized for job seekers applying to ${targetJobTitle || "unspecified job title"}.
+    
+    Please include the following sections in your response:
+    
+    - "overview": A professional summary of the resume's quality (3–4 sentences)
+    - "atsScore": A numeric ATS optimization score between 0 and 100
+    - "strengths": At least 6 strengths detected in the resume
+    - "weaknesses": At least 4 weaknesses or missing elements
+    - "suggestions": An array of sections with multiple actionable improvements. Each suggestion should include:
+      - "section": The section name (e.g. "Experience", "Skills", "Projects")
+      - "improvements": 2–3 improvements per section
+    - "keywords": At least 10 relevant keywords for the target job that are missing or underused
+    
+    Resume Content:
+    ---
+    ${resumeText}
+    ---
+    
+    Target Job Title: ${targetJobTitle || "Not provided"}
+    
+    Respond only with a valid JSON object. No commentary or markdown. Be concise, structured, and complete.
+    `;
+    
 
     const stream = await openai.chat.completions.create({
       model: "gpt-4",
