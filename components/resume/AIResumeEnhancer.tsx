@@ -37,7 +37,6 @@ import { CREDIT_COSTS } from "@/app/utils/credits"
 import SignUpModal from "@/components/SignUpModal"
 // 2. Add a simple SignUpModal component implementation if it doesn't exist
 
-
 export function AIResumeEnhancer() {
   const [resumeText, setResumeText] = useState("")
   const [targetJobTitle, setTargetJobTitle] = useState("")
@@ -213,11 +212,15 @@ export function AIResumeEnhancer() {
           parsedResult = JSON.parse(safeText);
         } catch (err) {
           console.error("🛑 Failed to parse AI response:\n", textBuffer);
-          toast({
-            title: "AI Response Error",
-            description: "The AI response was incomplete or broken. Please try again.",
-            variant: "destructive",
-          });
+          if (resumeText.trim().split(/\s+/).length > 1000) {
+            toast({
+              title: "Resume Too Long",
+              description: "Please shorten your resume to under 1000 words for best results.",
+              variant: "destructive",
+            });
+            return;
+          }          
+          
           return;
         }
 
@@ -370,7 +373,8 @@ export function AIResumeEnhancer() {
       cleanup();
     }
   };
-  
+
+
   
 
   return (
@@ -494,6 +498,10 @@ export function AIResumeEnhancer() {
                       value={resumeText}
                       onChange={(e) => setResumeText(e.target.value)}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      ⚠️ Tip: For best results, keep your resume under 2 pages or <strong>below 1000 words</strong>. Long resumes may cause incomplete AI responses.
+                    </p>
+
                     {isLoading && (
                       <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center">
                         <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
