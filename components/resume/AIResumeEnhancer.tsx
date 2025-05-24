@@ -53,6 +53,7 @@ export function AIResumeEnhancer() {
   } | null>(null)
   const [isLoadingCredits, setIsLoadingCredits] = useState(true)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
+  const [rawAIOutput, setRawAIOutput] = useState<string | null>(null);
 
 
   
@@ -214,12 +215,15 @@ export function AIResumeEnhancer() {
         parsedResult = JSON.parse(safeText);
       } catch {
         console.error("🛑 Failed to parse AI response:\n", safeText);
+        setRawAIOutput(safeText);
+
         toast({
           title: "AI Response Too Long",
-          description: "The resume may be too long. Try submitting a shorter version (under 1000 words).",
+          description: "The resume may be too long. Try submitting a shorter version or copy the raw result below.",
           variant: "destructive",
         });
         return;
+
       }
   
       setEnhancementResult(parsedResult);
@@ -934,7 +938,36 @@ export function AIResumeEnhancer() {
           </TabsContent>
         </Tabs>
       </Card>
-      
+      {rawAIOutput && (
+        <div className="mt-6 border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10 rounded-xl p-4 space-y-3">
+          <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">⚠️ Partial AI Output</h2>
+          <p className="text-sm text-muted-foreground">
+            The response was too long and got cut off. You can copy it or try again with a shorter resume.
+          </p>
+          <textarea
+            value={rawAIOutput}
+            readOnly
+            className="w-full h-60 p-2 bg-white dark:bg-black border border-gray-300 dark:border-gray-600 rounded-md text-sm font-mono"
+          />
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigator.clipboard.writeText(rawAIOutput)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm"
+            >
+              📋 Copy to Clipboard
+            </button>
+            <button
+              onClick={() => {
+                setRawAIOutput(null);
+                enhanceResume(); // retry
+              }}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm"
+            >
+              🔁 Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Use our simple modal implementation */}
       <SignUpModal isOpen={showSignUpModal} onClose={() => setShowSignUpModal(false)} />
