@@ -1026,4 +1026,3 @@ export function AIResumeEnhancer() {
     </div>
   )
 }
-
