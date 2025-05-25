@@ -581,68 +581,65 @@ export function AIResumeEnhancer() {
                           endpoint="resumeUploader"
                           onClientUploadComplete={async (res) => {
                             if (!res || res.length === 0) return;
-                          
+
                             const uploaded = res[0];
-                            const fileUrl = uploaded.ufsUrl;
+
                             const fileName = uploaded.name.toLowerCase();
-                          
                             if (!fileName.endsWith(".docx") && !fileName.endsWith(".pdf")) {
                               toast({
                                 title: "Unsupported File Type",
-                                description: "Only .docx or .pdf files are supported.",
+                                description: "Only DOCX or PDF files are supported.",
                                 variant: "destructive",
                               });
                               return;
                             }
-                          
+
                             setIsUploading(true);
                             const cleanup = simulateProgress();
-                          
+
                             try {
-                              // Step 1: Download file from UploadThing
-                              const fetchRes = await fetch(fileUrl);
-                              if (!fetchRes.ok) throw new Error("Failed to fetch uploaded file blob.");
-                          
-                              const blob = await fetchRes.blob();
-                          
-                              // Step 2: Build form data correctly
+                              // ✅ Fetch blob from ufsUrl
+                              const fileRes = await fetch(uploaded.ufsUrl);
+                              const blob = await fileRes.blob();
+
                               const formData = new FormData();
-                              formData.append("file", blob, uploaded.name); // ✅ KEY LINE
-                          
-                              // Step 3: Send to backend
-                              const parseRes = await fetch("/api/ai/resume-parse", {
+                              formData.append("file", blob, uploaded.name);
+
+                              const response = await fetch("/api/ai/resume-parse", {
                                 method: "POST",
                                 body: formData,
                               });
-                          
-                              const text = await parseRes.text();
+
+                              const text = await response.text();
                               const data = JSON.parse(text);
-                          
-                              if (!parseRes.ok) {
-                                if (parseRes.status === 402 && data.requiresSignup) {
+
+                              if (!response.ok) {
+                                if (response.status === 403 && data.requiresSignup) {
                                   setShowSignUpModal(true);
                                 }
                                 throw new Error(data.error || "Failed to parse resume");
                               }
-                          
-                              // ✅ Success
+
                               setResumeText(data.text);
                               setUploadedFile({ name: uploaded.name, size: uploaded.size });
+
                               if (data.remainingCredits !== undefined) {
                                 setCreditInfo((prev) =>
                                   prev ? { ...prev, credits: data.remainingCredits } : null
                                 );
                               }
-                          
+
                               toast({
                                 title: "Success",
                                 description: "Resume parsed successfully!",
                                 icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
                               });
-                            } catch (err: any) {
+                            } catch (err) {
+                              console.error(err);
                               toast({
                                 title: "Error",
-                                description: err.message || "Something went wrong.",
+                                description:
+                                  err instanceof Error ? err.message : "Unknown error occurred while parsing resume",
                                 variant: "destructive",
                               });
                             } finally {
@@ -650,9 +647,15 @@ export function AIResumeEnhancer() {
                               cleanup();
                             }
                           }}
-                          
-                          
+                          onUploadError={(error: Error) => {
+                            toast({
+                              title: "Upload Error",
+                              description: error.message,
+                              variant: "destructive",
+                            });
+                          }}
                         />
+
                       )}
                       <p className="text-xs text-muted-foreground">Accepts DOCX files (max 2MB)</p>
                     </div>
