@@ -1,5 +1,6 @@
 'use client';
 
+import SignUpModal from '@/components/SignUpModal';
 import React, { useState, useEffect } from 'react';
 
 export default function ResumeEnhancerPage() {
@@ -8,7 +9,8 @@ export default function ResumeEnhancerPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [guestCredits, setGuestCredits] = useState<number | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  
+  const [showSignUpModal, setShowSignUpModal] = useState(false)
 
   // Read guest credits from cookie
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function ResumeEnhancerPage() {
       });
 
       if (res.status === 403) {
-        setShowModal(true);
+        setShowSignUpModal(true);
         return;
       }
 
@@ -145,10 +147,8 @@ export default function ResumeEnhancerPage() {
           </div>
         )}
 
-        {showModal && (
-          <div className="p-4 border bg-yellow-100 text-yellow-800 rounded-md">
-            You've used all your guest credits. <strong>Please sign up</strong> to get 50 more!
-          </div>
+        {showSignUpModal && (
+          <SignUpModal isOpen={showSignUpModal} onClose={() => setShowSignUpModal(false)} />
         )}
       </div>
     </div>
