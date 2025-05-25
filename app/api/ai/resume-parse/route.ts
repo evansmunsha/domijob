@@ -87,33 +87,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
     }
 
-    const fileType = file.type;
-    const arrayBuffer = await file.arrayBuffer();
-    let parsedText = "";
+    const fileName = file.name.toLowerCase();
+const arrayBuffer = await file.arrayBuffer();
+let parsedText = "";
 
-    if (fileType === "application/pdf") {
-      try {
-        const { default: pdfParse } = await import("pdf-parse");
-        const pdfData = await pdfParse(Buffer.from(arrayBuffer));
-        parsedText = pdfData.text;
-      } catch (error) {
-        console.error("PDF parse error:", error);
-        return NextResponse.json({ error: "Failed to parse PDF" }, { status: 500 });
-      }
-    } else if (
-      fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      try {
-        const { extractRawText } = await import("mammoth");
-        const result = await extractRawText({ arrayBuffer });
-        parsedText = result.value;
-      } catch (error) {
-        console.error("DOCX parse error:", error);
-        return NextResponse.json({ error: "Failed to parse DOCX" }, { status: 500 });
-      }
-    } else {
-      return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
-    }
+// detect by extension, not mime type
+if (fileName.endsWith(".pdf")) {
+  try {
+    const { default: pdfParse } = await import("pdf-parse");
+    const pdfData = await pdfParse(Buffer.from(arrayBuffer));
+    parsedText = pdfData.text;
+  } catch (e) {
+    console.error("PDF parse error:", e);
+    return NextResponse.json({ error: "Failed to parse PDF" }, { status: 500 });
+  }
+} else if (fileName.endsWith(".docx")) {
+  try {
+    const { extractRawText } = await import("mammoth");
+    const result = await extractRawText({ arrayBuffer });
+    parsedText = result.value;
+  } catch (e) {
+    console.error("DOCX parse error:", e);
+    return NextResponse.json({ error: "Failed to parse DOCX" }, { status: 500 });
+  }
+} else {
+  return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
+}
 
     parsedText = parsedText.replace(/\s+/g, " ").trim();
 
