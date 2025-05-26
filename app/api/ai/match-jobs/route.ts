@@ -1,3 +1,5 @@
+//app/api/ai/match-jobs/route.ts
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/utils/db";
 import { generateAIResponse } from "@/app/utils/openai";
