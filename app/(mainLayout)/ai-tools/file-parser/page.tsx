@@ -96,23 +96,11 @@ export default function ResumeEnhancerPage() {
           </p>
         )}
 
-        <div>
-          <label className="block mb-1 font-medium">Upload DOCX Resume</label>
-          <input
-            type="file"
-            accept=".docx"
-            onChange={handleFileChange}
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-700"
-          />
-        </div>
+<form action="/api/ai/parse-resume" method="POST" encType="multipart/form-data">
+  <input type="file" name="file" />
+  <button type="submit">Upload</button>
+</form>
 
-        <button
-          onClick={handleEnhance}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md transition disabled:opacity-60"
-          disabled={loading || (guestCredits !== null && guestCredits <= 0)}
-        >
-          {loading ? 'Enhancing...' : 'Enhance Resume'}
-        </button>
 
         {error && <div className="text-red-500 font-medium">❌ {error}</div>}
 
