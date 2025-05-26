@@ -1,100 +1,87 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import React, { useState } from "react";
 
 export default function ResumeParserPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [parsedResult, setParsedResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       setFile(e.target.files[0]);
-      setResult(null);
+      setParsedResult(null);
       setError(null);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!file) {
-      setError('Please select a file.');
-      return;
-    }
+  const handleUpload = async () => {
+    if (!file) return;
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     setLoading(true);
+    setParsedResult(null);
     setError(null);
-    setResult(null);
 
     try {
-      const res = await fetch('/api/ai/parse-resume', {
-        method: 'POST',
+      const res = await fetch("/api/ai/parse-resume", {
+        method: "POST",
         body: formData,
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        setError(data.error || 'Something went wrong.');
-      } else {
-        setResult(data.parsed);
+        const err = await res.json();
+        throw new Error(err.error || "Upload failed");
       }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to upload resume.');
+
+      const result = await res.json();
+      setParsedResult(result.parsed);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-semibold mb-4">Resume Parser</h1>
+    <div className="max-w-2xl mx-auto mt-12 p-6 border rounded-xl shadow-sm">
+      <h1 className="text-2xl font-bold mb-4">Upload Resume (no PDFs)</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="file"
-          accept=".docx,.txt"
-          onChange={handleFileChange}
-          className="block w-full border border-gray-300 p-2 rounded"
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          disabled={loading}
-        >
-          {loading ? 'Parsing...' : 'Upload & Parse'}
-        </button>
-      </form>
+      <input
+        type="file"
+        accept=".docx,.txt"
+        onChange={handleFileChange}
+        className="mb-4"
+      />
+
+      <button
+        onClick={handleUpload}
+        disabled={!file || loading}
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+      >
+        {loading ? "Parsing..." : "Upload & Parse"}
+      </button>
 
       {error && (
         <div className="mt-4 text-red-600">
-          ❌ {error}
+          <strong>Error:</strong> {error}
         </div>
       )}
 
-      {result && (
+      {parsedResult && (
         <div className="mt-6">
-          <h2 className="text-xl font-medium mb-2">Parsed Resume JSON:</h2>
-          <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto whitespace-pre-wrap">
-            {JSON.stringify(result, null, 2)}
+          <h2 className="text-xl font-semibold mb-2">Parsed Resume:</h2>
+          <pre className="bg-gray-100 p-4 rounded overflow-auto text-sm">
+            {JSON.stringify(parsedResult, null, 2)}
           </pre>
         </div>
       )}
     </div>
   );
 }
-
-
-
-
-
-
 
 
 
