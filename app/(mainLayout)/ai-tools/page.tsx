@@ -218,7 +218,7 @@ export default function AIToolsPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              Document Parser
+              Document Parser coming soon
             </CardTitle>
             <CardDescription>Extract text from PDF and DOCX files</CardDescription>
           </CardHeader>
@@ -234,8 +234,8 @@ export default function AIToolsPage() {
           </CardContent>
           <CardFooter className="pt-4">
             <Button asChild className="w-full">
-              <Link href="/ai-tools/file-parser">
-                Parse Document
+              <Link href="#/ai-tools/file-parser">
+                Parse Document coming soon 
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
