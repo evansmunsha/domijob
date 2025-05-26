@@ -1,71 +1,121 @@
-import { NextRequest, NextResponse } from "next/server";
-import formidable, { File } from "formidable";
-import fs from "fs";
-import path from "path";
-import mammoth from "mammoth";
+import { NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import { OpenAI } from "openai";
+import mammoth from "mammoth";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
-// Helper to parse form
-async function parseFormData(req: any): Promise<{ file: File }> {
-  const form = formidable({ keepExtensions: true });
-
-  return new Promise((resolve, reject) => {
-    form.parse(req, (err, fields, files) => {
-      if (err) return reject(err);
-      const uploaded = Array.isArray(files.file) ? files.file[0] : files.file;
-      if (!uploaded) return reject("No file uploaded.");
-      resolve({ file: uploaded as File });
-    });
-  });
-}
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const GUEST_CREDIT_COOKIE = "domijob_guest_credits";
+const MAX_GUEST_CREDITS = 50;
+const FEATURE_COST = 10;
 
 export async function POST(req: NextRequest) {
   try {
-    // This ensures the underlying Node.js request is accessible
-    const nodeReq = (req as any).req;
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
 
-    const { file } = await parseFormData(nodeReq);
-
-    const ext = path.extname(file.originalFilename || "").toLowerCase();
-    if (ext === ".pdf") {
-      return NextResponse.json({ error: "PDFs are not supported." }, { status: 400 });
+    if (!file) {
+      console.error("❌ No file uploaded");
+      return new Response(JSON.stringify({ error: "No file uploaded" }), { status: 400 });
     }
 
-    const buffer = fs.readFileSync(file.filepath);
-    let text = "";
-
-    if (ext === ".docx") {
-      const result = await mammoth.extractRawText({ buffer });
-      text = result.value;
-    } else {
-      text = buffer.toString();
+    const fileName = file.name?.toLowerCase() || "";
+    if (!fileName.endsWith(".docx")) {
+      console.warn("❌ Unsupported file type:", fileName);
+      return new Response(JSON.stringify({ error: "Only DOCX files are supported." }), { status: 400 });
     }
 
-    const cleaned = text.replace(/\s+/g, " ").slice(0, 12000);
+    // 🔐 Handle guest credits
+    const cookieStore = cookies();
+    const cookie = (await cookieStore).get(GUEST_CREDIT_COOKIE);
+    let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
+    if (isNaN(guestCredits)) guestCredits = MAX_GUEST_CREDITS;
 
-    const gpt = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
+    if (guestCredits < FEATURE_COST) {
+      return new Response(
+        JSON.stringify({
+          error: "You've used all your free credits. Sign up to get 50 more!",
+          requiresSignup: true,
+        }),
+        { status: 403 }
+      );
+    }
+
+    // 📉 Deduct credits
+    const updatedCredits = guestCredits - FEATURE_COST;
+    try {
+      (await cookieStore).set(GUEST_CREDIT_COOKIE, updatedCredits.toString(), {
+        path: "/",
+        httpOnly: false,
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+    } catch (err) {
+      console.warn("⚠️ Could not set guest credit cookie:", err);
+    }
+
+    // 📄 Parse DOCX content
+    let plainText = "";
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      plainText = result.value.replace(/\s+/g, " ").trim();
+    } catch (err) {
+      console.error("❌ DOCX parsing failed:", err);
+      return new Response(JSON.stringify({ error: "Failed to parse DOCX file." }), { status: 500 });
+    }
+
+    if (!plainText || plainText.length < 30) {
+      return new Response(JSON.stringify({ error: "Resume file is too short or empty." }), { status: 400 });
+    }
+
+    // ✨ Prompt to GPT
+    const prompt = `
+You are a professional resume writer. Improve and rewrite the following resume to be more impactful, professional, and ATS-optimized. Use clear formatting, strong action verbs, and concise bullet points where applicable.
+
+Resume:
+---
+${plainText}
+---`;
+
+    const stream = await openai.chat.completions.create({
+      model: "gpt-4",
+      stream: true,
       messages: [
         {
           role: "system",
           content:
-            "You are a resume parser. Extract structured data from the text and return it in JSON format. Include fields: name, email, phone, location, summary, skills, experience, education, and certifications.",
+            "You are a professional resume editor. Only return the enhanced resume text. No commentary or formatting like Markdown.",
         },
-        { role: "user", content: cleaned },
+        { role: "user", content: prompt },
       ],
-      temperature: 0.2,
     });
 
-    const parsed = gpt.choices[0]?.message?.content;
+    // 🧠 Stream output
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(
+          encoder.encode(`CREDITS_REMAINING:${updatedCredits}\n\n`)
+        );
 
-    return NextResponse.json({
-      success: true,
-      parsed: parsed ? JSON.parse(parsed) : null,
+        for await (const chunk of stream) {
+          const text = chunk.choices?.[0]?.delta?.content;
+          if (text) controller.enqueue(encoder.encode(text));
+        }
+
+        controller.close();
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
     });
   } catch (err) {
-    console.error("Resume parse error:", err);
-    return NextResponse.json({ error: "Resume parsing failed." }, { status: 500 });
+    console.error("🔥 Unhandled /resume-parse error:", err);
+    return new Response(
+      JSON.stringify({ error: "Internal Server Error" }),
+      { status: 500 }
+    );
   }
 }
