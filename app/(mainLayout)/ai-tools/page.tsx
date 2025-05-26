@@ -17,7 +17,7 @@ export default function AIToolsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isNewUser, setIsNewUser] = useState(false)
 
-  // Fetch credit information on page load
+  // Fetch credit info on page load
   useEffect(() => {
     async function fetchCredits() {
       try {
