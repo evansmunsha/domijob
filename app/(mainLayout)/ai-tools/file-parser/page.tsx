@@ -1,147 +1,95 @@
 'use client';
 
-import SignUpModal from '@/components/SignUpModal';
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-export default function ResumeEnhancerPage() {
+export default function ResumeParserPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [enhancedText, setEnhancedText] = useState('');
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [guestCredits, setGuestCredits] = useState<number | null>(null);
-  
-  const [showSignUpModal, setShowSignUpModal] = useState(false)
-
-  // Read guest credits from cookie
-  useEffect(() => {
-    const match = document.cookie.match(/domijob_guest_credits=(\d+)/);
-    setGuestCredits(match ? parseInt(match[1]) : 50);
-  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    setFile(selectedFile);
-    setEnhancedText('');
-    setError('');
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      setResult(null);
+      setError(null);
+    }
   };
 
-  const handleEnhance = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (!file) {
-      setError('Please upload a DOCX file.');
+      setError('Please select a file.');
       return;
     }
-
-    setLoading(true);
-    setError('');
-    setEnhancedText('');
 
     const formData = new FormData();
     formData.append('file', file);
 
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
     try {
-      const res = await fetch('/api/ai/resume-parse', {
+      const res = await fetch('/api/ai/parse-resume', {
         method: 'POST',
         body: formData,
       });
 
-      if (res.status === 403) {
-        setShowSignUpModal(true);
-        return;
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong.');
+      } else {
+        setResult(data.parsed);
       }
-
-      if (!res.body) throw new Error('No response body.');
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-
-      let buffer = '';
-      let creditsRead = false;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-
-        // Handle credit prefix
-        if (!creditsRead && chunk.startsWith('CREDITS_REMAINING:')) {
-          const match = chunk.match(/CREDITS_REMAINING:(\d+)/);
-          if (match) {
-            setGuestCredits(parseInt(match[1]));
-          }
-          buffer = chunk.split('\n\n').slice(1).join('\n\n'); // skip prefix
-          creditsRead = true;
-        } else {
-          buffer = chunk;
-        }
-
-        setEnhancedText(prev => prev + buffer);
-      }
-    } catch (err: any) {
-      console.error('Error enhancing resume:', err.message);
-      setError('An error occurred. Please try again.');
+    } catch (err) {
+      console.error(err);
+      setError('Failed to upload resume.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold">🎯 AI Resume Enhancer</h1>
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-2xl font-semibold mb-4">Resume Parser</h1>
 
-        {guestCredits !== null && (
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            You have <strong>{guestCredits}</strong> free credits left.
-          </p>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="file"
+          accept=".docx,.txt"
+          onChange={handleFileChange}
+          className="block w-full border border-gray-300 p-2 rounded"
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          disabled={loading}
+        >
+          {loading ? 'Parsing...' : 'Upload & Parse'}
+        </button>
+      </form>
 
-<form action="/api/ai/parse-resume" method="POST" encType="multipart/form-data">
-  <input type="file" name="file" />
-  <button type="submit">Upload</button>
-</form>
+      {error && (
+        <div className="mt-4 text-red-600">
+          ❌ {error}
+        </div>
+      )}
 
-
-        {error && <div className="text-red-500 font-medium">❌ {error}</div>}
-
-        {enhancedText && (
-          <div className="space-y-3 mt-6">
-            <h2 className="text-xl font-semibold">Your Enhanced Resume</h2>
-            <textarea
-              value={enhancedText}
-              readOnly
-              className="w-full h-96 p-4 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md text-sm"
-            />
-            <div className="flex gap-3 flex-wrap">
-              <button
-                onClick={() => navigator.clipboard.writeText(enhancedText)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-              >
-                📋 Copy to Clipboard
-              </button>
-              <button
-                onClick={() => {
-                  const blob = new Blob([enhancedText], { type: 'text/plain;charset=utf-8' });
-                  const link = document.createElement('a');
-                  link.href = URL.createObjectURL(blob);
-                  link.download = 'enhanced-resume.txt';
-                  link.click();
-                }}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-              >
-                ⬇️ Download as .txt
-              </button>
-            </div>
-          </div>
-        )}
-
-        {showSignUpModal && (
-          <SignUpModal isOpen={showSignUpModal} onClose={() => setShowSignUpModal(false)} />
-        )}
-      </div>
+      {result && (
+        <div className="mt-6">
+          <h2 className="text-xl font-medium mb-2">Parsed Resume JSON:</h2>
+          <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto whitespace-pre-wrap">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
+
 
 
 
