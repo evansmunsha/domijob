@@ -477,13 +477,21 @@ export function AIResumeEnhancer() {
                 </Button>
                 <Button
                   variant={inputMethod === "upload" ? "default" : "outline"}
+                  size="sm"
+                  className="rounded-full"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload File coming soon 
+                </Button>
+                {/* <Button
+                  variant={inputMethod === "upload" ? "default" : "outline"}
                   onClick={() => setInputMethod("upload")}
                   size="sm"
                   className="rounded-full"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Upload File
-                </Button>
+                  Upload File 
+                </Button> */}
               </div>
 
               {inputMethod === "paste" ? (
