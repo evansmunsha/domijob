@@ -1,87 +1,68 @@
+// app/(yourpage)/page.tsx or page.client.tsx
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 
 export default function ResumeParserPage() {
-  const [file, setFile] = useState<File | null>(null);
+  const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
-  const [parsedResult, setParsedResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setFile(e.target.files[0]);
-      setParsedResult(null);
-      setError(null);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!file) return;
+  async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const file = (e.currentTarget.file as any)?.files?.[0];
+    if (!file) return alert("Please upload a DOCX file");
 
     const formData = new FormData();
     formData.append("file", file);
 
     setLoading(true);
-    setParsedResult(null);
-    setError(null);
+    setResult("");
 
-    try {
-      const res = await fetch('/api/ai/parse-resume', {
-        method: 'POST',
-        body: formData,
-      });
+    const res = await fetch("/api/ai/parse-resume", {
+      method: "POST",
+      body: formData,
+    });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Upload failed");
-      }
-
-      const result = await res.json();
-      setParsedResult(result.parsed);
-    } catch (err: any) {
-      setError(err.message || "Something went wrong.");
-    } finally {
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      alert(error?.error || "Upload failed");
       setLoading(false);
+      return;
     }
-  };
+
+    const reader = res.body?.getReader();
+    const decoder = new TextDecoder();
+    let text = "";
+
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        text += decoder.decode(value, { stream: true });
+        setResult((prev) => prev + decoder.decode(value, { stream: true }));
+      }
+    }
+
+    setLoading(false);
+  }
 
   return (
-    <div className="max-w-2xl mx-auto mt-12 p-6 border rounded-xl shadow-sm">
-      <h1 className="text-2xl font-bold mb-4">Upload Resume (no PDFs)</h1>
+    <div className="p-4 max-w-xl mx-auto">
+      <h1 className="text-xl font-bold mb-4">Upload your .docx Resume</h1>
+      <form onSubmit={handleUpload}>
+        <input type="file" name="file" accept=".docx" required className="mb-4" />
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+          {loading ? "Parsing..." : "Upload & Parse"}
+        </button>
+      </form>
 
-      <input
-        type="file"
-        accept=".docx,.txt"
-        onChange={handleFileChange}
-        className="mb-4"
-      />
-
-      <button
-        onClick={handleUpload}
-        disabled={!file || loading}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-      >
-        {loading ? "Parsing..." : "Upload & Parse"}
-      </button>
-
-      {error && (
-        <div className="mt-4 text-red-600">
-          <strong>Error:</strong> {error}
-        </div>
-      )}
-
-      {parsedResult && (
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-2">Parsed Resume:</h2>
-          <pre className="bg-gray-100 p-4 rounded overflow-auto text-sm">
-            {JSON.stringify(parsedResult, null, 2)}
-          </pre>
-        </div>
-      )}
+      <pre className="mt-6 bg-gray-100 p-4 whitespace-pre-wrap rounded text-sm">
+        {result}
+      </pre>
     </div>
   );
 }
+
 
 
 

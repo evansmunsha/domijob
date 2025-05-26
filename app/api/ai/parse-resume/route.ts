@@ -5,11 +5,6 @@ import path from "path";
 import mammoth from "mammoth";
 import { OpenAI } from "openai";
 
-// Disable body parser
-export const config = {
-  api: { bodyParser: false },
-};
-
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 // Helper to parse form
