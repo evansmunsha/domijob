@@ -1,4 +1,4 @@
-//app/api/ai/match-jobs/route.ts
+// app/api/ai/match-jobs/route.ts
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/utils/db";
@@ -12,101 +12,92 @@ const MAX_GUEST_CREDITS = 50;
 
 export async function POST(req: Request) {
   try {
-    // Get the feature cost
+    // ✅ Move body parsing to the top
+    const { resumeText } = await req.json();
+
+    if (!resumeText || typeof resumeText !== "string") {
+      return NextResponse.json({ error: "Resume text is required" }, { status: 400 });
+    }
+
     const featureCost = CREDIT_COSTS.job_match || 10;
-    
-    // Check authentication status
     const session = await auth();
     const userId = session?.user?.id;
-    
-    // Handle credits based on authentication status
+
     let creditInfo: {
       isGuest: boolean;
       creditsUsed: number;
       remainingCredits: number;
     };
-    
+
     if (userId) {
-      // Authenticated user - use database credits
-      const userCredits = await prisma.userCredits.findUnique({
-        where: { userId }
-      });
-      
+      // Authenticated user credit logic
+      const userCredits = await prisma.userCredits.findUnique({ where: { userId } });
+
       if (!userCredits || userCredits.balance < featureCost) {
         return NextResponse.json(
           { error: "Insufficient credits. Please purchase more credits to continue." },
           { status: 402 }
         );
       }
-      
-      // Deduct credits using a transaction
+
       await prisma.$transaction(async (tx) => {
-        // Update user's credit balance
         await tx.userCredits.update({
           where: { userId },
-          data: { balance: userCredits.balance - featureCost }
+          data: { balance: userCredits.balance - featureCost },
         });
-        
-        // Log the transaction if the table exists
+
         try {
           await tx.creditTransaction.create({
             data: {
               userId,
               amount: -featureCost,
               type: "usage",
-              description: `Used ${featureCost} credits for resume analysis`
-            }
+              description: `Used ${featureCost} credits for resume analysis`,
+            },
           });
-        } catch (error) {
-          // If creditTransaction table doesn't exist, just continue
+        } catch {
           console.log("Note: Credit transaction logging skipped");
         }
       });
-      
+
       creditInfo = {
         isGuest: false,
         creditsUsed: featureCost,
-        remainingCredits: userCredits.balance - featureCost
+        remainingCredits: userCredits.balance - featureCost,
       };
     } else {
-      // Anonymous user - use cookie credits
+      // Guest credit logic
       const cookieStore = await cookies();
       const cookie = cookieStore.get(GUEST_CREDIT_COOKIE);
       let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
-      
-      // Validate guest credits
+
       if (isNaN(guestCredits)) guestCredits = MAX_GUEST_CREDITS;
-      
+
       if (guestCredits < featureCost) {
         return NextResponse.json(
-          { 
+          {
             error: "You've used all your free credits. Sign up to get 50 more free credits!",
-            requiresSignup: true
+            requiresSignup: true,
           },
           { status: 403 }
         );
       }
-      
-      // Update guest credits
+
       const updatedCredits = guestCredits - featureCost;
       cookieStore.set(GUEST_CREDIT_COOKIE, updatedCredits.toString(), {
         path: "/",
         httpOnly: false,
-        maxAge: 60 * 60 * 24 * 7 // 7 days
+        maxAge: 60 * 60 * 24 * 7, // 7 days
       });
-      
+
       creditInfo = {
         isGuest: true,
         creditsUsed: featureCost,
-        remainingCredits: updatedCredits
+        remainingCredits: updatedCredits,
       };
     }
 
-    const { resumeText } = await req.json();
-    if (!resumeText || typeof resumeText !== "string") {
-      return NextResponse.json({ error: "Resume text is required" }, { status: 400 });
-    }
-
+    // ✅ Resume analysis with safe try/catch
     const systemPrompt = `You are an expert resume analyzer. Extract key skills, experience, job titles, and other relevant information from the resume text provided.`;
 
     const userPrompt = `Please analyze this resume and extract:
@@ -122,27 +113,34 @@ export async function POST(req: Request) {
 Resume:
 ${resumeText}`;
 
-    const resumeAnalysis = await generateAIResponse(
-      userId || "guest",
-      "job_match",
-      systemPrompt,
-      userPrompt,
-      { temperature: 0.1, skipCreditCheck: true }
-    );
+    let resumeAnalysis;
+    try {
+      resumeAnalysis = await generateAIResponse(
+        userId || "guest",
+        "job_match",
+        systemPrompt,
+        userPrompt,
+        { temperature: 0.1, skipCreditCheck: true }
+      );
+    } catch (err) {
+      console.error("Error analyzing resume:", err);
+      return NextResponse.json({ error: "AI resume analysis failed" }, { status: 500 });
+    }
 
+    // ✅ Limit to 20 jobs to reduce token size
     const activeJobs = await prisma.jobPost.findMany({
       where: { status: "ACTIVE" },
       include: {
         company: { select: { name: true, location: true } },
       },
-      take: 50,
+      take: 20,
     });
 
     if (activeJobs.length === 0) {
-      return NextResponse.json({ 
-        matches: [], 
+      return NextResponse.json({
+        matches: [],
         message: "No active jobs found.",
-        ...creditInfo
+        ...creditInfo,
       });
     }
 
@@ -162,15 +160,27 @@ Respond with a JSON array like:
 [{ jobId, matchScore, reasons: [], missingSkills: [] }]
 Only include matches with score >= 50.`;
 
-    const jobMatches = await generateAIResponse(
-      userId || "guest",
-      "job_match",
-      "You are an expert job matching assistant.",
-      matchPrompt,
-      { temperature: 0.2, skipCreditCheck: true }
-    );
+    let jobMatches;
+    try {
+      jobMatches = await generateAIResponse(
+        userId || "guest",
+        "job_match",
+        "You are an expert job matching assistant.",
+        matchPrompt,
+        { temperature: 0.2, skipCreditCheck: true }
+      );
+    } catch (err) {
+      console.error("Error matching jobs:", err);
+      return NextResponse.json({ error: "AI job matching failed" }, { status: 500 });
+    }
 
-    const enhancedMatches = jobMatches.matches?.map((match: any) => {
+    // ✅ Validate structure
+    if (!jobMatches?.matches || !Array.isArray(jobMatches.matches)) {
+      return NextResponse.json({ error: "Invalid AI match format" }, { status: 500 });
+    }
+
+    // Enhance match info
+    const enhancedMatches = jobMatches.matches.map((match: any) => {
       const job = activeJobs.find(j => j.id === match.jobId);
       if (!job) return null;
       return {
@@ -186,22 +196,23 @@ Only include matches with score >= 50.`;
             : job.salaryFrom
               ? `$${job.salaryFrom}+`
               : "Not specified",
-          employmentType: job.employmentType
-        }
+          employmentType: job.employmentType,
+        },
       };
-    }).filter(Boolean) || [];
+    }).filter(Boolean);
 
+    // Sort by match score
     enhancedMatches.sort((a: any, b: any) => b.matchScore - a.matchScore);
 
     return NextResponse.json({
       matches: enhancedMatches,
       creditsUsed: creditInfo.creditsUsed,
       remainingCredits: creditInfo.remainingCredits,
-      isGuest: creditInfo.isGuest
+      isGuest: creditInfo.isGuest,
     });
 
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Unhandled error in /api/ai/match-jobs:", error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
