@@ -27,8 +27,8 @@ export default function ResumeParserPage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/ai/parse-resume", {
-        method: "POST",
+      const res = await fetch('/api/ai/parse-resume', {
+        method: 'POST',
         body: formData,
       });
 
