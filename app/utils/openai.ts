@@ -132,7 +132,6 @@ export async function generateAIResponse(
       ],
       temperature: options.temperature ?? 0.2,
       max_tokens: settings.maxTokens,
-      response_format: { type: "json_object" },
     },
     {
       signal: options.signal,
