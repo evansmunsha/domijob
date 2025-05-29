@@ -3,13 +3,11 @@
 import { auth } from "@/app/utils/auth"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Coins, Sparkles, CheckCircle2 } from "lucide-react"
-import { getUserCreditBalance, purchaseAICredits } from "@/app/actions/aiCredits"
+import { getUserCreditBalance } from "@/app/actions/aiCredits"
 import { CREDIT_PACKAGES } from "@/app/utils/credits"
 import { use } from "react"
-
+import CreditPurchaseButton from "@/components/CreditPurchaseButton"
 
 
 export default function AICreditsPage() {
@@ -80,11 +78,11 @@ export default function AICreditsPage() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <form action={purchaseAICredits.bind(null, id)}>
-                  <Button type="submit" className="w-full" variant={id === "premium" ? "default" : "outline"}>
-                    Purchase
-                  </Button>
-                </form>
+              
+                <CardFooter>
+                  <CreditPurchaseButton packageId={id} variant={id === "premium" ? "default" : "outline"} />
+                </CardFooter>
+
               </CardFooter>
             </Card>
           ))}
