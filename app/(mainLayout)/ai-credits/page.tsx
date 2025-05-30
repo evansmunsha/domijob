@@ -8,8 +8,6 @@ import { getUserCreditBalance } from "@/app/actions/aiCredits"
 import { CREDIT_PACKAGES } from "@/app/utils/credits"
 import { use } from "react"
 import CreditPurchaseButton from "@/components/CreditPurchaseButton"
-import { Button } from "@/components/ui/button"
-import { purchaseAICredits } from "@/app/api/ai-credits/purchase/route"
 
 
 export default function AICreditsPage() {

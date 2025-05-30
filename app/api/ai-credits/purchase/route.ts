@@ -1,29 +1,33 @@
-import { NextResponse } from "next/server"
-import { stripe } from "@/app/utils/stripe"
-import { CREDIT_PACKAGES } from "@/app/utils/credits"
 import { auth } from "@/app/utils/auth"
+import { CREDIT_PACKAGES } from "@/app/utils/credits"
 import { prisma } from "@/app/utils/db"
-import { redirect } from "next/navigation"
+import { stripe } from "@/app/utils/stripe"
+import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { packageId } = body
+    console.log("🟡 packageId received:", packageId)
 
     const session = await auth()
     if (!session?.user?.id) {
+      console.log("🔴 No user session found")
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
     const userId = session.user.id
-
     const selectedPackage = CREDIT_PACKAGES[packageId as keyof typeof CREDIT_PACKAGES]
+
     if (!selectedPackage) {
+      console.log("🔴 Invalid package ID:", packageId)
       return NextResponse.json({ error: "Invalid package selected" }, { status: 400 })
     }
 
     let stripeCustomerId = session.user.stripeCustomerId
+
     if (!stripeCustomerId) {
+      console.log("🟡 Creating Stripe customer for user:", session.user.email)
       const customer = await stripe.customers.create({
         email: session.user.email!,
         name: session.user.name || undefined,
@@ -31,11 +35,18 @@ export async function POST(req: Request) {
 
       stripeCustomerId = customer.id
 
-      await prisma.user.update({
-        where: { id: userId },
-        data: { stripeCustomerId: customer.id },
-      })
+      try {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { stripeCustomerId: customer.id },
+        })
+      } catch (err) {
+        console.error("🔴 Error updating user with Stripe ID:", err)
+        return NextResponse.json({ error: "Failed to link Stripe account" }, { status: 500 })
+      }
     }
+
+    console.log("🟢 Creating Stripe checkout session")
 
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
@@ -67,12 +78,13 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ url: checkoutSession.url })
-  } catch (error) {
-    console.error("Error in checkout session:", error)
+  } catch (error: any) {
+    console.error("🔴 Error in checkout session:", error.message, error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-export async function purchaseAICredits(packageId: string) {
+
+/* export async function purchaseAICredits(packageId: string) {
     const session = await auth()
     
     if (!session?.user?.id) {
@@ -138,4 +150,4 @@ export async function purchaseAICredits(packageId: string) {
     }
     
     return redirect(checkoutSession.url)
-  }
+  } */

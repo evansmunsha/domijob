@@ -1,10 +1,7 @@
 //app/utils/credits.ts
 
 
-import { redirect } from "next/navigation"
-import { auth } from "./auth"
 import { prisma } from "./db"
-import { stripe } from "./stripe"
 
 // Define credit costs per feature
 export const CREDIT_COSTS = {
