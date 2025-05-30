@@ -5,7 +5,7 @@ import { prisma } from "./db"
 
 // Define credit costs per feature
 export const CREDIT_COSTS = {
-  job_match: 10,
+  job_match: 1,
   resume_enhancement: 15,
   job_description_enhancement: 20,
   file_parsing: 5, // Adding file parsing with a lower cost since it's a simpler operation
