@@ -1,12 +1,16 @@
-// utils/openai.ts
-import OpenAI from "openai";
+import OpenAI from "openai"
 import { prisma } from "@/app/utils/db"
 import { deductCredits } from "./credits"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
+// Model pricing per 1M tokens
+const MODEL_PRICING = {
+  "gpt-3.5-turbo": { input: 0.5, output: 1.5 },
+  "gpt-4o-mini": { input: 0.15, output: 0.6 },
+  "gpt-4": { input: 10, output: 30 },
+}
 
 // Load AI system settings from DB
 export async function getAISettings() {
@@ -59,62 +63,80 @@ async function useCredits(userId: string | null, endpoint: string): Promise<bool
   }
 }
 
-
+// Main AI executor
 export async function generateAIResponse(
-  userId: string,
-  featureName: string,
+  userId: string | null,
+  endpoint: string,
   systemPrompt: string,
   userPrompt: string,
   options: {
-    temperature?: number;
-    retries?: number;
-    skipCreditCheck?: boolean;
+    temperature?: number
+    cache?: boolean
+    skipCreditCheck?: boolean
+    signal?: AbortSignal
   } = {}
-): Promise<any> {
-  const { temperature = 0.2, retries = 2 } = options;
+) {
+  const settings = await getAISettings()
 
-  console.log("🧠 OpenAI request", {
-    userId,
-    featureName,
-    temperature,
-  });
+  if (!settings.enabled) {
+    throw new Error("AI features are currently disabled.")
+  }
 
-  let lastError: any;
+  const shouldDeduct = !options.skipCreditCheck && userId
+  const didDeduct = shouldDeduct ? await useCredits(userId, endpoint) : true
 
-  for (let attempt = 1; attempt <= retries + 1; attempt++) {
-    try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini", // or "gpt-4-turbo"
-        temperature,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        //response_format: "json",  Enforces valid JSON if supported
-      });
+  if (!didDeduct) {
+    throw new Error("You've used all your free credits. Please sign up or buy more credits.")
+  }
 
-      const raw = response.choices[0].message?.content?.trim();
-
-      // Try parsing if it's a string response
-      const parsed = raw ? JSON.parse(raw) : null;
-
-      console.log("✅ OpenAI parsed response", parsed);
-
-      return parsed;
-    } catch (err: any) {
-      console.error(`❌ OpenAI error (attempt ${attempt}):`, err);
-      lastError = err;
-
-      // On final attempt, throw
-      if (attempt === retries + 1) {
-        throw err;
+  // Return cached result if present
+  if (options.cache && userId) {
+    const cached = await getCachedResponse(userId, endpoint, userPrompt)
+    if (cached) {
+      try {
+        return JSON.parse(cached.response)
+      } catch {
+        console.warn("Invalid cached JSON, ignoring...")
       }
-
-      // Optional: Delay before retrying
-      await new Promise((res) => setTimeout(res, 500));
     }
   }
 
-  throw lastError;
-}
+  const modelName = endpoint === "job_description_enhancement" ? "gpt-4o-mini" : settings.model
 
+  const response = await openai.chat.completions.create({
+    model: modelName,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    temperature: options.temperature ?? 0.2,
+    max_tokens: settings.maxTokens,
+  }, {
+    signal: options.signal,
+  })
+
+  const { prompt_tokens = 0, completion_tokens = 0 } = response.usage || {}
+  const totalTokens = prompt_tokens + completion_tokens
+  const pricing = MODEL_PRICING[modelName as keyof typeof MODEL_PRICING]
+  const cost = (prompt_tokens * pricing.input + completion_tokens * pricing.output) / 1_000_000
+
+  if (userId) {
+    await logAIUsage(userId, endpoint, totalTokens, cost)
+  }
+
+  const raw = response.choices[0]?.message?.content || "{}"
+
+  let parsed
+  try {
+    parsed = JSON.parse(raw)
+  } catch (err) {
+    console.error("Failed to parse OpenAI response:", raw)
+    throw new Error("AI response could not be parsed. Please try again.")
+  }
+
+  if (options.cache && userId) {
+    await saveAIResponse(userId, endpoint, userPrompt, raw)
+  }
+
+  return parsed
+}

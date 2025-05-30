@@ -23,28 +23,22 @@ export default function JobMatcherAnalyzePage() {
   const [error, setError] = useState("")
   const [creditsUsed, setCreditsUsed] = useState(0)
   const [activeTab, setActiveTab] = useState("input")
-  const [creditInfo, setCreditInfo] = useState<{
-    isGuest: boolean;
-    credits: number;
-  } | null>(null)
+  const [creditInfo, setCreditInfo] = useState<{ isGuest: boolean; credits: number } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
-  
-  // Fetch credit information on page load
+
   useEffect(() => {
     if (activeTab === "results") {
       window.scrollTo({ top: 0, behavior: "smooth" })
     }
-    
-    // Fetch credit information for both authenticated and anonymous users
+
     async function fetchCredits() {
       try {
         const response = await fetch("/api/credits")
         if (!response.ok) throw new Error("Failed to fetch credits")
         const data = await response.json()
         setCreditInfo(data)
-        
-        // Check if user has enough credits
+
         if (data.credits < CREDIT_COSTS.job_match) {
           if (data.isGuest) {
             toast({
@@ -78,48 +72,39 @@ export default function JobMatcherAnalyzePage() {
 
     fetchCredits()
   }, [router, activeTab])
-  
+
   async function handleAnalyzeResume() {
     if (!resumeText.trim()) {
       setError("Please enter your resume text")
       return
     }
-    
+
     setIsAnalyzing(true)
     setError("")
-    
+
     try {
       const response = await fetch("/api/ai/match-jobs", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resumeText })
       })
-      
+
       const data = await response.json()
-      
+
       if (!response.ok) {
-        // Handle insufficient credits with signup prompt for guests
         if (response.status === 403 && data.requiresSignup) {
           setShowSignUpModal(true)
           throw new Error("You've used all your free credits. Sign up to get 50 more free credits!")
         }
-        
+
         throw new Error(data.error || "Failed to analyze resume")
       }
-      
+
       setMatches(data.matches || [])
       setCreditsUsed(data.creditsUsed || CREDIT_COSTS.job_match)
-      
-      // Update credit info with the new balance
-      setCreditInfo(prev => prev ? {
-        ...prev,
-        credits: data.remainingCredits
-      } : null)
-      
+      setCreditInfo(prev => prev ? { ...prev, credits: data.remainingCredits } : null)
       setActiveTab("results")
-      
+
       toast({
         title: "Analysis Complete",
         description: `Found ${data.matches?.length || 0} job matches for your profile.`,
@@ -128,7 +113,7 @@ export default function JobMatcherAnalyzePage() {
     } catch (error: any) {
       console.error("Error analyzing resume:", error)
       setError(error.message || "An error occurred while analyzing your resume")
-      
+
       toast({
         title: "Error",
         description: error.message || "An error occurred while analyzing your resume",
@@ -139,27 +124,27 @@ export default function JobMatcherAnalyzePage() {
       setIsAnalyzing(false)
     }
   }
-  
+
   function formatSalary(salary: string | null) {
     if (!salary) return "Not specified"
     return salary
   }
-  
+
   function formatDate(dateString: string) {
     if (!dateString) return "Recent"
-    
+
     const date = new Date(dateString)
     const now = new Date()
     const diffTime = Math.abs(now.getTime() - date.getTime())
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays === 0) return "Today"
     if (diffDays === 1) return "Yesterday"
     if (diffDays < 7) return `${diffDays} days ago`
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
     return `${Math.floor(diffDays / 30)} months ago`
   }
-  
+
   if (isLoading) {
     return (
       <div className="container py-10 max-w-6xl mx-auto">
@@ -171,7 +156,6 @@ export default function JobMatcherAnalyzePage() {
       </div>
     )
   }
-  
   return (
     <div className="container py-10 max-w-6xl mx-auto">
       <div className="mb-8">
