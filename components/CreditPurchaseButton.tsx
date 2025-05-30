@@ -35,7 +35,7 @@ export default function CreditPurchaseButton({ packageId, variant = "default" }:
   }
 
   return (
-    <Button onClick={handleClick} className="w-full" variant={variant} disabled={loading}>
+    <Button type="submit" onClick={handleClick} className="w-full" variant={variant} disabled={loading}>
       {loading ? "Redirecting..." : "Purchase"}
     </Button>
   )

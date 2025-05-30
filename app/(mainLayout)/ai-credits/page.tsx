@@ -80,14 +80,14 @@ export default function AICreditsPage() {
                 </ul>
               </CardContent>
               <CardFooter>
-              {/* <CardFooter>
+              <CardFooter>
                   <CreditPurchaseButton packageId={id} variant={id === "premium" ? "default" : "outline"} />
-                </CardFooter> */}
-                <form action={purchaseAICredits.bind(null, id)}>
+                </CardFooter>
+                {/* <form action={purchaseAICredits.bind(null, id)}>
                   <Button type="submit" className="w-full" variant={id === "premium" ? "default" : "outline"}>
                     Purchase
                   </Button>
-                </form>
+                </form> */}
 
 
               </CardFooter>
