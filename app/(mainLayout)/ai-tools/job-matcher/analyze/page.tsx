@@ -1,4 +1,163 @@
-"use client"
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Download } from "lucide-react";
+
+const JobMatcherPage = () => {
+  const [resumeText, setResumeText] = useState("");
+  const [jobTitles, setJobTitles] = useState(["", "", ""]);
+  const [jobDescriptions, setJobDescriptions] = useState(["", "", ""]);
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleMatch = async () => {
+    setLoading(true);
+    try {
+      const jobs = jobTitles.map((title, i) => ({
+        title,
+        description: jobDescriptions[i],
+      }));
+      const res = await fetch("/api/ai/match-jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resumeText, jobDescriptions: jobs }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Matching failed.");
+      } else {
+        setResults(data.matches);
+        toast.success("Resume analyzed successfully!");
+      }
+    } catch (err) {
+      toast.error("Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportJSON = () => {
+    const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "job-match-results.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportCSV = () => {
+    const csv = [
+      ["Title", "Match Score", "Explanation", "Missing Keywords"],
+      ...results.map(r => [
+        r.title,
+        r.matchScore,
+        `"${r.explanation.replace(/"/g, "'")}"`,
+        `"${(r.missingKeywords || []).join(", ").replace(/"/g, "'")}"`
+      ])
+    ].map(row => row.join(",")).join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "job-match-results.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-bold">AI Resume Job Matcher</h1>
+      
+      <div>
+        <Label htmlFor="resume">Paste your resume</Label>
+        <Textarea
+          id="resume"
+          rows={10}
+          value={resumeText}
+          onChange={(e) => setResumeText(e.target.value)}
+          placeholder="Paste your resume text here..."
+        />
+      </div>
+
+      {jobTitles.map((_, i) => (
+        <div key={i} className="space-y-2">
+          <Label>Job {i + 1}</Label>
+          <Input
+            placeholder="Job title"
+            value={jobTitles[i]}
+            onChange={(e) => {
+              const copy = [...jobTitles];
+              copy[i] = e.target.value;
+              setJobTitles(copy);
+            }}
+          />
+          <Textarea
+            placeholder="Job description"
+            rows={4}
+            value={jobDescriptions[i]}
+            onChange={(e) => {
+              const copy = [...jobDescriptions];
+              copy[i] = e.target.value;
+              setJobDescriptions(copy);
+            }}
+          />
+        </div>
+      ))}
+
+      <Button disabled={loading || !resumeText} onClick={handleMatch}>
+        {loading ? "Analyzing..." : "Match Jobs"}
+      </Button>
+
+      {results.length > 0 && (
+        <div className="space-y-4 mt-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Results</h2>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={exportCSV}>
+                <Download className="mr-2 h-4 w-4" /> Export CSV
+              </Button>
+              <Button variant="secondary" onClick={exportJSON}>
+                <Download className="mr-2 h-4 w-4" /> Export JSON
+              </Button>
+            </div>
+          </div>
+
+          {results.map((match, i) => (
+            <div key={i} className="border p-4 rounded-lg bg-muted">
+              <h3 className="text-lg font-bold">{match.title}</h3>
+              <p><strong>Score:</strong> {match.matchScore}/100</p>
+              <p><strong>Explanation:</strong> {match.explanation}</p>
+              <p><strong>Missing Keywords:</strong> {match.missingKeywords?.join(", ") || "None"}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default JobMatcherPage;
+
+
+
+
+
+
+
+
+
+
+
+
+/* "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -375,11 +534,11 @@ export default function JobMatcherAnalyzePage() {
         </Tabs>
       </Card>
       
-      {/* Sign Up Modal */}
+      
       <SignUpModal 
         isOpen={showSignUpModal} 
         onClose={() => setShowSignUpModal(false)} 
       />
     </div>
   )
-}
+} */

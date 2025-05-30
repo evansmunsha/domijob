@@ -9,6 +9,7 @@ export const CREDIT_COSTS = {
   resume_enhancement: 15,
   job_description_enhancement: 20,
   file_parsing: 5, // Adding file parsing with a lower cost since it's a simpler operation
+  resume_matching: 10, // Adding file parsing with a lower cost since it's a simpler operation
 }
 
 // Credit packages available for purchase

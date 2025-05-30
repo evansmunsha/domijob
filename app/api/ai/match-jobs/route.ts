@@ -11,7 +11,7 @@ const MAX_GUEST_CREDITS = 50;
 
 export async function POST(req: NextRequest) {
   try {
-    const featureCost = CREDIT_COSTS.job_match || 10;
+    const featureCost = CREDIT_COSTS.resume_matching || 10;
     const session = await auth();
     const userId = session?.user?.id;
 
@@ -21,12 +21,14 @@ export async function POST(req: NextRequest) {
       remainingCredits: number;
     };
 
+    // 🔐 Handle credits: check balance or update guest credits
     if (userId) {
       const userCredits = await prisma.userCredits.findUnique({ where: { userId } });
       if (!userCredits || userCredits.balance < featureCost) {
         return new Response(JSON.stringify({ error: "Insufficient credits." }), { status: 402 });
       }
 
+      // Deduct credits and log transaction
       await prisma.$transaction(async (tx) => {
         await tx.userCredits.update({
           where: { userId },
@@ -52,6 +54,7 @@ export async function POST(req: NextRequest) {
         remainingCredits: userCredits.balance - featureCost,
       };
     } else {
+      // Handle guest credit logic using cookies
       const cookieStore = await cookies();
       const cookie = cookieStore.get(GUEST_CREDIT_COOKIE);
       let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
@@ -78,6 +81,7 @@ export async function POST(req: NextRequest) {
       };
     }
 
+    // 📝 Parse and validate the request body
     const body = await req.json();
     const { resumeText, jobDescriptions } = body;
 
@@ -88,28 +92,30 @@ export async function POST(req: NextRequest) {
       return new Response(JSON.stringify({ error: "Please provide job descriptions to match against." }), { status: 400 });
     }
 
-    const prompt = `You are a resume matching AI.
-Given the resume below and a list of job descriptions, compare the resume to each job and output a JSON array.
-For each job, give:
-- title: Job title
-- matchScore: A score from 0 to 100
-- explanation: Short reason why this resume matches or does not match the job
-- missingKeywords: Important missing keywords from the job description
+    // ✂️ Limit job descriptions to avoid token overload in OpenAI
+    const limitedJobs = jobDescriptions.slice(0, 5);
 
-Resume:
----
+    // 🧠 Craft the prompt for AI
+    const prompt = `You are an AI assistant specialized in resume screening.
+Your task is to evaluate how well the resume below matches each of the following job descriptions.
+For each job, return a JSON object with:
+- title: the job title
+- matchScore: score from 0 (no match) to 100 (perfect match)
+- explanation: why this resume is a good or poor fit
+- missingKeywords: important missing skills or phrases from the job description
+
+Only return valid JSON. Do not add explanations or extra comments.
+
+RESUME:
 ${resumeText}
----
 
-Jobs:
-${jobDescriptions.map((job: any, i: number) => `Job ${i + 1}:\nTitle: ${job.title}\nDescription: ${job.description}`).join("\n\n")}
+JOB DESCRIPTIONS:
+${limitedJobs.map((job, i) => `Job ${i + 1} - Title: ${job.title}\n${job.description}`).join("\n\n")}`;
 
-Respond with only JSON. Do not include commentary or markdown.`;
-
-    const stream = await openai.chat.completions.create({
+    // 🧾 Call OpenAI with prompt and receive result directly (not streamed for simplicity)
+    const response = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
-      stream: true,
-      max_tokens: 1000,
+      temperature: 0.2,
       messages: [
         {
           role: "system",
@@ -122,23 +128,30 @@ Respond with only JSON. Do not include commentary or markdown.`;
       ],
     });
 
-    const encoder = new TextEncoder();
-    const readable = new ReadableStream({
-      async start(controller) {
-        controller.enqueue(encoder.encode(`CREDIT_INFO:${JSON.stringify(creditInfo)}\n\n`));
-        for await (const chunk of stream) {
-          const text = chunk.choices?.[0]?.delta?.content;
-          if (text) controller.enqueue(encoder.encode(text));
-        }
-        controller.close();
-      },
-    });
+    // 🔄 Parse the response content
+    const text = response.choices[0].message?.content || "";
+    let matches;
+    try {
+      matches = JSON.parse(text);
+    } catch (err) {
+      console.error("JSON parse error:", err);
+      return new Response(JSON.stringify({ error: "Failed to parse AI response." }), { status: 500 });
+    }
 
-    return new Response(readable, {
+    // ✅ Return result
+    return new Response(JSON.stringify({
+      metadata: {
+        analyzedAt: new Date().toISOString(),
+        jobCount: matches.length,
+        creditInfo
+      },
+      matches
+    }), {
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": "application/json",
       },
     });
+    
   } catch (err) {
     console.error("Job matcher error:", err);
     return new Response(JSON.stringify({ error: "Failed to match resume with jobs." }), { status: 500 });
