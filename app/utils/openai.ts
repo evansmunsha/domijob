@@ -22,7 +22,7 @@ export async function getAISettings() {
 
   return {
     enabled: enabledSetting?.value === "true",
-    model: modelSetting?.value || "gpt-4o-mini",
+    model: modelSetting?.value || "gpt-4o",
     maxTokens: Number(maxTokensSetting?.value || 1000),
   }
 }
