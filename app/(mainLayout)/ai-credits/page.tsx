@@ -8,6 +8,8 @@ import { getUserCreditBalance } from "@/app/actions/aiCredits"
 import { CREDIT_PACKAGES } from "@/app/utils/credits"
 import { use } from "react"
 import CreditPurchaseButton from "@/components/CreditPurchaseButton"
+import { Button } from "@/components/ui/button"
+import { purchaseAICredits } from "@/app/api/ai-credits/purchase/route"
 
 
 export default function AICreditsPage() {
@@ -78,10 +80,15 @@ export default function AICreditsPage() {
                 </ul>
               </CardContent>
               <CardFooter>
-              
-                <CardFooter>
+              {/* <CardFooter>
                   <CreditPurchaseButton packageId={id} variant={id === "premium" ? "default" : "outline"} />
-                </CardFooter>
+                </CardFooter> */}
+                <form action={purchaseAICredits.bind(null, id)}>
+                  <Button type="submit" className="w-full" variant={id === "premium" ? "default" : "outline"}>
+                    Purchase
+                  </Button>
+                </form>
+
 
               </CardFooter>
             </Card>
