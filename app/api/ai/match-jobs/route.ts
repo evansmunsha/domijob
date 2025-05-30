@@ -117,7 +117,7 @@ ${resumeText}`;
     try {
       resumeAnalysis = await generateAIResponse(
         userId || "guest",
-        "job_match",
+        "match_jobs",
         systemPrompt,
         userPrompt,
         { temperature: 0.1, skipCreditCheck: true }
@@ -164,7 +164,7 @@ Only include matches with score >= 50.`;
     try {
       jobMatches = await generateAIResponse(
         userId || "guest",
-        "job_match",
+        "match_jobs",
         "You are an expert job matching assistant.",
         matchPrompt,
         { temperature: 0.2, skipCreditCheck: true }

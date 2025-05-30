@@ -84,7 +84,7 @@ export async function generateAIResponse(
   for (let attempt = 1; attempt <= retries + 1; attempt++) {
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // or "gpt-4-turbo"
+        model: "gpt-4o-mini", // or "gpt-4-turbo"
         temperature,
         messages: [
           { role: "system", content: systemPrompt },
