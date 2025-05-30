@@ -8,7 +8,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 // Model pricing per 1M tokens
 const MODEL_PRICING = {
   "gpt-3.5-turbo": { input: 0.5, output: 1.5 },
-  "gpt-4o-mini": { input: 0.15, output: 0.6 },
+  "gpt-4.1-mini": { input: 0.15, output: 0.6 },
   "gpt-4": { input: 10, output: 30 },
 }
 
@@ -22,7 +22,7 @@ export async function getAISettings() {
 
   return {
     enabled: enabledSetting?.value === "true",
-    model: modelSetting?.value || "gpt-4o",
+    model: modelSetting?.value || "gpt-4.1-mini",
     maxTokens: Number(maxTokensSetting?.value || 1000),
   }
 }
