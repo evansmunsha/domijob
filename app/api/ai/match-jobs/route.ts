@@ -1,3 +1,122 @@
+/* import { NextResponse } from "next/server";
+import { prisma } from "@/app/utils/db";
+import { generateAIResponse } from "@/app/utils/openai";
+import { CREDIT_COSTS } from "@/app/utils/credits";
+
+export async function POST(req: Request) {
+  try {
+    const featureCost = CREDIT_COSTS.job_matching || 10;
+
+    // 💳 Deduct credits (guest or signed-in)
+    const creditInfo = await handleCreditCharge(req, featureCost);
+    if ("error" in creditInfo) {
+      return NextResponse.json(creditInfo, { status: 402 });
+    }
+
+    const { resumeText } = await req.json();
+    if (!resumeText || typeof resumeText !== "string") {
+      return NextResponse.json({ error: "Resume text is required" }, { status: 400 });
+    }
+
+    const systemPrompt = `You are an expert resume analyzer. Extract key skills, experience, job titles, and other relevant information from the resume text provided.`;
+
+    const userPrompt = `Please analyze this resume and extract:
+1. Technical skills
+2. Soft skills
+3. Job titles
+4. Years of experience
+5. Industry specializations
+6. Education
+7. Certifications
+8. Languages
+
+Resume:
+${resumeText}`;
+
+    const resumeAnalysis = await generateAIResponse(
+      creditInfo.isGuest ? "guest" : "user",
+      "job_match",
+      systemPrompt,
+      userPrompt,
+      { temperature: 0.1, skipCreditCheck: true }
+    );
+
+    const activeJobs = await prisma.jobPost.findMany({
+      where: { status: "ACTIVE" },
+      include: {
+        company: { select: { name: true, location: true } },
+      },
+      take: 50,
+    });
+
+    if (activeJobs.length === 0) {
+      return NextResponse.json({ matches: [], message: "No active jobs found." });
+    }
+
+    const matchPrompt = `Match the candidate with jobs based on this analysis:
+${JSON.stringify(resumeAnalysis, null, 2)}
+
+Jobs:
+${activeJobs.map((job, i) => `
+Job ${i + 1}:
+- ID: ${job.id}
+- Title: ${job.jobTitle}
+- Company: ${job.company?.name}
+- Description: ${job.jobDescription}
+`).join('\n')}
+
+Respond with a JSON array like:
+[{ jobId, matchScore, reasons: [], missingSkills: [] }]
+Only include matches with score >= 50.`;
+
+    const jobMatches = await generateAIResponse(
+      creditInfo.isGuest ? "guest" : "user",
+      "job_match",
+      "You are an expert job matching assistant.",
+      matchPrompt,
+      { temperature: 0.2, skipCreditCheck: true }
+    );
+
+    const enhancedMatches = jobMatches.matches?.map((match: any) => {
+      const job = activeJobs.find(j => j.id === match.jobId);
+      if (!job) return null;
+      return {
+        ...match,
+        job: {
+          id: job.id,
+          title: job.jobTitle,
+          company: job.company?.name,
+          location: job.location || job.company?.location || "Not specified",
+          postedAt: job.createdAt,
+          salaryRange: job.salaryFrom && job.salaryTo
+            ? `$${job.salaryFrom} - $${job.salaryTo}`
+            : job.salaryFrom
+              ? `$${job.salaryFrom}+`
+              : "Not specified",
+          employmentType: job.employmentType
+        }
+      };
+    }).filter(Boolean) || [];
+
+    enhancedMatches.sort((a: any, b: any) => b.matchScore - a.matchScore);
+
+    return NextResponse.json({
+      matches: enhancedMatches,
+      creditsUsed: creditInfo.creditsUsed,
+      remainingCredits: creditInfo.remainingCredits,
+    });
+
+  } catch (error) {
+    console.error("Error:", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+}
+ */
+
+
+
+
+
 import { NextRequest } from "next/server";
 import { OpenAI } from "openai";
 import { auth } from "@/app/utils/auth";
@@ -8,7 +127,7 @@ import { CREDIT_COSTS } from "@/app/utils/credits";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const GUEST_CREDIT_COOKIE = "domijob_guest_credits";
 const MAX_GUEST_CREDITS = 50;
-/* 
+
 export async function POST(req: NextRequest) {
   try {
     const featureCost = CREDIT_COSTS.resume_matching || 10;
@@ -155,136 +274,5 @@ ${limitedJobs.map((job, i) => `Job ${i + 1} - Title: ${job.title}\n${job.descrip
   } catch (err) {
     console.error("Job matcher error:", err);
     return new Response(JSON.stringify({ error: "Failed to match resume with jobs." }), { status: 500 });
-  }
-}
-
-
- */
-//api/ai/match-jobs.route.ts
-
-
-
-import { NextResponse } from "next/server";
-import { generateAIResponse } from "@/app/utils/openai";
-
-const GUEST_CREDIT_COST = 10;
-
-export async function POST(req: Request) {
-  try {
-    const cookieStore = cookies();
-    const cookie = (await cookieStore).get(GUEST_CREDIT_COOKIE);
-    let guestCredits = cookie ? parseInt(cookie.value) : MAX_GUEST_CREDITS;
-
-    if (guestCredits < GUEST_CREDIT_COST) {
-      return NextResponse.json(
-        { error: "Insufficient guest credits. Please sign up to continue." },
-        { status: 403 }
-      );
-    }
-
-    const { resumeText } = await req.json();
-    if (!resumeText || typeof resumeText !== "string") {
-      return NextResponse.json({ error: "Resume text is required" }, { status: 400 });
-    }
-
-    // ✅ Deduct 10 guest credits
-    guestCredits -= GUEST_CREDIT_COST;
-    (await cookieStore).set(GUEST_CREDIT_COOKIE, guestCredits.toString(), {
-      path: "/",
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
-
-    const systemPrompt = `You are an expert resume analyzer. Extract key skills, experience, job titles, and other relevant information from the resume text provided.`;
-
-    const userPrompt = `Please analyze this resume and extract:
-1. Technical skills
-2. Soft skills
-3. Job titles
-4. Years of experience
-5. Industry specializations
-6. Education
-7. Certifications
-8. Languages
-
-Resume:
-${resumeText}`;
-
-    const resumeAnalysis = await generateAIResponse(
-      "guest",
-      "job_match",
-      systemPrompt,
-      userPrompt,
-      { temperature: 0.1, skipCreditCheck: true }
-    );
-
-    const activeJobs = await prisma.jobPost.findMany({
-      where: { status: "ACTIVE" },
-      include: {
-        company: { select: { name: true, location: true } },
-      },
-      take: 50,
-    });
-
-    if (activeJobs.length === 0) {
-      return NextResponse.json({ matches: [], message: "No active jobs found." });
-    }
-
-    const matchPrompt = `Match the candidate with jobs based on this analysis:
-${JSON.stringify(resumeAnalysis, null, 2)}
-
-Jobs:
-${activeJobs.map((job, i) => `
-Job ${i + 1}:
-- ID: ${job.id}
-- Title: ${job.jobTitle}
-- Company: ${job.company?.name}
-- Description: ${job.jobDescription}
-`).join('\n')}
-
-Respond with a JSON array like:
-[{ jobId, matchScore, reasons: [], missingSkills: [] }]
-Only include matches with score >= 50.`;
-
-    const jobMatches = await generateAIResponse(
-      "guest",
-      "job_match",
-      "You are an expert job matching assistant.",
-      matchPrompt,
-      { temperature: 0.2, skipCreditCheck: true }
-    );
-
-    const enhancedMatches = jobMatches.matches?.map((match: any) => {
-      const job = activeJobs.find(j => j.id === match.jobId);
-      if (!job) return null;
-      return {
-        ...match,
-        job: {
-          id: job.id,
-          title: job.jobTitle,
-          company: job.company?.name,
-          location: job.location || job.company?.location || "Not specified",
-          postedAt: job.createdAt,
-          salaryRange: job.salaryFrom && job.salaryTo
-            ? `$${job.salaryFrom} - $${job.salaryTo}`
-            : job.salaryFrom
-              ? `$${job.salaryFrom}+`
-              : "Not specified",
-          employmentType: job.employmentType
-        }
-      };
-    }).filter(Boolean) || [];
-
-    enhancedMatches.sort((a: any, b: any) => b.matchScore - a.matchScore);
-
-    return NextResponse.json({
-      matches: enhancedMatches,
-      creditsUsed: GUEST_CREDIT_COST,
-      remainingCredits: guestCredits
-    });
-
-  } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

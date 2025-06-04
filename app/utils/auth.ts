@@ -148,9 +148,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
 
 
-
 // Function to add free signup credits to a user
+
 async function addFreeSignupCredits(userId: string, guestCredits: number) {
+  const signupBonus = MAX_GUEST_CREDITS;
+  const totalCredits = signupBonus + guestCredits;
+
   try {
     await prisma.user.update({
       where: {
@@ -160,25 +163,38 @@ async function addFreeSignupCredits(userId: string, guestCredits: number) {
         aiCredits: {
           update: {
             balance: {
-              increment: guestCredits,
+              increment: totalCredits,
             },
           },
         },
       },
-    })
+    });
 
+    // Record full signup bonus
     await prisma.creditTransaction.create({
       data: {
         userId: userId,
-        amount: guestCredits,
+        amount: signupBonus,
         type: "signup_bonus",
         description: "Free signup credits",
       },
-    })
+    });
 
-    console.log(`Successfully added ${guestCredits} signup credits to user ${userId}`)
+    // Optionally log guest credits if any
+    if (guestCredits > 0) {
+      await prisma.creditTransaction.create({
+        data: {
+          userId: userId,
+          amount: guestCredits,
+          type: "guest_transfer",
+          description: `Transferred ${guestCredits} remaining guest credits`,
+        },
+      });
+    }
+
+    console.log(`Successfully added ${totalCredits} total credits to user ${userId}`);
   } catch (error) {
-    console.error("Error adding signup credits:", error)
+    console.error("Error adding signup credits:", error);
   }
 }
 

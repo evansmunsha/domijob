@@ -1,4 +1,4 @@
-"use client";
+/*"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -146,6 +146,7 @@ const JobMatcherPage = () => {
 
 export default JobMatcherPage;
 
+*/
 
 
 
@@ -153,8 +154,7 @@ export default JobMatcherPage;
 
 
 
-
-/* "use client"
+ "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -538,4 +538,4 @@ export default function JobMatcherAnalyzePage() {
       />
     </div>
   )
-} */
+} 
