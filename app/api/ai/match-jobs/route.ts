@@ -115,8 +115,6 @@ Only include matches with score >= 50.`;
 
 
 
-
-
 import { NextRequest } from "next/server";
 import { OpenAI } from "openai";
 import { auth } from "@/app/utils/auth";

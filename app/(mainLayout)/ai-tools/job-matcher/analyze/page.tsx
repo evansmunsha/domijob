@@ -1,4 +1,4 @@
-/*"use client";
+"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -146,13 +146,13 @@ const JobMatcherPage = () => {
 
 export default JobMatcherPage;
 
-*/
 
 
 
 
 
 
+/*
 
  "use client"
 
@@ -538,4 +538,4 @@ export default function JobMatcherAnalyzePage() {
       />
     </div>
   )
-} 
+} */
