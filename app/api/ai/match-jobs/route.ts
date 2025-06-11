@@ -197,7 +197,7 @@ Only return valid JSON, no other text.`;
 
     // 🤖 Call OpenAI API
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       temperature: 0.3,
       max_tokens: 2000,
       messages: [
