@@ -1,121 +1,4 @@
-/* import { NextResponse } from "next/server";
-import { prisma } from "@/app/utils/db";
-import { generateAIResponse } from "@/app/utils/openai";
-import { CREDIT_COSTS } from "@/app/utils/credits";
-
-export async function POST(req: Request) {
-  try {
-    const featureCost = CREDIT_COSTS.job_matching || 10;
-
-    // 💳 Deduct credits (guest or signed-in)
-    const creditInfo = await handleCreditCharge(req, featureCost);
-    if ("error" in creditInfo) {
-      return NextResponse.json(creditInfo, { status: 402 });
-    }
-
-    const { resumeText } = await req.json();
-    if (!resumeText || typeof resumeText !== "string") {
-      return NextResponse.json({ error: "Resume text is required" }, { status: 400 });
-    }
-
-    const systemPrompt = `You are an expert resume analyzer. Extract key skills, experience, job titles, and other relevant information from the resume text provided.`;
-
-    const userPrompt = `Please analyze this resume and extract:
-1. Technical skills
-2. Soft skills
-3. Job titles
-4. Years of experience
-5. Industry specializations
-6. Education
-7. Certifications
-8. Languages
-
-Resume:
-${resumeText}`;
-
-    const resumeAnalysis = await generateAIResponse(
-      creditInfo.isGuest ? "guest" : "user",
-      "job_match",
-      systemPrompt,
-      userPrompt,
-      { temperature: 0.1, skipCreditCheck: true }
-    );
-
-    const activeJobs = await prisma.jobPost.findMany({
-      where: { status: "ACTIVE" },
-      include: {
-        company: { select: { name: true, location: true } },
-      },
-      take: 50,
-    });
-
-    if (activeJobs.length === 0) {
-      return NextResponse.json({ matches: [], message: "No active jobs found." });
-    }
-
-    const matchPrompt = `Match the candidate with jobs based on this analysis:
-${JSON.stringify(resumeAnalysis, null, 2)}
-
-Jobs:
-${activeJobs.map((job, i) => `
-Job ${i + 1}:
-- ID: ${job.id}
-- Title: ${job.jobTitle}
-- Company: ${job.company?.name}
-- Description: ${job.jobDescription}
-`).join('\n')}
-
-Respond with a JSON array like:
-[{ jobId, matchScore, reasons: [], missingSkills: [] }]
-Only include matches with score >= 50.`;
-
-    const jobMatches = await generateAIResponse(
-      creditInfo.isGuest ? "guest" : "user",
-      "job_match",
-      "You are an expert job matching assistant.",
-      matchPrompt,
-      { temperature: 0.2, skipCreditCheck: true }
-    );
-
-    const enhancedMatches = jobMatches.matches?.map((match: any) => {
-      const job = activeJobs.find(j => j.id === match.jobId);
-      if (!job) return null;
-      return {
-        ...match,
-        job: {
-          id: job.id,
-          title: job.jobTitle,
-          company: job.company?.name,
-          location: job.location || job.company?.location || "Not specified",
-          postedAt: job.createdAt,
-          salaryRange: job.salaryFrom && job.salaryTo
-            ? `$${job.salaryFrom} - $${job.salaryTo}`
-            : job.salaryFrom
-              ? `$${job.salaryFrom}+`
-              : "Not specified",
-          employmentType: job.employmentType
-        }
-      };
-    }).filter(Boolean) || [];
-
-    enhancedMatches.sort((a: any, b: any) => b.matchScore - a.matchScore);
-
-    return NextResponse.json({
-      matches: enhancedMatches,
-      creditsUsed: creditInfo.creditsUsed,
-      remainingCredits: creditInfo.remainingCredits,
-    });
-
-  } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
-  }
-}
- */
-
-
-
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { OpenAI } from "openai";
 import { auth } from "@/app/utils/auth";
 import { prisma } from "@/app/utils/db";
@@ -126,9 +9,23 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const GUEST_CREDIT_COOKIE = "domijob_guest_credits";
 const MAX_GUEST_CREDITS = 50;
 
+type JobMatch = {
+  jobId: string;
+  score: number;
+  reasons: string[];
+  missingSkills?: string[];
+  job?: {
+    title: string;
+    company: string;
+    location: string;
+    createdAt: string;
+    salaryRange: string;
+  };
+};
+
 export async function POST(req: NextRequest) {
   try {
-    const featureCost = CREDIT_COSTS.resume_matching || 10;
+    const featureCost = CREDIT_COSTS.job_match || 1;
     const session = await auth();
     const userId = session?.user?.id;
 
@@ -142,7 +39,9 @@ export async function POST(req: NextRequest) {
     if (userId) {
       const userCredits = await prisma.userCredits.findUnique({ where: { userId } });
       if (!userCredits || userCredits.balance < featureCost) {
-        return new Response(JSON.stringify({ error: "Insufficient credits." }), { status: 402 });
+        return NextResponse.json({
+          error: "Insufficient credits. Please purchase more credits to continue."
+        }, { status: 402 });
       }
 
       // Deduct credits and log transaction
@@ -157,7 +56,7 @@ export async function POST(req: NextRequest) {
               userId,
               amount: -featureCost,
               type: "usage",
-              description: `Used ${featureCost} credits for resume job matching`,
+              description: `Used ${featureCost} credits for AI job matching`,
             },
           });
         } catch {
@@ -178,10 +77,10 @@ export async function POST(req: NextRequest) {
       if (isNaN(guestCredits)) guestCredits = MAX_GUEST_CREDITS;
 
       if (guestCredits < featureCost) {
-        return new Response(JSON.stringify({
+        return NextResponse.json({
           error: "You've used all your free credits. Sign up to get 50 more!",
           requiresSignup: true,
-        }), { status: 402 });
+        }, { status: 403 });
       }
 
       const updatedCredits = guestCredits - featureCost;
@@ -200,77 +99,196 @@ export async function POST(req: NextRequest) {
 
     // 📝 Parse and validate the request body
     const body = await req.json();
-    const { resumeText, jobDescriptions } = body;
+    const { resumeText } = body;
 
-    if (!resumeText || resumeText.trim().length < 50) {
-      return new Response(JSON.stringify({ error: "Please provide a valid resume text." }), { status: 400 });
+    if (!resumeText || typeof resumeText !== "string" || resumeText.trim().length < 50) {
+      return NextResponse.json({
+        error: "Please provide a valid resume text (minimum 50 characters)."
+      }, { status: 400 });
     }
-    if (!jobDescriptions || !Array.isArray(jobDescriptions) || jobDescriptions.length === 0) {
-      return new Response(JSON.stringify({ error: "Please provide job descriptions to match against." }), { status: 400 });
+
+    // 🔍 Fetch active jobs from database
+    const activeJobs = await prisma.jobPost.findMany({
+      where: {
+        status: "ACTIVE",
+        // Only get jobs posted in the last 90 days for relevancy
+        createdAt: {
+          gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        }
+      },
+      include: {
+        company: {
+          select: {
+            name: true,
+            location: true
+          }
+        },
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 20, // Limit to prevent token overflow
+    });
+
+    if (activeJobs.length === 0) {
+      return NextResponse.json({
+        matches: [],
+        creditsUsed: creditInfo.creditsUsed,
+        remainingCredits: creditInfo.remainingCredits,
+        message: "No active jobs found. Please check back later for new opportunities."
+      });
     }
 
-    // ✂️ Limit job descriptions to avoid token overload in OpenAI
-    const limitedJobs = jobDescriptions.slice(0, 5);
+    // 🧠 Create AI prompt for job matching
+    const systemPrompt = `You are an expert AI job matching assistant. Your task is to analyze a resume and match it against job postings, providing detailed scoring and feedback.
 
-    // 🧠 Craft the prompt for AI
-    const prompt = `You are an AI assistant specialized in resume screening.
-Your task is to evaluate how well the resume below matches each of the following job descriptions.
-For each job, return a JSON object with:
-- title: the job title
-- matchScore: score from 0 (no match) to 100 (perfect match)
-- explanation: why this resume is a good or poor fit
-- missingKeywords: important missing skills or phrases from the job description
+For each job, you must return a JSON object with:
+- jobId: the exact job ID provided
+- score: match percentage from 0-100 (be realistic, most matches are 60-85%)
+- reasons: array of 2-4 specific reasons why this person is a good fit
+- missingSkills: array of 0-3 key skills/qualifications they're missing (if any)
 
-Only return valid JSON. Do not add explanations or extra comments.
+Only include matches with score >= 50. Be thorough but concise in your analysis.`;
+
+    const jobsForPrompt = activeJobs.map(job => ({
+      id: job.id,
+      title: job.jobTitle,
+      company: job.company?.name || "Unknown Company",
+      location: job.location || job.company?.location || "Not specified",
+      description: job.jobDescription,
+      requirements: job.jobDescription || "", // Use jobDescription as requirements
+      salaryRange: job.salaryFrom && job.salaryTo
+        ? `$${job.salaryFrom} - $${job.salaryTo}`
+        : job.salaryFrom
+          ? `$${job.salaryFrom}+`
+          : "Not specified",
+      employmentType: job.employmentType || "Full-time"
+    }));
+
+    const userPrompt = `Analyze this resume and match it against the following job postings:
 
 RESUME:
 ${resumeText}
 
-JOB DESCRIPTIONS:
-${limitedJobs.map((job, i) => `Job ${i + 1} - Title: ${job.title}\n${job.description}`).join("\n\n")}`;
+JOBS TO MATCH:
+${jobsForPrompt.map((job, index) => `
+Job ${index + 1}:
+ID: ${job.id}
+Title: ${job.title}
+Company: ${job.company}
+Location: ${job.location}
+Employment Type: ${job.employmentType}
+Salary: ${job.salaryRange}
+Description: ${job.description}
+Requirements: ${job.requirements}
+`).join('\n')}
 
-    // 🧾 Call OpenAI with prompt and receive result directly (not streamed for simplicity)
+Return a JSON array of matches with score >= 50. Format:
+[
+  {
+    "jobId": "exact_job_id_here",
+    "score": 75,
+    "reasons": ["Specific reason 1", "Specific reason 2"],
+    "missingSkills": ["Skill 1", "Skill 2"]
+  }
+]
+
+Only return valid JSON, no other text.`;
+
+    // 🤖 Call OpenAI API
     const response = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      temperature: 0.2,
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      max_tokens: 2000,
       messages: [
         {
           role: "system",
-          content: "Respond with valid JSON only. No markdown, headers, or commentary.",
+          content: systemPrompt,
         },
         {
           role: "user",
-          content: prompt,
+          content: userPrompt,
         },
       ],
     });
 
-    // 🔄 Parse the response content
-    const text = response.choices[0].message?.content || "";
-    let matches;
+    // 🔄 Parse AI response
+    const aiResponse = response.choices[0].message?.content || "";
+    let matches: JobMatch[] = [];
+
     try {
-      matches = JSON.parse(text);
-    } catch (err) {
-      console.error("JSON parse error:", err);
-      return new Response(JSON.stringify({ error: "Failed to parse AI response." }), { status: 500 });
+      // Clean the response to extract JSON
+      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+      const jsonString = jsonMatch ? jsonMatch[0] : aiResponse;
+      const parsedMatches = JSON.parse(jsonString);
+
+      if (Array.isArray(parsedMatches)) {
+        matches = parsedMatches;
+      } else {
+        throw new Error("Response is not an array");
+      }
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", parseError);
+      console.error("AI Response:", aiResponse);
+      return NextResponse.json({
+        error: "Failed to analyze resume. Please try again."
+      }, { status: 500 });
     }
 
-    // ✅ Return result
-    return new Response(JSON.stringify({
-      metadata: {
-        analyzedAt: new Date().toISOString(),
-        jobCount: matches.length,
-        creditInfo
-      },
-      matches
-    }), {
-      headers: {
-        "Content-Type": "application/json",
-      },
+    // 🔗 Enhance matches with job details
+    const enhancedMatches = matches
+      .map((match) => {
+        const job = activeJobs.find(j => j.id === match.jobId);
+        if (!job) return null;
+
+        return {
+          jobId: match.jobId,
+          score: match.score,
+          reasons: match.reasons || [],
+          missingSkills: match.missingSkills || [],
+          job: {
+            title: job.jobTitle,
+            company: job.company?.name || "Unknown Company",
+            location: job.location || job.company?.location || "Not specified",
+            createdAt: job.createdAt.toISOString(),
+            salaryRange: job.salaryFrom && job.salaryTo
+              ? `$${job.salaryFrom} - $${job.salaryTo}`
+              : job.salaryFrom
+                ? `$${job.salaryFrom}+`
+                : "Not specified",
+          }
+        };
+      })
+      .filter(Boolean) // Remove null entries
+      .sort((a, b) => (b?.score || 0) - (a?.score || 0)); // Sort by score descending
+
+    // 📊 Log usage for analytics
+    try {
+      await prisma.aIUsageLog.create({
+        data: {
+          userId: userId || null,
+          endpoint: "job_matching",
+          tokenCount: response.usage?.total_tokens || 0,
+          cost: (response.usage?.total_tokens || 0) * 0.0001, // Rough estimate
+        }
+      });
+    } catch (logError) {
+      console.log("Note: AI usage logging skipped");
+    }
+
+    // ✅ Return successful response
+    return NextResponse.json({
+      matches: enhancedMatches,
+      creditsUsed: creditInfo.creditsUsed,
+      remainingCredits: creditInfo.remainingCredits,
+      totalJobsAnalyzed: activeJobs.length,
+      matchesFound: enhancedMatches.length,
     });
-    
-  } catch (err) {
-    console.error("Job matcher error:", err);
-    return new Response(JSON.stringify({ error: "Failed to match resume with jobs." }), { status: 500 });
+
+  } catch (error) {
+    console.error("Job matching error:", error);
+    return NextResponse.json({
+      error: "An unexpected error occurred while matching jobs. Please try again."
+    }, { status: 500 });
   }
 }
