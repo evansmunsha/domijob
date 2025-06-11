@@ -147,15 +147,20 @@ export async function POST(req: NextRequest) {
     }
 
     // 🧠 Create AI prompt for job matching
-    const systemPrompt = `You are an expert AI job matching assistant. Your task is to analyze a resume and match it against job postings, providing detailed scoring and feedback.
+    const systemPrompt = `You are an expert AI job matching assistant. Analyze the resume and return ONLY a valid JSON array.
 
-For each job, you must return a JSON object with:
-- jobId: the exact job ID provided
-- score: match percentage from 0-100 (be realistic, most matches are 60-85%)
-- reasons: array of 2-4 specific reasons why this person is a good fit
-- missingSkills: array of 0-3 key skills/qualifications they're missing (if any)
+IMPORTANT: Your response must be ONLY a JSON array, no other text.
 
-Only include matches with score >= 50. Be thorough but concise in your analysis.`;
+For each job with score >= 50, return:
+{
+  "jobId": "exact_job_id_here",
+  "score": 75,
+  "reasons": ["Specific reason 1", "Specific reason 2"],
+  "missingSkills": ["Skill 1", "Skill 2"]
+}
+
+Example response format:
+[{"jobId":"job123","score":75,"reasons":["5+ years React experience","Strong TypeScript skills"],"missingSkills":["AWS","Docker"]}]`;
 
     const jobsForPrompt = activeJobs.map(job => ({
       id: job.id,
@@ -168,32 +173,13 @@ Only include matches with score >= 50. Be thorough but concise in your analysis.
       employmentType: job.employmentType || "Full-time"
     }));
 
-    const userPrompt = `Analyze this resume and match it against the following job postings:
+    const userPrompt = `RESUME:
+${resumeText.substring(0, 2000)} // Limit resume length
 
-RESUME:
-${resumeText}
+JOBS:
+${jobsForPrompt.map((job, index) => `${index + 1}. ID:${job.id} TITLE:${job.title} DESC:${job.description}`).join('\n')}
 
-JOBS TO MATCH:
-${jobsForPrompt.map((job, index) => `
-Job ${index + 1}:
-ID: ${job.id}
-Title: ${job.title}
-Company: ${job.company}
-Type: ${job.employmentType}
-Description: ${job.description}
-`).join('\n')}
-
-Return a JSON array of matches with score >= 50. Format:
-[
-  {
-    "jobId": "exact_job_id_here",
-    "score": 75,
-    "reasons": ["Specific reason 1", "Specific reason 2"],
-    "missingSkills": ["Skill 1", "Skill 2"]
-  }
-]
-
-Only return valid JSON, no other text.`;
+Return JSON array for matches >=50 score:`;
 
     // 🤖 Call OpenAI API with timeout handling
     let response: any;
@@ -215,11 +201,13 @@ Only return valid JSON, no other text.`;
           ],
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('OpenAI API timeout')), 8000) // 8 second timeout
+          setTimeout(() => reject(new Error('OpenAI API timeout')), 12000) // 12 second timeout
         )
       ]);
     } catch (timeoutError) {
-      console.error("OpenAI API timeout:", timeoutError);
+      console.error("OpenAI API timeout or error:", timeoutError);
+      console.log("Resume length:", resumeText.length);
+      console.log("Jobs count:", activeJobs.length);
 
       // Fallback: return basic keyword matching
       const fallbackMatches = activeJobs.slice(0, 3).map((job, index) => ({
@@ -252,6 +240,7 @@ Only return valid JSON, no other text.`;
 
     // 🔄 Parse AI response
     const aiResponse = response?.choices?.[0]?.message?.content || "";
+    console.log("AI Response received:", aiResponse.substring(0, 200) + "...");
     let matches: JobMatch[] = [];
 
     try {

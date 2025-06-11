@@ -1,6 +1,6 @@
 
  "use client"
- 
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -344,7 +344,7 @@ export default function JobMatcherAnalyzePage() {
                           )}
                           
                           <Link 
-                            href={`/jobs/${match.jobId}`}
+                            href={`/job/${match.jobId}`}
                             className="inline-block text-sm text-primary hover:underline mt-2"
                           >
                             View Full Job Details
