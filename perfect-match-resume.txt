@@ -1,0 +1,89 @@
+Alex Thompson
+Principal Software Engineer
+Email: alex.thompson@email.com | Phone: +44 7700 123456
+LinkedIn: linkedin.com/in/alexthompson-security | GitHub: github.com/alexthompson
+
+PROFESSIONAL SUMMARY
+Senior software engineer with 7+ years of experience building security-focused products and leading feature development in high-growth startups. Expert in Python and GoLang with deep expertise in cybersecurity, attack surface management, and vulnerability assessment tools. Proven track record of architecting scalable systems that operate at internet scale, including network scanning and threat detection platforms. Passionate about automated security testing and red team methodologies.
+
+TECHNICAL EXPERTISE
+• Languages: Python (Expert), GoLang (Expert), JavaScript, Rust, C++
+• Security: Vulnerability Assessment, Penetration Testing, Attack Surface Management, Red Team Tools
+• Cloud Platforms: AWS, Google Cloud Platform, Azure, Kubernetes, Docker
+• Databases: PostgreSQL, MongoDB, Redis, InfluxDB, Elasticsearch
+• Tools: Nmap, Metasploit, Burp Suite, OWASP ZAP, Wireshark, Shodan API
+• Frameworks: FastAPI, Django, Gin (Go), gRPC, REST APIs
+• DevOps: CI/CD, Terraform, Ansible, Jenkins, GitLab CI
+
+PROFESSIONAL EXPERIENCE
+
+Principal Software Engineer | CyberGuard Security | 2021 - Present
+• Led development of automated attack surface discovery platform scanning 50M+ IP addresses daily
+• Built real-time vulnerability detection engine in Python processing 100K+ security events per hour
+• Architected microservices infrastructure in GoLang handling internet-scale data ingestion
+• Developed machine learning models for threat classification with 95% accuracy rate
+• Created automated red team simulation tools reducing manual testing time by 80%
+• Collaborated with security researchers to implement cutting-edge attack detection algorithms
+• Mentored team of 4 engineers while maintaining individual contributor role
+
+Senior Software Engineer | SecureNet Innovations | 2019 - 2021
+• Designed and implemented B2B security SaaS platform serving 200+ enterprise clients
+• Built continuous security monitoring system using Python and distributed computing
+• Developed GoLang-based network scanning engine capable of scanning entire /8 networks
+• Led feature development for automated penetration testing module
+• Integrated with major cloud providers (AWS, GCP, Azure) for comprehensive asset discovery
+• Reduced false positive rates by 60% through advanced filtering algorithms
+
+Software Engineer | ThreatScope Analytics | 2017 - 2019
+• Developed core vulnerability scanning engine processing 10M+ assets monthly
+• Built real-time threat intelligence platform aggregating data from 50+ security feeds
+• Implemented automated exploit verification system using Python and custom frameworks
+• Created RESTful APIs serving security data to 1000+ concurrent users
+• Optimized database queries reducing response times from 5s to 200ms
+
+Security Software Developer | CyberDefense Labs | 2016 - 2017
+• Built proof-of-concept attack surface management tools for startup environment
+• Developed Python scripts for automated security testing and vulnerability discovery
+• Created network reconnaissance tools using GoLang for high-performance scanning
+• Participated in red team exercises and security research initiatives
+
+EDUCATION
+Master of Science in Cybersecurity | University of Edinburgh | 2016
+Bachelor of Science in Computer Science | Imperial College London | 2014
+Relevant Coursework: Network Security, Cryptography, Ethical Hacking, Malware Analysis
+
+CERTIFICATIONS & ACHIEVEMENTS
+• Certified Ethical Hacker (CEH) - 2020
+• OSCP (Offensive Security Certified Professional) - 2019
+• AWS Certified Security - Specialty - 2021
+• Speaker at BSides London 2022: "Scaling Attack Surface Management"
+• Published research on automated red teaming in Journal of Cybersecurity (2021)
+
+KEY PROJECTS
+• Internet-Scale Asset Discovery Platform: Led development of distributed scanning system capable of discovering and profiling 4B+ IPv4 addresses using GoLang and Python
+• Automated Red Team Framework: Built comprehensive penetration testing automation platform reducing manual testing cycles from weeks to hours
+• Real-time Threat Detection Engine: Architected ML-powered system processing 1M+ security events daily with sub-second response times
+• Cloud Security Posture Management: Developed multi-cloud security assessment tool for AWS, GCP, and Azure environments
+
+TECHNICAL LEADERSHIP
+• Led cross-functional teams of 3-6 engineers in agile development environment
+• Architected systems handling petabytes of security data with 99.9% uptime
+• Established engineering best practices for security-focused product development
+• Mentored junior developers in secure coding practices and threat modeling
+
+SECURITY RESEARCH
+• Active contributor to open-source security tools with 2000+ GitHub stars
+• Regular participant in bug bounty programs with 15+ critical vulnerabilities discovered
+• Research focus on automated vulnerability discovery and exploit development
+• Collaboration with academic institutions on AI-driven security research
+
+LANGUAGES
+• English (Native)
+• Python (Expert - 7 years)
+• GoLang (Expert - 5 years)
+
+INTERESTS
+• Capture The Flag (CTF) competitions - Top 10% globally
+• Security conference speaking and workshop facilitation
+• Open source security tool development
+• Blockchain and cryptocurrency security research
