@@ -124,12 +124,12 @@ export function AIResumeEnhancer() {
       return;
     }
   
-    // ✅ Limit input to ~1000 words
+    // ✅ Limit input to reasonable length (most resumes are 1-3 pages)
     const wordCount = resumeText.trim().split(/\s+/).length;
-    if (wordCount > 1000) {
+    if (wordCount > 2500) {
       toast({
         title: "Resume Too Long",
-        description: "Please shorten your resume to under 1000 words for best results.",
+        description: "Please shorten your resume to under 2500 words (about 3-4 pages) for best results.",
         variant: "destructive",
       });
       return;
@@ -450,7 +450,7 @@ export function AIResumeEnhancer() {
                       onChange={(e) => setResumeText(e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      ⚠️ Tip: For best results, keep your resume under 2 pages or <strong>below 1000 words</strong>. Long resumes may cause incomplete AI responses.
+                      ⚠️ Tip: For best results, keep your resume under 3-4 pages or <strong>below 2500 words</strong>. Very long resumes may cause incomplete AI responses.
                     </p>
 
                     {rawAIOutput && (
