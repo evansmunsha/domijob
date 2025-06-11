@@ -1,0 +1,25 @@
+/* styles/editor.css */
+.tiptap .prose p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+  
+  .tiptap .prose ul,
+  .tiptap .prose ol {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+  
+  .tiptap .prose li {
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+  }
+  
+  .tiptap .prose li > p {
+    margin: 0;
+  }
+  
+  /* Fix for extra spacing when pasting */
+  .tiptap .ProseMirror-selectednode {
+    outline: none;
+  }

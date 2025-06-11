@@ -1,0 +1,522 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+}
+
+
+
+
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String          @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  // Optional for WebAuthn support
+  Authenticator Authenticator[]
+
+  onboardingCompleted Boolean @default(false)
+
+  userType UserType?
+
+  stripeCustomerId String? @unique
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Company      Company?
+  JobSeeker    JobSeeker?
+  SavedJobPost SavedJobPost[]
+
+  JobApplication JobApplication[]
+
+  SkillGapAnalysis SkillGapAnalysis[]
+
+  UserNotification UserNotification[]
+  CompanyProfileView CompanyProfileView[]
+
+  chatThreads ChatThread[]
+
+  affiliate Affiliate?
+  referredByCode String?
+  affiliateReferrals AffiliateReferral[]
+  
+  aiCredits UserCredits?
+  AIGeneratedContent AIGeneratedContent[]
+  AIUsageLog AIUsageLog[]
+
+  CreditTransaction CreditTransaction[]
+}
+
+model SkillGapAnalysis {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  userId        String
+  targetJobTitle String
+  currentSkills  String[]
+  missingSkills  Json
+  completeness   Int
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// Optional for WebAuthn support
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+}
+
+enum UserType {
+  COMPANY
+  JOB_SEEKER
+  ADMIN
+}
+
+model Company {
+  id String @id @default(uuid())
+
+  name     String
+  location String
+  logo     String
+  industry String?
+  size     String?
+  foundedYear   String?
+  website  String
+  xAccount String?
+  about    String
+  user     User    @relation(fields: [userId], references: [id])
+  userId   String  @unique
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  JobPost   JobPost[]
+  notifications CompanyNotification[]
+
+  CompanyProfileView CompanyProfileView[]
+
+  candidateContacts CandidateContact[]
+  chatThreads       ChatThread[]
+}
+
+model CandidateContact {
+  id            String   @id @default(uuid())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id])
+  candidateName String
+  candidateId   String?  // Optional - if you have the actual user ID
+  message       String   @db.Text
+  notificationId String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+
+
+// Add these new models for chat functionality
+model ChatThread {
+  id            String        @id @default(uuid())
+  companyId     String
+  company       Company       @relation(fields: [companyId], references: [id])
+  jobSeekerId   String
+  jobSeeker     User          @relation(fields: [jobSeekerId], references: [id])
+  messages      ChatMessage[]
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model ChatMessage {
+  id           String     @id @default(uuid())
+  threadId     String
+  thread       ChatThread @relation(fields: [threadId], references: [id])
+  senderId     String
+  senderType   String     // "COMPANY" or "JOB_SEEKER"
+  content      String     @db.Text
+  read         Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+}
+// Add this model to your schema.prisma file
+model CompanyProfileView {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String?
+  timestamp DateTime @default(now())
+  location  String   @default("Unknown") // Add this field
+  
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([companyId])
+  @@index([userId])
+  @@index([location]) // Add this index
+}
+
+
+// This is a partial schema file showing just the new model
+// Add this to your existing schema.prisma file
+
+
+
+
+
+
+
+
+
+
+
+
+model JobSeeker {
+  id     String @id @default(uuid())
+  name   String
+  about  String
+  resume String
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  skills          String[]
+  languages       String[]
+  
+  // Add job preference fields
+  preferredJobTypes    String[]
+  preferredLocations   String[]
+  salaryExpectation    Int      @default(0)
+  remoteOnly           Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+
+model JobPost {
+  id String @id @default(uuid())
+
+  jobTitle        String
+  employmentType  String
+  location        String
+  salaryFrom      Int
+  salaryTo        Int
+  jobDescription  String
+  listingDuration Int
+  benefits        String[]
+
+  status       JobPostStatus @default(DRAFT)
+  applications Int           @default(0)
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  SavedJobPost SavedJobPost[]
+  notifications CompanyNotification[]
+
+  JobApplication JobApplication[]
+
+  UserNotification UserNotification[]
+}
+
+enum JobPostStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+}
+
+model SavedJobPost {
+  id     String @id @default(uuid())
+  jobId  String
+  userId String
+
+  job  JobPost @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, jobId])
+}
+// Add this model to your existing schema
+
+
+
+model CompanyNotification {
+  id        String   @id @default(cuid())
+  companyId String
+  jobId     String?
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) // Add this field for storing additional data as JSON
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  job       JobPost? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  metadata  String?  @db.Text
+  @@index([companyId])
+  @@index([jobId])
+}
+model UserNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  jobId     String?
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job       JobPost? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  metadata  String?  @db.Text   // ← ✅ Add this if you want to store extra structured info
+  @@index([userId])
+  @@index([jobId])
+}
+
+enum NotificationType {
+  NEW_APPLICATION
+  JOB_EXPIRED
+  NEW_JOB_MATCH
+  APPLICATION_STATUS_CHANGE
+  APPLICATION_STATUS_UPDATED
+  PROFILE_VIEWS
+  POTENTIAL_CANDIDATE
+  NEW_REGION
+  SKILL_GAP_ANALYSIS
+  REGION_MILESTONE
+}
+
+// Add this model to your Prisma schema if it doesn't exist
+ 
+ model JobApplication {
+  id        String   @id @default(uuid())
+  userId    String
+  jobId     String
+  appliedVia String   @default("Domijob")
+  status    ApplicationStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job       JobPost  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+}
+
+
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  SHORTLISTED
+  REJECTED
+}
+
+// Affiliate Models
+model Affiliate {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  code            String    @unique
+  commissionRate  Float
+  totalEarnings   Float     @default(0)
+  pendingEarnings Float     @default(0)
+  paidEarnings    Float     @default(0)
+  conversionCount Int       @default(0)
+  clickCount      Int       @default(0)
+  paymentMethod   String    @default("paypal")
+  paypalEmail     String?
+  bankName        String?
+  accountNumber   String?
+  accountName     String?
+  routingNumber   String?
+  swiftCode       String?
+  country         String?
+  referrals       AffiliateReferral[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  AffiliatePayment AffiliatePayment[]
+
+  AffiliateClick AffiliateClick[]
+}
+
+model AffiliateReferral {
+  id              String    @id @default(cuid())
+  affiliateId     String
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id])
+  referredUserId  String
+  user            User      @relation(fields: [referredUserId], references: [id])
+  commissionAmount Float
+  status          String    // PENDING, CONVERTED, PAID
+  createdAt       DateTime  @default(now())
+  convertedAt     DateTime?
+  paidAt          DateTime?
+
+  @@index([affiliateId])
+  @@index([referredUserId])
+}
+
+model AffiliateClick {
+  id              String    @id @default(cuid())
+  affiliateId     String
+  timestamp       DateTime  @default(now())
+  ipAddress       String?
+  userAgent       String?
+  referrer        String?
+  landingPage     String
+  source          String?
+  campaign        String?
+  converted       Boolean   @default(false)
+  convertedAt     DateTime?
+
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
+  @@index([timestamp])
+}
+
+model AffiliatePayment {
+  id              String    @id @default(cuid())
+  affiliateId     String
+  amount          Float
+  status          String    @default("PENDING")
+  paymentMethod   String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  paidAt          DateTime?
+  transactionId   String?
+
+  affiliate       Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
+}
+
+model Setting {
+  key           String    @id
+  value         String    @db.Text
+  category      String    @default("general")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String?
+  description   String?   @db.Text
+
+  @@index([category])
+}
+
+// Store AI generated content for caching and audit
+model AIGeneratedContent {
+  id        String   @id @default(cuid())
+  type      String   // e.g. "job_match", "resume_enhancement", "job_description"
+  prompt    String   @db.Text
+  response  String   @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+}
+
+// Track AI usage for rate limiting and billing
+model AIUsageLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  endpoint   String   // Which AI feature was used
+  tokenCount Int      // How many tokens were consumed
+  cost       Float    // Estimated cost in USD
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([endpoint])
+}
+
+// AI credits system
+model UserCredits {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// Add this model to your existing schema.prisma file
+
+// Track individual credit transactions
+model CreditTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Int      // Positive for additions, negative for deductions
+  type        String   // "purchase", "usage", "signup_bonus", "promotional", "refund"
+  description String
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+}
+
