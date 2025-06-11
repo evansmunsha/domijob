@@ -124,12 +124,16 @@ export function AIResumeEnhancer() {
       return;
     }
   
-    // ✅ Limit input to reasonable length (most resumes are 1-3 pages)
+    // ✅ Debug word count and validate length
     const wordCount = resumeText.trim().split(/\s+/).length;
-    if (wordCount > 2500) {
+    console.log("Resume word count:", wordCount);
+    console.log("Resume length:", resumeText.length);
+    console.log("First 200 chars:", resumeText.substring(0, 200));
+
+    if (wordCount > 3500) { // Temporarily increased limit for debugging
       toast({
         title: "Resume Too Long",
-        description: "Please shorten your resume to under 2500 words (about 3-4 pages) for best results.",
+        description: `Your resume has ${wordCount} words. Please shorten it to under 3500 words. If this seems wrong, try uploading a DOCX file instead of PDF.`,
         variant: "destructive",
       });
       return;
@@ -449,9 +453,42 @@ export function AIResumeEnhancer() {
                       value={resumeText}
                       onChange={(e) => setResumeText(e.target.value)}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      ⚠️ Tip: For best results, keep your resume under 3-4 pages or <strong>below 2500 words</strong>. Very long resumes may cause incomplete AI responses.
-                    </p>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-xs text-muted-foreground">
+                        ⚠️ Tip: For best results, keep your resume under 3-4 pages or <strong>below 3500 words</strong>.
+                      </p>
+                      {resumeText && (
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">
+                            <strong>{resumeText.trim().split(/\s+/).length} words</strong>
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={async () => {
+                              try {
+                                const response = await fetch('/api/debug-resume-text', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ resumeText })
+                                });
+                                const data = await response.json();
+                                console.log('Resume debug data:', data);
+                                toast({
+                                  title: "Debug Info",
+                                  description: `${data.analysis.totalWords} words, ${data.analysis.totalLines} lines. Check console for details.`,
+                                });
+                              } catch (error) {
+                                console.error('Debug failed:', error);
+                              }
+                            }}
+                          >
+                            Debug
+                          </Button>
+                        </div>
+                      )}
+                    </div>
 
                     {rawAIOutput && (
                       <div className="mt-6 border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10 rounded-xl p-4 space-y-3">
