@@ -174,12 +174,12 @@ Example response format:
     }));
 
     const userPrompt = `RESUME:
-${resumeText.substring(0, 2000)} // Limit resume length
+${resumeText.substring(0, 2000)}
 
 JOBS:
 ${jobsForPrompt.map((job, index) => `${index + 1}. ID:${job.id} TITLE:${job.title} DESC:${job.description}`).join('\n')}
 
-Return JSON array for matches >=50 score:`;
+Return JSON array for matches with score 50 or higher:`;
 
     // 🤖 Call OpenAI API with timeout handling
     let response: any;
