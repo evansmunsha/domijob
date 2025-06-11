@@ -1,3 +1,5 @@
+//components/resume/AIResumeEnhancer.tsx
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -28,7 +30,7 @@ import {
 import { toast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { UploadButton } from "@/components/general/UploadThingReExport"
+import { SimpleFileUpload } from "@/components/resume/SimpleFileUpload"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
@@ -41,7 +43,6 @@ export function AIResumeEnhancer() {
   const [resumeText, setResumeText] = useState("")
   const [targetJobTitle, setTargetJobTitle] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null)
   const [enhancementResult, setEnhancementResult] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<"input" | "results">("input")
@@ -314,66 +315,7 @@ export function AIResumeEnhancer() {
       .save();
   };
   
-  const parseUploadedResume = async (file: File) => {
-    setIsUploading(true);
-    const cleanup = simulateProgress();
-  
-    try {
-      // Check credit before parsing
-      if (creditInfo && creditInfo.credits < CREDIT_COSTS.file_parsing) {
-        if (creditInfo.isGuest) {
-          setShowSignUpModal(true);
-          throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
-        } else {
-          throw new Error(`You need ${CREDIT_COSTS.file_parsing} credits to use this feature.`);
-        }
-      }
-  
-      const formData = new FormData();
-      formData.append("file", file);
-  
-      const response = await fetch("/api/ai/resume-parse", {
-        method: "POST",
-        body: formData,
-      });
-  
-      const text = await response.text();
-      const data = JSON.parse(text);
-  
-      if (!response.ok) {
-        if (response.status === 402 && data.requiresSignup) {
-          setShowSignUpModal(true);
-          throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
-        }
-        throw new Error(data.error || "Failed to parse resume");
-      }
-  
-      setResumeText(data.text);
-      setUploadedFile({ name: file.name, size: file.size });
-  
-      if (data.remainingCredits !== undefined) {
-        setCreditInfo((prev) =>
-          prev ? { ...prev, credits: data.remainingCredits } : null
-        );
-      }
-  
-      toast({
-        title: "Success",
-        description: "Resume parsed successfully!",
-        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-      });
-    } catch (err) {
-      console.error("Resume parse failed:", err);
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Resume parse failed.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-      cleanup();
-    }
-  };
+
 
 
   
@@ -481,9 +423,9 @@ export function AIResumeEnhancer() {
                   className="rounded-full"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Upload File coming soon 
+                  {/*Upload File coming soon */}
                 </Button>
-                {/* <Button
+                 <Button
                   variant={inputMethod === "upload" ? "default" : "outline"}
                   onClick={() => setInputMethod("upload")}
                   size="sm"
@@ -491,7 +433,7 @@ export function AIResumeEnhancer() {
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Upload File 
-                </Button> */}
+                </Button> 
               </div>
 
               {inputMethod === "paste" ? (
@@ -570,105 +512,26 @@ export function AIResumeEnhancer() {
                       Drag and drop your resume file here, or click to browse
                     </p>
 
-                    <div className="flex flex-col items-center gap-2">
-                      {isUploading ? (
-                        <div className="w-full max-w-xs space-y-4">
-                          <div className="flex items-center justify-between mb-1 text-sm">
-                            <span>Parsing document...</span>
-                            <span>{Math.round(processingProgress)}%</span>
-                          </div>
-                          <div className="h-2 w-full bg-gray-200 rounded-full">
-                            <div
-                              className="h-full bg-primary rounded-full transition-all duration-300"
-                              style={{ width: `${processingProgress}%` }}
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <UploadButton
-                          endpoint="resumeUploader"
-                          onClientUploadComplete={async (res) => {
-                            if (!res || res.length === 0) return;
+                    <SimpleFileUpload
+                      onFileProcessed={(text, fileName, fileSize) => {
+                        setResumeText(text);
+                        setUploadedFile({ name: fileName, size: fileSize });
+                      }}
+                      onError={(error) => {
+                        if (error.includes("Sign up")) {
+                          setShowSignUpModal(true);
+                        }
+                        toast({
+                          title: "Upload Error",
+                          description: error,
+                          variant: "destructive",
+                        });
+                      }}
+                      isLoading={isLoading}
+                      disabled={isLoading}
+                    />
 
-                            const uploaded = res[0];
-
-                            const fileName = uploaded.name.toLowerCase();
-                            if (!fileName.endsWith(".docx") && !fileName.endsWith(".pdf")) {
-                              toast({
-                                title: "Unsupported File Type",
-                                description: "Only DOCX or PDF files are supported.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
-
-                            setIsUploading(true);
-                            const cleanup = simulateProgress();
-
-                            try {
-                              // ✅ Fetch blob from ufsUrl
-                              const fileRes = await fetch(uploaded.ufsUrl);
-                              const blob = await fileRes.blob();
-
-                              const formData = new FormData();
-                              formData.append("file", blob, uploaded.name);
-
-                              const response = await fetch("/api/ai/resume-parse", {
-                                method: "POST",
-                                body: formData,
-                              });
-
-                              const text = await response.text();
-                              const data = JSON.parse(text);
-
-                              if (!response.ok) {
-                                if (response.status === 403 && data.requiresSignup) {
-                                  setShowSignUpModal(true);
-                                }
-                                throw new Error(data.error || "Failed to parse resume");
-                              }
-
-                              setResumeText(data.text);
-                              setUploadedFile({ name: uploaded.name, size: uploaded.size });
-
-                              if (data.remainingCredits !== undefined) {
-                                setCreditInfo((prev) =>
-                                  prev ? { ...prev, credits: data.remainingCredits } : null
-                                );
-                              }
-
-                              toast({
-                                title: "Success",
-                                description: "Resume parsed successfully!",
-                                icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-                              });
-                            } catch (err) {
-                              console.error(err);
-                              toast({
-                                title: "Error",
-                                description:
-                                  err instanceof Error ? err.message : "Unknown error occurred while parsing resume",
-                                variant: "destructive",
-                              });
-                            } finally {
-                              setIsUploading(false);
-                              cleanup();
-                            }
-                          }}
-                          onUploadError={(error: Error) => {
-                            toast({
-                              title: "Upload Error",
-                              description: error.message,
-                              variant: "destructive",
-                            });
-                          }}
-                        />
-
-                      )}
-                      <p className="text-xs text-muted-foreground">Accepts DOCX files (max 2MB)</p>
-                    </div>
-
-                    {uploadedFile && !isUploading && (
+                    {uploadedFile && (
                       <div className="mt-4 flex items-center justify-center gap-2 text-sm">
                         <Badge variant="outline" className="bg-primary/5 text-primary">
                           <FileText className="h-3.5 w-3.5 mr-1" />
@@ -736,7 +599,7 @@ export function AIResumeEnhancer() {
               </div>
               <Button
                 onClick={enhanceResume}
-                disabled={isLoading || isUploading || !resumeText.trim()}
+                disabled={isLoading || !resumeText.trim()}
                 className="gap-1"
               >
                 {isLoading ? (
