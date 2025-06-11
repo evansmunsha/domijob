@@ -37,9 +37,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         image: profile.picture,
       };
     },
-    //allowDangerousEmailAccountLinking: true,
     // Optional, enable this if you want to auto-link accounts (with caution)
-    // allowDangerousEmailAccountLinking: true,
+    allowDangerousEmailAccountLinking: true,
   }),
 ],
   callbacks: {
