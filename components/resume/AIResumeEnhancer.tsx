@@ -159,7 +159,7 @@ export function AIResumeEnhancer() {
     setEnhancementResult(null);
   
     try {
-      const response = await fetch("/api/ai/resume-enhancer", {
+      const response = await fetch("/api/simple-resume-enhance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -167,72 +167,29 @@ export function AIResumeEnhancer() {
           targetJobTitle: targetJobTitle.trim() || undefined,
         }),
       });
-  
+
+      const data = await response.json();
+
       if (!response.ok) {
         if (response.status === 402) {
-          const data = await response.json();
           if (data.requiresSignup) {
             setShowSignUpModal(true);
             throw new Error("You've used all your free credits. Sign up to get 50 more free credits!");
           }
         }
-        const error = await response.json();
-        throw new Error(error.error || "Failed to enhance resume.");
+        throw new Error(data.error || "Failed to enhance resume.");
       }
-  
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-  
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-  
-          const chunk = decoder.decode(value, { stream: true });
-          textBuffer += chunk;
-        }
-      }
-  
-      // ✅ Strip CREDIT_INFO: header if present
-      const creditPrefix = "CREDIT_INFO:";
-      if (textBuffer.startsWith(creditPrefix)) {
-        const split = textBuffer.split("\n\n");
-        if (split.length > 1) {
-          const creditMeta = JSON.parse(split[0].replace(creditPrefix, ""));
-          setCreditInfo((prev) =>
-            prev ? { ...prev, credits: creditMeta.remainingCredits } : null
-          );
-          textBuffer = split.slice(1).join("\n\n");
-        }
-      }
-  
-      // ✅ Safe parse logic with fallback
-      let safeText = textBuffer.trim();
-      const lastBrace = safeText.lastIndexOf("}");
-      if (lastBrace !== -1) {
-        safeText = safeText.slice(0, lastBrace + 1);
-      }
-  
-      let parsedResult;
-      try {
-        parsedResult = JSON.parse(safeText);
-      } catch {
-        console.error("🛑 Failed to parse AI response:\n", safeText);
-        setRawAIOutput(safeText);
 
-        toast({
-          title: "AI Response Too Long",
-          description: "The resume may be too long. Try submitting a shorter version or copy the raw result below.",
-          variant: "destructive",
-        });
-        return;
-
+      // Update credit info
+      if (data.remainingCredits !== undefined) {
+        setCreditInfo((prev) =>
+          prev ? { ...prev, credits: data.remainingCredits } : null
+        );
       }
-  
-      setEnhancementResult(parsedResult);
+
+      setEnhancementResult(data);
       setActiveTab("results");
-  
+
       toast({
         title: "Success",
         description: "Resume analysis complete!",

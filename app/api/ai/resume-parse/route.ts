@@ -58,22 +58,38 @@ export async function POST(req: NextRequest) {
       const arrayBuffer = await file.arrayBuffer();
 
       if (fileName.endsWith(".docx")) {
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        plainText = result.value.replace(/\s+/g, " ").trim();
-      } else if (fileName.endsWith(".pdf")) {
-        // For PDF files, we'll use a simple text extraction
-        // Note: This is a basic implementation. For production, consider using pdf-parse
-        const buffer = Buffer.from(arrayBuffer);
-        const text = buffer.toString('utf8');
-        // Extract readable text (this is very basic)
-        plainText = text.replace(/[^\x20-\x7E\n]/g, ' ').replace(/\s+/g, ' ').trim();
+        try {
+          console.log("Attempting to parse DOCX file:", file.name);
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          console.log("Mammoth result:", {
+            hasValue: !!result.value,
+            valueLength: result.value?.length || 0,
+            messages: result.messages?.length || 0
+          });
 
-        // If no readable text found, return error
-        if (plainText.length < 50) {
+          if (!result.value || result.value.trim().length < 10) {
+            throw new Error("No text content found in DOCX file");
+          }
+
+          plainText = result.value.replace(/\s+/g, " ").trim();
+          console.log("Extracted text length:", plainText.length);
+        } catch (docxError) {
+          console.error("DOCX parsing error:", docxError);
           return NextResponse.json({
-            error: "Could not extract text from PDF. Please try uploading a DOCX file instead."
+            error: "Failed to parse DOCX file. The file might be corrupted or in an unsupported format. Please try: 1) Re-saving the file as a new DOCX, 2) Copy-pasting the text directly, or 3) Converting to a simpler format.",
+            details: docxError instanceof Error ? docxError.message : "Unknown DOCX parsing error"
           }, { status: 400 });
         }
+      } else if (fileName.endsWith(".pdf")) {
+        // For PDF files, return a helpful error message
+        return NextResponse.json({
+          error: "PDF parsing is currently limited. Please try one of these options: 1) Convert your PDF to DOCX using Google Docs or online converters, 2) Copy and paste your resume text directly instead of uploading a file, 3) Save your resume as a DOCX file if possible.",
+          suggestions: [
+            "Convert PDF to DOCX using Google Docs (File → Open → Upload PDF → Download as DOCX)",
+            "Use copy-paste method instead of file upload",
+            "Try online PDF to Word converters like SmallPDF or ILovePDF"
+          ]
+        }, { status: 400 });
       }
     } catch (err) {
       console.error("❌ File parsing failed:", err);

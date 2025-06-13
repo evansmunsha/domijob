@@ -46,6 +46,12 @@ export function SimpleFileUpload({
       return
     }
 
+    // Warn about PDF limitations
+    if (fileName.endsWith('.pdf')) {
+      onError("PDF files have limited support. Please convert to DOCX using Google Docs or copy-paste your resume text instead.")
+      return
+    }
+
     // Validate file size (2MB limit)
     if (file.size > 2 * 1024 * 1024) {
       onError("File size must be less than 2MB")
@@ -217,10 +223,13 @@ export function SimpleFileUpload({
                   </p>
                 </div>
                 <div className="flex justify-center gap-2">
-                  <Badge variant="outline">DOCX</Badge>
-                  <Badge variant="outline">PDF</Badge>
+                  <Badge variant="outline">DOCX Recommended</Badge>
+                  <Badge variant="outline" className="opacity-50">PDF Limited</Badge>
                   <Badge variant="outline">Max 2MB</Badge>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 For best results, use DOCX files or copy-paste your text
+                </p>
               </div>
             )}
           </div>
