@@ -34,6 +34,7 @@ import Link from "next/link"
 import { CREDIT_COSTS } from "@/app/utils/credits"
 // Remove the SignUpModal import for now
 import SignUpModal from "@/components/SignUpModal"
+import { trackEvents } from "@/app/utils/analytics"
 // 2. Add a simple SignUpModal component implementation if it doesn't exist
 
 export function AIResumeEnhancer() {
@@ -118,6 +119,9 @@ export function AIResumeEnhancer() {
       });
       return;
     }
+
+    // Track resume enhancement started
+    trackEvents.resumeEnhancementStarted();
   
     // ✅ Debug word count and validate length
     const wordCount = resumeText.trim().split(/\s+/).length;
@@ -184,6 +188,12 @@ export function AIResumeEnhancer() {
 
       setEnhancementResult(data);
       setActiveTab("results");
+
+      // Track successful completion
+      trackEvents.resumeEnhancementCompleted(
+        data.wordCount || resumeText.trim().split(/\s+/).length,
+        data.atsScore || 0
+      );
 
       toast({
         title: "Success",

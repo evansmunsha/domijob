@@ -3,18 +3,20 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { 
-  Home, 
-  Users, 
-  Briefcase,  
-  Settings, 
+import {
+  Home,
+  Users,
+  Briefcase,
+  Settings,
   DollarSign,
   Building,
-  BarChartHorizontal
+  BarChartHorizontal,
+  TrendingUp
 } from "lucide-react"
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: Home },
+  { name: "Growth", href: "/admin/growth", icon: TrendingUp },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Companies", href: "/admin/companies", icon: Building },
   { name: "Jobs", href: "/admin/jobs", icon: Briefcase },
