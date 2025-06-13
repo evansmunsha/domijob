@@ -38,7 +38,12 @@ export async function POST(request: NextRequest) {
           where: { email },
           data: {
             status: "ACTIVE",
-            preferences: preferences || existingSubscription.preferences,
+            preferences: preferences || (existingSubscription.preferences || {
+              jobAlerts: true,
+              careerTips: true,
+              weeklyDigest: true,
+              productUpdates: false
+            }),
             tags: tags || existingSubscription.tags,
             source: source || existingSubscription.source,
             confirmedAt: new Date(),
@@ -227,3 +232,4 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
