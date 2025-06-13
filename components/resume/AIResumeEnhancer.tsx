@@ -13,11 +13,8 @@ import {
   Check,
   AlertCircle,
   FileText,
-  Upload,
   ChevronRight,
-  Clipboard,
   CheckCircle2,
-  FileUp,
   Award,
   Target,
   Lightbulb,
@@ -30,7 +27,7 @@ import {
 import { toast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { SimpleFileUpload } from "@/components/resume/SimpleFileUpload"
+
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
@@ -43,11 +40,9 @@ export function AIResumeEnhancer() {
   const [resumeText, setResumeText] = useState("")
   const [targetJobTitle, setTargetJobTitle] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null)
   const [enhancementResult, setEnhancementResult] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<"input" | "results">("input")
   const [processingProgress, setProcessingProgress] = useState(0)
-  const [inputMethod, setInputMethod] = useState<"paste" | "upload">("paste")
   const [creditInfo, setCreditInfo] = useState<{
     isGuest: boolean
     credits: number
@@ -211,12 +206,7 @@ export function AIResumeEnhancer() {
   
   
   
-  // Reset form when switching input methods
-  useEffect(() => {
-    if (inputMethod === "paste" && uploadedFile) {
-      setUploadedFile(null)
-    }
-  }, [inputMethod])
+
 
   const formatResultAsText = (result: any) => {
     let output = `🎯 Resume Analysis Report\n\n`;
@@ -331,7 +321,7 @@ export function AIResumeEnhancer() {
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "input" | "results")}>
           <TabsList className="grid w-full grid-cols-2 rounded-none">
             <TabsTrigger value="input" disabled={isLoading} className="rounded-none">
-              <FileUp className="h-4 w-4 mr-2" />
+              <FileText className="h-4 w-4 mr-2" />
               Resume Input
             </TabsTrigger>
             <TabsTrigger value="results" disabled={!enhancementResult} className="rounded-none">
@@ -368,84 +358,56 @@ export function AIResumeEnhancer() {
                 </p>
               </div>
 
-              <div className="flex space-x-2 mb-2">
-                <Button
-                  variant={inputMethod === "paste" ? "default" : "outline"}
-                  onClick={() => setInputMethod("paste")}
-                  size="sm"
-                  className="rounded-full"
-                >
-                  <Clipboard className="h-4 w-4 mr-2" />
-                  Paste Text
-                </Button>
-                <Button
-                  variant={inputMethod === "upload" ? "default" : "outline"}
-                  size="sm"
-                  className="rounded-full"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {/*Upload File coming soon */}
-                </Button>
-                 <Button
-                  variant={inputMethod === "upload" ? "default" : "outline"}
-                  onClick={() => setInputMethod("upload")}
-                  size="sm"
-                  className="rounded-full"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload File 
-                </Button> 
-              </div>
 
-              {inputMethod === "paste" ? (
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary" />
-                    Resume Text
-                  </Label>
-                  <div className="relative">
-                    <Textarea
-                      placeholder="Paste your resume text here..."
-                      className="min-h-[250px] resize-none border-primary/20 focus-visible:ring-primary"
-                      value={resumeText}
-                      onChange={(e) => setResumeText(e.target.value)}
-                    />
-                    <div className="flex justify-between items-center mt-1">
-                      <p className="text-xs text-muted-foreground">
-                        ⚠️ Tip: For best results, keep your resume under 3-4 pages or <strong>below 3500 words</strong>.
-                      </p>
-                      {resumeText && (
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs text-muted-foreground">
-                            <strong>{resumeText.trim().split(/\s+/).length} words</strong>
-                          </p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={async () => {
-                              try {
-                                const response = await fetch('/api/debug-resume-text', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ resumeText })
-                                });
-                                const data = await response.json();
-                                console.log('Resume debug data:', data);
-                                toast({
-                                  title: "Debug Info",
-                                  description: `${data.analysis.totalWords} words, ${data.analysis.totalLines} lines. Check console for details.`,
-                                });
-                              } catch (error) {
-                                console.error('Debug failed:', error);
-                              }
-                            }}
-                          >
-                            Debug
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Resume Text
+                </Label>
+                <div className="relative">
+                  <Textarea
+                    placeholder="Paste your resume text here... (Copy from PDF, Word doc, or any text source)"
+                    className="min-h-[300px] resize-none border-primary/20 focus-visible:ring-primary"
+                    value={resumeText}
+                    onChange={(e) => setResumeText(e.target.value)}
+                  />
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-xs text-muted-foreground">
+                      💡 <strong>Tip:</strong> Copy text from your PDF/Word resume and paste here. Keep under <strong>3500 words</strong> for best results.
+                    </p>
+                    {resumeText && (
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">
+                          <strong>{resumeText.trim().split(/\s+/).length} words</strong>
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/debug-resume-text', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ resumeText })
+                              });
+                              const data = await response.json();
+                              console.log('Resume debug data:', data);
+                              toast({
+                                title: "Debug Info",
+                                description: `${data.analysis.totalWords} words, ${data.analysis.totalLines} lines. Check console for details.`,
+                              });
+                            } catch (error) {
+                              console.error('Debug failed:', error);
+                            }
+                          }}
+                        >
+                          Debug
+                        </Button>
+                      </div>
+                    )}
+                  </div>
 
                     {rawAIOutput && (
                       <div className="mt-6 border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10 rounded-xl p-4 space-y-3">
@@ -493,58 +455,6 @@ export function AIResumeEnhancer() {
                     )}
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <FileUp className="h-4 w-4 text-primary" />
-                    Upload Resume
-                  </Label>
-                  <div className="border-2 border-dashed border-primary/20 rounded-lg p-6 text-center bg-muted/10">
-                    <FileUp className="h-10 w-10 text-primary/50 mx-auto mb-4" />
-                    <h3 className="text-base font-medium mb-2">Upload Your Resume</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Drag and drop your resume file here, or click to browse
-                    </p>
-
-                    <SimpleFileUpload
-                      onFileProcessed={(text, fileName, fileSize) => {
-                        setResumeText(text);
-                        setUploadedFile({ name: fileName, size: fileSize });
-                      }}
-                      onError={(error) => {
-                        if (error.includes("Sign up")) {
-                          setShowSignUpModal(true);
-                        }
-                        toast({
-                          title: "Upload Error",
-                          description: error,
-                          variant: "destructive",
-                        });
-                      }}
-                      isLoading={isLoading}
-                      disabled={isLoading}
-                    />
-
-                    {uploadedFile && (
-                      <div className="mt-4 flex items-center justify-center gap-2 text-sm">
-                        <Badge variant="outline" className="bg-primary/5 text-primary">
-                          <FileText className="h-3.5 w-3.5 mr-1" />
-                          {uploadedFile.name} ({Math.round(uploadedFile.size / 1024)} KB)
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {uploadedFile && inputMethod === "paste" && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded-md">
-                  <FileText className="h-4 w-4 text-primary" />
-                  <span>
-                    Using text from: {uploadedFile.name} ({Math.round(uploadedFile.size / 1024)} KB)
-                  </span>
-                </div>
-              )}
 
               {/* Credit cost information */}
               <div className="bg-muted/30 p-4 rounded-lg border border-primary/10">
