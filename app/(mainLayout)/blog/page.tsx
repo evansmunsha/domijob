@@ -67,6 +67,61 @@ export default async function BlogPage() {
   const featuredPost = posts.find(post => post.featured)
   const otherPosts = posts.filter(post => !post.featured)
 
+  // If no posts exist, show empty state
+  if (posts.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center max-w-2xl mx-auto">
+            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="h-12 w-12 text-primary" />
+            </div>
+            <h1 className="text-4xl font-bold mb-4">Blog Coming Soon!</h1>
+            <p className="text-xl text-muted-foreground mb-8">
+              We're working on creating amazing content to help accelerate your career.
+              Check back soon for expert tips, industry insights, and career guidance.
+            </p>
+            <div className="space-y-4">
+              <p className="text-muted-foreground">
+                In the meantime, try our AI-powered tools:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild size="lg">
+                  <Link href="/ai-tools/resume-enhancer">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Enhance Your Resume
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link href="/jobs">
+                    <Search className="h-4 w-4 mr-2" />
+                    Find Jobs
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Newsletter Signup */}
+            <div className="mt-12">
+              <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold mb-2">Get Notified When We Launch</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Be the first to read our career insights and job search tips
+                  </p>
+                  <div className="flex gap-2 max-w-md mx-auto">
+                    <Input placeholder="Enter your email" className="flex-1" />
+                    <Button>Subscribe</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       {/* Hero Section */}

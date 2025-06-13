@@ -36,13 +36,19 @@ export function NewsletterSignup({ variant = "default", source = "website" }: Ne
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!email) {
       toast.error("Please enter your email address")
       return
     }
 
+    if (!email.includes("@")) {
+      toast.error("Please enter a valid email address")
+      return
+    }
+
     setIsLoading(true)
+    console.log("Subscribing email:", email)
 
     try {
       const response = await fetch("/api/newsletter/subscribe", {
@@ -58,17 +64,21 @@ export function NewsletterSignup({ variant = "default", source = "website" }: Ne
         }),
       })
 
+      console.log("Response status:", response.status)
       const data = await response.json()
+      console.log("Response data:", data)
 
       if (response.ok) {
         setIsSubscribed(true)
-        toast.success("Successfully subscribed to newsletter!")
+        toast.success("🎉 Successfully subscribed to newsletter!")
+        setEmail("") // Clear the email field
       } else {
-        toast.error(data.error || "Failed to subscribe")
+        console.error("Subscription error:", data)
+        toast.error(data.error || "Failed to subscribe. Please try again.")
       }
     } catch (error) {
       console.error("Newsletter subscription error:", error)
-      toast.error("Something went wrong. Please try again.")
+      toast.error("Network error. Please check your connection and try again.")
     } finally {
       setIsLoading(false)
     }
