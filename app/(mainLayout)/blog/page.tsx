@@ -1,258 +1,373 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, ArrowRight, User } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Calendar, Clock, ArrowRight, User, Search, TrendingUp, BookOpen, Eye } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { prisma } from "@/app/utils/db"
+import { Suspense } from "react"
 
-// Mock blog posts - in production, this would come from a CMS or database
-const blogPosts = [
-  {
-    id: "ai-resume-optimization-2024",
-    title: "AI Resume Optimization: The Complete Guide for 2024",
-    excerpt: "Learn how artificial intelligence is revolutionizing resume writing and how to leverage AI tools to create a resume that gets noticed by both ATS systems and hiring managers.",
-    content: `
-# AI Resume Optimization: The Complete Guide for 2024
+async function getBlogPosts() {
+  const posts = await prisma.blogPost.findMany({
+    where: { published: true },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      },
+      _count: {
+        select: {
+          comments: {
+            where: { approved: true }
+          }
+        }
+      }
+    },
+    orderBy: [
+      { featured: "desc" },
+      { publishedAt: "desc" }
+    ],
+    take: 20
+  })
 
-In today's competitive job market, your resume needs to stand out not just to human recruiters, but also to Applicant Tracking Systems (ATS) that screen resumes before they ever reach human eyes. This is where AI-powered resume optimization comes in.
+  return posts
+}
 
-## Why AI Resume Optimization Matters
+async function getBlogStats() {
+  const [totalPosts, totalViews, categories] = await Promise.all([
+    prisma.blogPost.count({ where: { published: true } }),
+    prisma.blogPost.aggregate({
+      where: { published: true },
+      _sum: { views: true }
+    }),
+    prisma.blogPost.groupBy({
+      by: ["category"],
+      where: { published: true },
+      _count: true,
+      orderBy: { _count: { category: "desc" } }
+    })
+  ])
 
-Over 98% of Fortune 500 companies use ATS systems to filter resumes. These systems scan for specific keywords, formatting, and structure. A resume that isn't optimized for ATS might never be seen by a human recruiter, regardless of your qualifications.
-
-## Key Benefits of AI Resume Optimization
-
-### 1. ATS Compatibility
-AI tools analyze your resume against ATS requirements, ensuring proper formatting and keyword optimization.
-
-### 2. Keyword Optimization
-AI identifies industry-specific keywords that are crucial for your target role and suggests where to incorporate them naturally.
-
-### 3. Content Enhancement
-AI can suggest improvements to your bullet points, making them more impactful and results-oriented.
-
-### 4. Personalization at Scale
-AI enables you to quickly customize your resume for different job applications while maintaining quality.
-
-## How to Use AI for Resume Optimization
-
-### Step 1: Choose the Right AI Tool
-Look for tools that offer:
-- ATS compatibility checking
-- Keyword analysis
-- Content suggestions
-- Industry-specific optimization
-
-### Step 2: Input Your Current Resume
-Upload or paste your existing resume into the AI tool. The more complete your information, the better the AI can help.
-
-### Step 3: Analyze the Results
-Review the AI's suggestions for:
-- Missing keywords
-- Formatting issues
-- Content improvements
-- Structure optimization
-
-### Step 4: Implement Changes Strategically
-Don't blindly accept all suggestions. Use your judgment to maintain authenticity while incorporating valuable improvements.
-
-## Best Practices for AI-Optimized Resumes
-
-1. **Keep it authentic**: AI should enhance your real experience, not fabricate it
-2. **Maintain readability**: Ensure your resume is still easy for humans to read
-3. **Regular updates**: Re-optimize your resume as you gain new skills and experience
-4. **Test different versions**: A/B test different optimizations to see what works best
-
-## Common Mistakes to Avoid
-
-- Over-stuffing keywords
-- Losing your personal voice
-- Ignoring industry-specific requirements
-- Not updating regularly
-
-## The Future of AI Resume Optimization
-
-As AI technology continues to evolve, we can expect even more sophisticated features like:
-- Real-time job market analysis
-- Predictive career path suggestions
-- Dynamic resume adaptation
-- Integration with professional networks
-
-## Conclusion
-
-AI resume optimization is no longer optional—it's essential for job search success in 2024. By leveraging AI tools effectively, you can ensure your resume gets past ATS systems and into the hands of hiring managers.
-
-Ready to optimize your resume with AI? Try our free resume enhancement tool and see the difference AI can make in your job search.
-    `,
-    author: "DomiJob Team",
-    publishedAt: "2024-01-15",
-    readTime: "8 min read",
-    category: "Resume Tips",
-    tags: ["AI", "Resume", "Job Search", "ATS"],
-    featured: true,
-    image: "/blog/ai-resume-optimization.jpg"
-  },
-  {
-    id: "job-search-strategies-2024",
-    title: "5 Job Search Strategies That Actually Work in 2024",
-    excerpt: "Discover the most effective job search strategies for 2024, from leveraging AI tools to building meaningful professional networks.",
-    content: "# 5 Job Search Strategies That Actually Work in 2024\n\nThe job market has evolved significantly...",
-    author: "Career Expert",
-    publishedAt: "2024-01-10",
-    readTime: "6 min read",
-    category: "Job Search",
-    tags: ["Job Search", "Career", "Networking"],
-    featured: false,
-    image: "/blog/job-search-strategies.jpg"
-  },
-  {
-    id: "remote-work-resume-tips",
-    title: "How to Showcase Remote Work Experience on Your Resume",
-    excerpt: "Learn how to effectively highlight your remote work experience and skills to stand out in today's hybrid work environment.",
-    content: "# How to Showcase Remote Work Experience on Your Resume\n\nRemote work has become the norm...",
-    author: "Remote Work Specialist",
-    publishedAt: "2024-01-05",
-    readTime: "5 min read",
-    category: "Remote Work",
-    tags: ["Remote Work", "Resume", "Skills"],
-    featured: false,
-    image: "/blog/remote-work-resume.jpg"
+  return {
+    totalPosts,
+    totalViews: totalViews._sum.views || 0,
+    categories
   }
-]
+}
+export default async function BlogPage() {
+  const [posts, stats] = await Promise.all([
+    getBlogPosts(),
+    getBlogStats()
+  ])
 
-export default function BlogPage() {
-  const featuredPost = blogPosts.find(post => post.featured)
-  const otherPosts = blogPosts.filter(post => !post.featured)
+  const featuredPost = posts.find(post => post.featured)
+  const otherPosts = posts.filter(post => !post.featured)
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Career Insights & Tips</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Expert advice, industry insights, and practical tips to accelerate your career growth
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+        <div className="container mx-auto px-4 py-16 relative">
+          <div className="text-center mb-8">
+            <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary border-primary/20">
+              <BookOpen className="h-3 w-3 mr-1" />
+              Career Blog
+            </Badge>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Career Insights & Tips
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+              Expert advice, industry insights, and practical tips to accelerate your career growth
+            </p>
 
-      {/* Featured Post */}
-      {featuredPost && (
-        <div className="mb-12">
-          <Card className="overflow-hidden border-primary/20">
-            <div className="md:flex">
-              <div className="md:w-1/2">
-                <div className="h-64 md:h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <Badge className="mb-4">Featured Article</Badge>
-                    <h2 className="text-2xl font-bold mb-4">{featuredPost.title}</h2>
-                    <p className="text-muted-foreground mb-6">{featuredPost.excerpt}</p>
-                    <Button asChild>
-                      <Link href={`/blog/${featuredPost.id}`}>
-                        Read Article <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
+            {/* Stats */}
+            <div className="flex flex-wrap justify-center gap-6 mb-8">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BookOpen className="h-4 w-4 text-primary" />
+                <span>{stats.totalPosts} Articles</span>
               </div>
-              <div className="md:w-1/2 p-6">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                  <div className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    {featuredPost.author}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(featuredPost.publishedAt).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {featuredPost.readTime}
-                  </div>
-                </div>
-                <Badge variant="secondary" className="mb-4">
-                  {featuredPost.category}
-                </Badge>
-                <div className="space-y-4">
-                  <h3 className="font-semibold">What you'll learn:</h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• How AI is changing resume optimization</li>
-                    <li>• Best practices for ATS compatibility</li>
-                    <li>• Common mistakes to avoid</li>
-                    <li>• Future trends in resume technology</li>
-                  </ul>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-6">
-                  {featuredPost.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Eye className="h-4 w-4 text-primary" />
+                <span>{stats.totalViews.toLocaleString()} Views</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span>{stats.categories.length} Categories</span>
               </div>
             </div>
-          </Card>
+
+            {/* Search */}
+            <div className="max-w-md mx-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search articles..."
+                  className="pl-10 bg-background/50 backdrop-blur-sm border-primary/20"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      )}
-
-      {/* Other Posts Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {otherPosts.map((post) => (
-          <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="h-48 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-              <div className="text-center p-4">
-                <Badge variant="secondary" className="mb-2">
-                  {post.category}
-                </Badge>
-                <h3 className="font-semibold text-sm">{post.title}</h3>
-              </div>
-            </div>
-            <CardHeader>
-              <CardTitle className="text-lg line-clamp-2">{post.title}</CardTitle>
-              <CardDescription className="line-clamp-3">{post.excerpt}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {new Date(post.publishedAt).toLocaleDateString()}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {post.readTime}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1 mb-4">
-                {post.tags.slice(0, 2).map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              <Button asChild variant="outline" className="w-full">
-                <Link href={`/blog/${post.id}`}>
-                  Read More
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
       </div>
 
-      {/* Newsletter Signup */}
-      <Card className="mt-12 bg-primary/5 border-primary/20">
-        <CardHeader className="text-center">
-          <CardTitle>Stay Updated</CardTitle>
-          <CardDescription>
-            Get the latest career tips and job search strategies delivered to your inbox
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-center">
-          <Button asChild size="lg">
-            <Link href="/newsletter">
-              Subscribe to Newsletter
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="container mx-auto px-4 pb-16">
+        {/* Featured Post */}
+        {featuredPost && (
+          <div className="mb-16">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2">Featured Article</h2>
+              <p className="text-muted-foreground">Our most popular career insight</p>
+            </div>
+
+            <Card className="overflow-hidden border-primary/20 shadow-xl bg-gradient-to-br from-background to-muted/20">
+              <div className="lg:flex">
+                <div className="lg:w-1/2">
+                  <div className="h-64 lg:h-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-grid-pattern opacity-10" />
+                    <div className="text-center p-8 relative z-10">
+                      <Badge className="mb-4 bg-primary text-primary-foreground">
+                        ⭐ Featured Article
+                      </Badge>
+                      <h3 className="text-2xl lg:text-3xl font-bold mb-4 leading-tight">
+                        {featuredPost.title}
+                      </h3>
+                      <p className="text-muted-foreground mb-6 text-lg">
+                        {featuredPost.excerpt}
+                      </p>
+                      <Button asChild size="lg" className="shadow-lg">
+                        <Link href={`/blog/${featuredPost.slug}`}>
+                          Read Article <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="lg:w-1/2 p-8">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="font-medium">{featuredPost.author.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(featuredPost.publishedAt!).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {featuredPost.readTime} min read
+                    </div>
+                  </div>
+
+                  <Badge variant="secondary" className="mb-6 bg-primary/10 text-primary">
+                    {featuredPost.category}
+                  </Badge>
+
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="font-semibold mb-3 text-lg">Article Highlights:</h4>
+                      <ul className="space-y-2 text-muted-foreground">
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                          <span>AI-powered resume optimization techniques</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                          <span>ATS compatibility best practices</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                          <span>Common resume mistakes to avoid</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                          <span>Future trends in career technology</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {featuredPost.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs hover:bg-primary/10 transition-colors">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground pt-4 border-t">
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-4 w-4" />
+                        <span>{featuredPost.views.toLocaleString()} views</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <TrendingUp className="h-4 w-4" />
+                        <span>{featuredPost._count.comments} comments</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Categories Filter */}
+        <div className="mb-12">
+          <h3 className="text-2xl font-bold mb-6 text-center">Browse by Category</h3>
+          <div className="flex flex-wrap justify-center gap-3">
+            {stats.categories.map((category) => (
+              <Badge
+                key={category.category}
+                variant="outline"
+                className="px-4 py-2 hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+              >
+                {category.category} ({category._count})
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Latest Articles */}
+        <div className="mb-16">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold mb-2">Latest Articles</h3>
+            <p className="text-muted-foreground">Stay updated with our newest career insights</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {otherPosts.map((post) => (
+              <Card key={post.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-background to-muted/20">
+                <div className="h-48 bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+                  <div className="text-center p-6 relative z-10">
+                    <Badge variant="secondary" className="mb-3 bg-primary/10 text-primary">
+                      {post.category}
+                    </Badge>
+                    <h4 className="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors">
+                      {post.title}
+                    </h4>
+                  </div>
+                </div>
+
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                    {post.title}
+                  </CardTitle>
+                  <CardDescription className="line-clamp-3 text-sm">
+                    {post.excerpt}
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="pt-0">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                    <div className="flex items-center gap-1">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-3 w-3 text-primary" />
+                      </div>
+                      <span>{post.author.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(post.publishedAt!).toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {post.readTime} min
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {post.views}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {post.tags.slice(0, 3).map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-xs hover:bg-primary/10 transition-colors">
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <Button asChild variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Link href={`/blog/${post.slug}`}>
+                      Read Article
+                      <ArrowRight className="ml-2 h-3 w-3" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Newsletter Signup */}
+        <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20 shadow-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+          <CardHeader className="text-center relative z-10">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl mb-2">Stay Ahead in Your Career</CardTitle>
+            <CardDescription className="text-lg">
+              Get weekly career insights, job search tips, and exclusive resources delivered to your inbox
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center relative z-10">
+            <div className="max-w-md mx-auto space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter your email address"
+                  className="flex-1 bg-background/50 backdrop-blur-sm"
+                />
+                <Button size="lg" className="px-8">
+                  Subscribe
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Join 10,000+ professionals. Unsubscribe anytime.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 text-sm">
+              <div className="text-center">
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-muted-foreground">Weekly Tips</span>
+              </div>
+              <div className="text-center">
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-muted-foreground">Career Guides</span>
+              </div>
+              <div className="text-center">
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Search className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-muted-foreground">Job Alerts</span>
+              </div>
+              <div className="text-center">
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-muted-foreground">Expert Advice</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

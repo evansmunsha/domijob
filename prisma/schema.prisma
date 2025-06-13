@@ -49,6 +49,11 @@ model User {
 
   chatThreads ChatThread[]
 
+  // Blog and Newsletter
+  BlogPost BlogPost[]
+  BlogComment BlogComment[]
+  NewsletterSubscription NewsletterSubscription?
+
   affiliate Affiliate?
   referredByCode String?
   affiliateReferrals AffiliateReferral[]
@@ -518,5 +523,111 @@ model CreditTransaction {
 
   @@index([userId])
   @@index([type])
+}
+
+// Blog System
+model BlogPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String   @db.Text
+  content     String   @db.Text
+  published   Boolean  @default(false)
+  featured    Boolean  @default(false)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  category    String
+  tags        String[]
+  readTime    Int      // in minutes
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  image       String?
+  metaTitle   String?
+  metaDescription String? @db.Text
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  comments    BlogComment[]
+
+  @@index([slug])
+  @@index([published])
+  @@index([category])
+  @@index([authorId])
+  @@index([publishedAt])
+}
+
+model BlogComment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  postId    String
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    BlogComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   BlogComment[] @relation("CommentReplies")
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([approved])
+}
+
+// Newsletter System
+model NewsletterSubscription {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  userId      String?  @unique
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status      SubscriptionStatus @default(ACTIVE)
+  preferences Json?    // Store subscription preferences
+  source      String?  // Where they subscribed from
+  tags        String[] // Segmentation tags
+  confirmedAt DateTime?
+  unsubscribedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([userId])
+}
+
+model NewsletterCampaign {
+  id          String   @id @default(cuid())
+  name        String
+  subject     String
+  content     String   @db.Text
+  htmlContent String?  @db.Text
+  status      CampaignStatus @default(DRAFT)
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  recipients  Int      @default(0)
+  opens       Int      @default(0)
+  clicks      Int      @default(0)
+  unsubscribes Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+  PENDING
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
 }
 
