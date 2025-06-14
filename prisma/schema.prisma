@@ -52,6 +52,7 @@ model User {
   // Blog and Newsletter
   BlogPost BlogPost[]
   BlogComment BlogComment[]
+  BlogLike BlogLike[]
   NewsletterSubscription NewsletterSubscription?
 
   affiliate Affiliate?
@@ -549,6 +550,7 @@ model BlogPost {
   updatedAt   DateTime @updatedAt
 
   comments    BlogComment[]
+  likes_rel   BlogLike[]
 
   @@index([slug])
   @@index([published])
@@ -574,6 +576,20 @@ model BlogComment {
   @@index([postId])
   @@index([authorId])
   @@index([approved])
+}
+
+// Blog Likes System
+model BlogLike {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId String
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
 }
 
 // Newsletter System

@@ -4,13 +4,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { 
-  Calendar, 
-  Clock, 
-  Eye, 
-  Heart, 
-  Share2, 
-  ArrowLeft, 
+import {
+  Calendar,
+  Clock,
+  Eye,
+  Heart,
+  Share2,
+  ArrowLeft,
   User,
   MessageSquare,
   BookOpen,
@@ -19,6 +19,8 @@ import {
 import Link from "next/link"
 import { prisma } from "@/app/utils/db"
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup"
+import { BlogInteractions } from "@/components/blog/BlogInteractions"
+import { CommentSection } from "@/components/blog/CommentSection"
 
 interface BlogPostPageProps {
   params: {
@@ -108,6 +110,20 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound()
   }
 
+  // Increment view count
+  try {
+    await prisma.blogPost.update({
+      where: { slug: params.slug },
+      data: {
+        views: {
+          increment: 1
+        }
+      }
+    })
+  } catch (error) {
+    console.error("Error incrementing views:", error)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       {/* Header */}
@@ -134,7 +150,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 {post.excerpt}
               </p>
 
-              <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-3 md:gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={post.author.image || ""} />
@@ -144,25 +160,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   </Avatar>
                   <span className="font-medium">{post.author.name}</span>
                 </div>
-                
+
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  <span>{new Date(post.publishedAt!).toLocaleDateString()}</span>
+                  <span className="hidden sm:inline">{new Date(post.publishedAt!).toLocaleDateString()}</span>
+                  <span className="sm:hidden">{new Date(post.publishedAt!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                 </div>
-                
+
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
-                  <span>{post.readTime} min read</span>
+                  <span>{post.readTime} min</span>
                 </div>
-                
+
                 <div className="flex items-center gap-1">
                   <Eye className="h-4 w-4" />
-                  <span>{post.views.toLocaleString()} views</span>
+                  <span>{post.views.toLocaleString()}</span>
                 </div>
-                
+
                 <div className="flex items-center gap-1">
                   <Heart className="h-4 w-4" />
-                  <span>{post.likes} likes</span>
+                  <span>{post.likes}</span>
                 </div>
               </div>
 
@@ -178,11 +195,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid lg:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-4 gap-6 lg:gap-8">
             {/* Main Content */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 order-2 lg:order-1">
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-8">
                   {/* Article Content */}
@@ -192,23 +209,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
                   <Separator className="my-8" />
 
-                  {/* Article Footer */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Button variant="outline" size="sm">
-                        <Heart className="h-4 w-4 mr-2" />
-                        Like ({post.likes})
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
-                      </Button>
-                    </div>
-                    
-                    <div className="text-sm text-muted-foreground">
-                      {post.views.toLocaleString()} views
-                    </div>
-                  </div>
+                  {/* Interactive Features */}
+                  <BlogInteractions
+                    postId={post.id}
+                    postTitle={post.title}
+                    postUrl={`${process.env.NEXT_PUBLIC_URL || 'https://domijob.vercel.app'}/blog/${post.slug}`}
+                    initialLikes={post.likes}
+                    initialComments={post.comments.length}
+                    views={post.views}
+                  />
                 </CardContent>
               </Card>
 
@@ -239,76 +248,16 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </Card>
 
               {/* Comments Section */}
-              {post.comments.length > 0 && (
-                <Card className="mt-8">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5" />
-                      Comments ({post.comments.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {post.comments.map((comment) => (
-                      <div key={comment.id} className="space-y-3">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage src={comment.author?.image || ""} />
-                            <AvatarFallback>
-                              {comment.author?.name?.charAt(0) || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm">
-                                {comment.author?.name || "Anonymous"}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(comment.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {comment.content}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Replies */}
-                        {comment.replies.length > 0 && (
-                          <div className="ml-8 space-y-3">
-                            {comment.replies.map((reply) => (
-                              <div key={reply.id} className="flex items-start gap-3">
-                                <Avatar className="w-6 h-6">
-                                  <AvatarImage src={reply.author?.image || ""} />
-                                  <AvatarFallback className="text-xs">
-                                    {reply.author?.name?.charAt(0) || "U"}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-medium text-xs">
-                                      {reply.author?.name || "Anonymous"}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {new Date(reply.createdAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    {reply.content}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
+              <div className="mt-8">
+                <CommentSection
+                  postId={post.id}
+                  comments={post.comments}
+                />
+              </div>
             </div>
 
             {/* Sidebar */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-1 order-1 lg:order-2 space-y-4 lg:space-y-6">
               {/* Newsletter Signup */}
               <NewsletterSignup variant="sidebar" source="blog_post" />
 
