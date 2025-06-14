@@ -251,7 +251,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="mt-8">
                 <CommentSection
                   postId={post.id}
-                  comments={post.comments}
+                  comments={post.comments.map(comment => ({
+                    ...comment,
+                    createdAt: comment.createdAt.toISOString(),
+                    replies: comment.replies.map(reply => ({
+                      ...reply,
+                      createdAt: reply.createdAt.toISOString(),
+                      replies: [] // Replies don't have nested replies
+                    }))
+                  }))}
                 />
               </div>
             </div>

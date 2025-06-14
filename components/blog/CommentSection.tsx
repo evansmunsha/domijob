@@ -20,7 +20,12 @@ import Link from "next/link"
 interface Comment {
   id: string
   content: string
-  createdAt: string
+  createdAt: string | Date
+  authorId: string | null
+  postId: string
+  parentId: string | null
+  approved: boolean
+  updatedAt: Date
   author: {
     id: string
     name: string | null
