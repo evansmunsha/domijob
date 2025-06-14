@@ -120,16 +120,27 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("Blog post creation started...")
+
     const session = await auth()
-    
+    console.log("Session:", session?.user?.email, session?.user?.userType)
+
     if (!session?.user || session.user.userType !== "ADMIN") {
+      console.log("Unauthorized access attempt")
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Unauthorized - Admin access required" },
         { status: 401 }
       )
     }
 
     const body = await request.json()
+    console.log("Request body received:", {
+      title: body.title,
+      slug: body.slug,
+      category: body.category,
+      published: body.published
+    })
+
     const {
       title,
       slug,
@@ -147,24 +158,37 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!title || !slug || !excerpt || !content || !category) {
+      console.log("Missing required fields:", { title: !!title, slug: !!slug, excerpt: !!excerpt, content: !!content, category: !!category })
       return NextResponse.json(
-        { error: "Missing required fields" },
+        {
+          error: "Missing required fields",
+          details: {
+            title: !title ? "Title is required" : null,
+            slug: !slug ? "Slug is required" : null,
+            excerpt: !excerpt ? "Excerpt is required" : null,
+            content: !content ? "Content is required" : null,
+            category: !category ? "Category is required" : null
+          }
+        },
         { status: 400 }
       )
     }
 
     // Check if slug already exists
+    console.log("Checking if slug exists:", slug)
     const existingPost = await prisma.blogPost.findUnique({
       where: { slug }
     })
 
     if (existingPost) {
+      console.log("Slug already exists:", slug)
       return NextResponse.json(
-        { error: "Slug already exists" },
+        { error: "Slug already exists. Please choose a different URL slug." },
         { status: 400 }
       )
     }
 
+    console.log("Creating blog post...")
     const post = await prisma.blogPost.create({
       data: {
         title,
@@ -193,11 +217,34 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log("Blog post created successfully:", post.id)
     return NextResponse.json(post, { status: 201 })
   } catch (error) {
     console.error("Error creating blog post:", error)
+
+    // Provide more specific error messages
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: "A blog post with this slug already exists" },
+        { status: 400 }
+      )
+    } else if (error.code === 'P2021') {
+      return NextResponse.json(
+        { error: "Database table does not exist. Please run database migration." },
+        { status: 500 }
+      )
+    } else if (error.message.includes('does not exist')) {
+      return NextResponse.json(
+        { error: "Database tables not found. Please run: npx prisma db push" },
+        { status: 500 }
+      )
+    }
+
     return NextResponse.json(
-      { error: "Failed to create blog post" },
+      {
+        error: "Failed to create blog post",
+        details: error.message
+      },
       { status: 500 }
     )
   }
