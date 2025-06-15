@@ -21,6 +21,7 @@ import { prisma } from "@/app/utils/db"
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup"
 import { BlogInteractions } from "@/components/blog/BlogInteractions"
 import { CommentSection } from "@/components/blog/CommentSection"
+import { serializeBlogPost, BlogPostDB } from "@/types/blog"
 
 interface BlogPostPageProps {
   params: {

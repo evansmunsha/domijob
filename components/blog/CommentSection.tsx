@@ -7,36 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { 
-  MessageSquare, 
-  Send, 
+import {
+  MessageSquare,
+  Send,
   Reply,
   Loader2,
   User
 } from "lucide-react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-
-interface Comment {
-  id: string
-  content: string
-  createdAt: string | Date
-  authorId: string | null
-  postId: string
-  parentId: string | null
-  approved: boolean
-  updatedAt: Date
-  author: {
-    id: string
-    name: string | null
-    image: string | null
-  } | null
-  replies: Comment[]
-}
+import { BlogComment } from "@/types/blog"
 
 interface CommentSectionProps {
   postId: string
-  comments: Comment[]
+  comments: BlogComment[]
 }
 
 export function CommentSection({ postId, comments: initialComments }: CommentSectionProps) {
