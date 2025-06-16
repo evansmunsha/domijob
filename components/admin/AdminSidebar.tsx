@@ -1,4 +1,4 @@
- "use client"
+"use client"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -12,13 +12,15 @@ import {
   Building,
   BarChartHorizontal,
   TrendingUp,
-  BookOpen
+  BookOpen,
+  MessageSquare
 } from "lucide-react"
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: Home },
   { name: "Growth", href: "/admin/growth", icon: TrendingUp },
   { name: "Blog", href: "/admin/blog", icon: BookOpen },
+  { name: "Comments", href: "/admin/comments", icon: MessageSquare },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Companies", href: "/admin/companies", icon: Building },
   { name: "Jobs", href: "/admin/jobs", icon: Briefcase },
