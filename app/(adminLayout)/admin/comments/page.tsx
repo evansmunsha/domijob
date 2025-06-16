@@ -28,6 +28,24 @@ function serializeComment(comment: any): BlogComment {
 async function getComments() {
   try {
     console.log("Fetching comments...")
+    
+    // First, let's try a simple query without any includes
+    const simpleComments = await prisma.blogComment.findMany({
+      where: {
+        parentId: null
+      }
+    })
+    
+    console.log("Simple query result:", {
+      total: simpleComments.length,
+      firstComment: simpleComments[0] ? {
+        id: simpleComments[0].id,
+        content: simpleComments[0].content,
+        approved: simpleComments[0].approved
+      } : null
+    })
+
+    // Now try the full query
     const comments = await prisma.blogComment.findMany({
       where: {
         parentId: null // Only top-level comments
@@ -71,7 +89,7 @@ async function getComments() {
       ]
     })
 
-    console.log("Found comments:", {
+    console.log("Full query result:", {
       total: comments.length,
       approved: comments.filter(c => c.approved).length,
       pending: comments.filter(c => !c.approved).length,
