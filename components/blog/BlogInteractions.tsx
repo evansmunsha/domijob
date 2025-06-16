@@ -49,7 +49,7 @@ export function BlogInteractions({
     setIsLiking(true)
     
     try {
-      const response = await fetch(`/api/blog/posts/${postId}/like`, {
+      const response = await fetch(`/api/blog/posts/by-id/${postId}/like`, {
         method: "POST",
       })
 
@@ -188,4 +188,4 @@ export function BlogInteractions({
       </div>
     </div>
   )
-}
+} 
