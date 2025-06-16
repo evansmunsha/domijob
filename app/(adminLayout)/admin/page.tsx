@@ -85,7 +85,7 @@ export default async function AdminDashboard() {
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <a 
               href="/admin/affiliate/payments" 
               className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -113,6 +113,16 @@ export default async function AdminDashboard() {
               <h3 className="font-semibold mb-1">User Management</h3>
               <p className="text-sm text-muted-foreground">
                 Manage users and permissions
+              </p>
+            </a>
+
+            <a 
+              href="/admin/comments" 
+              className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <h3 className="font-semibold mb-1">Comment Management</h3>
+              <p className="text-sm text-muted-foreground">
+                Review and approve blog comments
               </p>
             </a>
           </div>

@@ -147,7 +147,7 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`/api/blog/posts/${formData.slug}`, {
+      const response = await fetch(`/api/blog/posts/${params.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -182,7 +182,7 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`/api/blog/posts/${formData.slug}`, {
+      const response = await fetch(`/api/blog/posts/${params.id}`, {
         method: "DELETE",
       })
 

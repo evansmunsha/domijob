@@ -16,6 +16,14 @@ export interface BlogComment {
   approved: boolean
   author: BlogAuthor | null
   replies: BlogComment[]
+  post?: {
+    id: string
+    title: string
+    slug: string
+  }
+  _count?: {
+    replies: number
+  }
 }
 
 export interface BlogPost {
