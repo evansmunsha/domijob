@@ -27,6 +27,7 @@ function serializeComment(comment: any): BlogComment {
 
 async function getComments() {
   try {
+    console.log("Fetching comments...")
     const comments = await prisma.blogComment.findMany({
       where: {
         parentId: null // Only top-level comments
@@ -68,6 +69,19 @@ async function getComments() {
         { approved: "asc" },
         { createdAt: "desc" }
       ]
+    })
+
+    console.log("Found comments:", {
+      total: comments.length,
+      approved: comments.filter(c => c.approved).length,
+      pending: comments.filter(c => !c.approved).length,
+      firstComment: comments[0] ? {
+        id: comments[0].id,
+        content: comments[0].content,
+        approved: comments[0].approved,
+        author: comments[0].author?.name,
+        post: comments[0].post?.title
+      } : null
     })
 
     return comments.map(serializeComment)
