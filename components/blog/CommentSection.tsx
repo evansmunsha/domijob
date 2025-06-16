@@ -47,7 +47,7 @@ export function CommentSection({ postId, comments: initialComments }: CommentSec
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`/api/blog/posts/by-id/${postId}/comments`, {
+      const response = await fetch(`/api/blog/posts/${postId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -88,7 +88,7 @@ export function CommentSection({ postId, comments: initialComments }: CommentSec
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`/api/blog/posts/by-id/${postId}/comments`, {
+      const response = await fetch(`/api/blog/posts/${postId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
