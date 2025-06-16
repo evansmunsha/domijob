@@ -92,13 +92,23 @@ async function getComments() {
 }
 
 export default async function CommentsAdminPage() {
+  console.log("CommentsAdminPage: Starting...")
+  
   const session = await auth()
+  console.log("CommentsAdminPage: Session:", {
+    hasUser: !!session?.user,
+    userType: session?.user?.userType,
+    userId: session?.user?.id
+  })
 
   if (!session?.user || session.user.userType !== "ADMIN") {
+    console.log("CommentsAdminPage: Redirecting to login - not admin")
     redirect("/login")
   }
 
+  console.log("CommentsAdminPage: User is admin, fetching comments...")
   const comments = await getComments()
+  console.log("CommentsAdminPage: Comments fetched:", comments.length)
 
   return (
     <div className="space-y-6">
@@ -109,6 +119,20 @@ export default async function CommentsAdminPage() {
           Review and manage blog post comments
         </p>
       </div>
+
+      {/* Debug Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Debug Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Total Comments: {comments.length}</p>
+          <p>Approved: {comments.filter(c => c.approved).length}</p>
+          <p>Pending: {comments.filter(c => !c.approved).length}</p>
+          <p>User Type: {session.user.userType}</p>
+          <p>User ID: {session.user.id}</p>
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
