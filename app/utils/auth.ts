@@ -13,6 +13,7 @@ const GUEST_CREDIT_COOKIE = "domijob_guest_credits";
 const MAX_GUEST_CREDITS = 50;
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   providers: [
   GitHub({
     clientId: process.env.GITHUB_ID as string,
