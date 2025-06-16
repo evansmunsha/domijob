@@ -45,7 +45,7 @@ async function getComments() {
       } : null
     })
 
-    // Now try the full query
+    // Now try the full query (exact same as working API)
     const comments = await prisma.blogComment.findMany({
       where: {
         parentId: null // Only top-level comments
@@ -110,13 +110,32 @@ async function getComments() {
 }
 
 export default async function CommentsAdminPage() {
+  console.log("=== COMMENTS ADMIN PAGE STARTING ===")
+  
   const session = await auth()
+  console.log("CommentsAdminPage: Session:", {
+    hasUser: !!session?.user,
+    userType: session?.user?.userType,
+    userId: session?.user?.id
+  })
 
   if (!session?.user || session.user.userType !== "ADMIN") {
+    console.log("CommentsAdminPage: Redirecting to login - not admin")
     redirect("/login")
   }
 
+  console.log("CommentsAdminPage: User is admin, about to fetch comments...")
+  
+  // Test simple query first
+  try {
+    const testCount = await prisma.blogComment.count()
+    console.log("Test count query result:", testCount)
+  } catch (error) {
+    console.error("Test count query error:", error)
+  }
+  
   const comments = await getComments()
+  console.log("CommentsAdminPage: Comments fetched:", comments.length)
 
   return (
     <div className="space-y-6">
