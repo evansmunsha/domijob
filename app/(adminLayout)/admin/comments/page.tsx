@@ -110,6 +110,7 @@ async function getComments() {
 }
 
 export default async function CommentsAdminPage() {
+  console.log("=== COMMENTS ADMIN PAGE STARTING ===")
   console.log("CommentsAdminPage: Starting...")
   
   const session = await auth()
@@ -124,7 +125,16 @@ export default async function CommentsAdminPage() {
     redirect("/login")
   }
 
-  console.log("CommentsAdminPage: User is admin, fetching comments...")
+  console.log("CommentsAdminPage: User is admin, about to fetch comments...")
+  
+  try {
+    const comments = await getComments()
+    console.log("CommentsAdminPage: Comments fetched successfully:", comments.length)
+  } catch (error) {
+    console.error("CommentsAdminPage: Error in getComments:", error)
+    throw error
+  }
+  
   const comments = await getComments()
   console.log("CommentsAdminPage: Comments fetched:", comments.length)
 
@@ -149,6 +159,7 @@ export default async function CommentsAdminPage() {
           <p>Pending: {comments.filter(c => !c.approved).length}</p>
           <p>User Type: {session.user.userType}</p>
           <p>User ID: {session.user.id}</p>
+          <p>Timestamp: {new Date().toISOString()}</p>
         </CardContent>
       </Card>
 
