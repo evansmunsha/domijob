@@ -51,15 +51,19 @@ export function BlogInteractions({
     try {
       const response = await fetch(`/api/blog/posts/${postId}/like`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
 
       if (response.ok) {
         const data = await response.json()
         setLikes(data.likes)
-        setIsLiked(!isLiked)
-        toast.success(isLiked ? "Like removed" : "Post liked! ❤️")
+        setIsLiked(data.isLiked)
+        toast.success(data.isLiked ? "Post liked! ❤️" : "Like removed")
       } else {
-        toast.error("Failed to like post")
+        const data = await response.json()
+        toast.error(data.error || "Failed to like post")
       }
     } catch (error) {
       console.error("Error liking post:", error)
