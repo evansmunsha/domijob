@@ -110,33 +110,13 @@ async function getComments() {
 }
 
 export default async function CommentsAdminPage() {
-  console.log("=== COMMENTS ADMIN PAGE STARTING ===")
-  console.log("CommentsAdminPage: Starting...")
-  
   const session = await auth()
-  console.log("CommentsAdminPage: Session:", {
-    hasUser: !!session?.user,
-    userType: session?.user?.userType,
-    userId: session?.user?.id
-  })
 
   if (!session?.user || session.user.userType !== "ADMIN") {
-    console.log("CommentsAdminPage: Redirecting to login - not admin")
     redirect("/login")
   }
 
-  console.log("CommentsAdminPage: User is admin, about to fetch comments...")
-  
-  try {
-    const comments = await getComments()
-    console.log("CommentsAdminPage: Comments fetched successfully:", comments.length)
-  } catch (error) {
-    console.error("CommentsAdminPage: Error in getComments:", error)
-    throw error
-  }
-  
   const comments = await getComments()
-  console.log("CommentsAdminPage: Comments fetched:", comments.length)
 
   return (
     <div className="space-y-6">
