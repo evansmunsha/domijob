@@ -18,83 +18,46 @@ import {
 import Link from "next/link"
 import { CommentActions } from "./CommentActions"
 import { BlogComment } from "@/types/blog"
+import { auth } from "@/app/utils/auth"
+import { prisma } from "@/app/utils/db"
 
-export default function CommentsAdminPage() {
-  const { data: session, status } = useSession()
-  const [comments, setComments] = useState<BlogComment[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+function serializeComment(comment: any): BlogComment {
+  return {
+    ...comment,
+    createdAt: comment.createdAt.toISOString(),
+    updatedAt: comment.updatedAt.toISOString(),
+    replies: comment.replies.map(serializeComment)
+  }
+}
 
-  useEffect(() => {
-    if (status === "loading") return
-
-    if (!session?.user || session.user.userType !== "ADMIN") {
-      redirect("/login")
+async function getComments() {
+  try {
+    // Use the working API endpoint instead of direct database query
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/test/admin-comments`, {
+      cache: 'no-store'
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments')
     }
+    
+    const data = await response.json()
+    return data.fullQuery ? data.fullQuery.comments || [] : []
+  } catch (error) {
+    console.error("Error fetching comments:", error)
+    return []
+  }
+}
 
-    fetchComments()
-  }, [session, status])
+export default async function CommentsAdminPage() {
+  const session = await auth()
 
-  const fetchComments = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch("/api/test/admin-comments")
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch comments")
-      }
-      
-      const data = await response.json()
-      setComments(data.fullQuery ? data.fullQuery.comments || [] : [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch comments")
-    } finally {
-      setLoading(false)
-    }
+  if (!session?.user || session.user.userType !== "ADMIN") {
+    redirect("/login")
   }
 
-  if (status === "loading" || loading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Comment Management</h1>
-          <p className="text-muted-foreground">
-            Review and manage blog post comments
-          </p>
-        </div>
-        
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Loading comments...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Comment Management</h1>
-          <p className="text-muted-foreground">
-            Review and manage blog post comments
-          </p>
-        </div>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-600">{error}</p>
-            <Button onClick={fetchComments} className="mt-4">
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  const comments = await getComments()
 
   return (
     <div className="space-y-6">
@@ -115,8 +78,8 @@ export default function CommentsAdminPage() {
           <p>Total Comments: {comments.length}</p>
           <p>Approved: {comments.filter(c => c.approved).length}</p>
           <p>Pending: {comments.filter(c => !c.approved).length}</p>
-          <p>User Type: {session?.user?.userType}</p>
-          <p>User ID: {session?.user?.id}</p>
+          <p>User Type: {session.user.userType}</p>
+          <p>User ID: {session.user.id}</p>
           <p>Timestamp: {new Date().toISOString()}</p>
         </CardContent>
       </Card>
