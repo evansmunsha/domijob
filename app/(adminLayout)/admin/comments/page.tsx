@@ -1,5 +1,7 @@
-import { auth } from "@/app/utils/auth"
-import { prisma } from "@/app/utils/db"
+"use client"
+
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,132 +12,89 @@ import {
   MessageSquare,
   User,
   Calendar,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from "lucide-react"
 import Link from "next/link"
 import { CommentActions } from "./CommentActions"
 import { BlogComment } from "@/types/blog"
 
-function serializeComment(comment: any): BlogComment {
-  return {
-    ...comment,
-    createdAt: comment.createdAt.toISOString(),
-    updatedAt: comment.updatedAt.toISOString(),
-    replies: comment.replies.map(serializeComment)
-  }
-}
+export default function CommentsAdminPage() {
+  const { data: session, status } = useSession()
+  const [comments, setComments] = useState<BlogComment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-async function getComments() {
-  try {
-    console.log("Fetching comments...")
-    
-    // First, let's try a simple query without any includes
-    const simpleComments = await prisma.blogComment.findMany({
-      where: {
-        parentId: null
+  useEffect(() => {
+    if (status === "loading") return
+
+    if (!session?.user || session.user.userType !== "ADMIN") {
+      redirect("/login")
+    }
+
+    fetchComments()
+  }, [session, status])
+
+  const fetchComments = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch("/api/test/admin-comments")
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch comments")
       }
-    })
-    
-    console.log("Simple query result:", {
-      total: simpleComments.length,
-      firstComment: simpleComments[0] ? {
-        id: simpleComments[0].id,
-        content: simpleComments[0].content,
-        approved: simpleComments[0].approved
-      } : null
-    })
-
-    // Now try the full query (exact same as working API)
-    const comments = await prisma.blogComment.findMany({
-      where: {
-        parentId: null // Only top-level comments
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        },
-        post: {
-          select: {
-            id: true,
-            title: true,
-            slug: true
-          }
-        },
-        replies: {
-          include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                image: true
-              }
-            }
-          },
-          orderBy: { createdAt: "asc" }
-        },
-        _count: {
-          select: {
-            replies: true
-          }
-        }
-      },
-      orderBy: [
-        { approved: "asc" },
-        { createdAt: "desc" }
-      ]
-    })
-
-    console.log("Full query result:", {
-      total: comments.length,
-      approved: comments.filter(c => c.approved).length,
-      pending: comments.filter(c => !c.approved).length,
-      firstComment: comments[0] ? {
-        id: comments[0].id,
-        content: comments[0].content,
-        approved: comments[0].approved,
-        author: comments[0].author?.name,
-        post: comments[0].post?.title
-      } : null
-    })
-
-    return comments.map(serializeComment)
-  } catch (error) {
-    console.error("Error fetching comments:", error)
-    return []
-  }
-}
-
-export default async function CommentsAdminPage() {
-  console.log("=== COMMENTS ADMIN PAGE STARTING ===")
-  
-  const session = await auth()
-  console.log("CommentsAdminPage: Session:", {
-    hasUser: !!session?.user,
-    userType: session?.user?.userType,
-    userId: session?.user?.id
-  })
-
-  if (!session?.user || session.user.userType !== "ADMIN") {
-    console.log("CommentsAdminPage: Redirecting to login - not admin")
-    redirect("/login")
+      
+      const data = await response.json()
+      setComments(data.fullQuery ? data.fullQuery.comments || [] : [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch comments")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  console.log("CommentsAdminPage: User is admin, about to fetch comments...")
-  
-  // Test simple query first
-  try {
-    const testCount = await prisma.blogComment.count()
-    console.log("Test count query result:", testCount)
-  } catch (error) {
-    console.error("Test count query error:", error)
+  if (status === "loading" || loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Comment Management</h1>
+          <p className="text-muted-foreground">
+            Review and manage blog post comments
+          </p>
+        </div>
+        
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading comments...</span>
+        </div>
+      </div>
+    )
   }
-  
-  const comments = await getComments()
-  console.log("CommentsAdminPage: Comments fetched:", comments.length)
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Comment Management</h1>
+          <p className="text-muted-foreground">
+            Review and manage blog post comments
+          </p>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">{error}</p>
+            <Button onClick={fetchComments} className="mt-4">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -156,8 +115,8 @@ export default async function CommentsAdminPage() {
           <p>Total Comments: {comments.length}</p>
           <p>Approved: {comments.filter(c => c.approved).length}</p>
           <p>Pending: {comments.filter(c => !c.approved).length}</p>
-          <p>User Type: {session.user.userType}</p>
-          <p>User ID: {session.user.id}</p>
+          <p>User Type: {session?.user?.userType}</p>
+          <p>User ID: {session?.user?.id}</p>
           <p>Timestamp: {new Date().toISOString()}</p>
         </CardContent>
       </Card>
