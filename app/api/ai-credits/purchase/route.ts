@@ -6,6 +6,11 @@ import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
   try {
+    // Check if Stripe is configured
+    if (!stripe) {
+      return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 })
+    }
+
     const body = await req.json()
     const { packageId } = body
     console.log("🟡 packageId received:", packageId)

@@ -1,19 +1,11 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { 
-  Check,
-  X,
   MessageSquare,
-  User,
   Calendar,
-  ExternalLink,
-  Loader2
+  ExternalLink
 } from "lucide-react"
 import Link from "next/link"
 import { CommentActions } from "./CommentActions"
@@ -32,18 +24,50 @@ function serializeComment(comment: any): BlogComment {
 
 async function getComments(): Promise<BlogComment[]> {
   try {
-    // Use the working API endpoint instead of direct database query
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/test/admin-comments`, {
-      cache: 'no-store'
+    console.log("Fetching comments from database...")
+    
+    const comments = await prisma.blogComment.findMany({
+      where: {
+        parentId: null // Only top-level comments
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true
+          }
+        },
+        post: {
+          select: {
+            id: true,
+            title: true,
+            slug: true
+          }
+        },
+        replies: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                image: true
+              }
+            }
+          },
+          orderBy: { createdAt: "asc" }
+        },
+        _count: {
+          select: {
+            replies: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
     })
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch comments')
-    }
-    
-    const data = await response.json()
-    return data.fullQuery ? data.fullQuery.comments || [] : []
+
+    console.log(`Found ${comments.length} comments`)
+    return comments.map(serializeComment)
   } catch (error) {
     console.error("Error fetching comments:", error)
     return []
