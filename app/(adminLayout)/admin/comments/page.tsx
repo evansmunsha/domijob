@@ -24,8 +24,9 @@ function serializeComment(comment: any): BlogComment {
 
 async function getComments(): Promise<BlogComment[]> {
   try {
-    console.log("Fetching comments from database...")
+    console.log("🔍 Fetching comments from database...")
     
+    // Use a simpler query that matches the working test endpoint
     const comments = await prisma.blogComment.findMany({
       where: {
         parentId: null // Only top-level comments
@@ -66,22 +67,44 @@ async function getComments(): Promise<BlogComment[]> {
       orderBy: { createdAt: "desc" }
     })
 
-    console.log(`Found ${comments.length} comments`)
+    console.log(`✅ Found ${comments.length} comments in admin query`)
+    
+    // Log some debug info
+    comments.forEach((comment, index) => {
+      console.log(`Comment ${index + 1}:`, {
+        id: comment.id,
+        content: comment.content.substring(0, 30) + "...",
+        approved: comment.approved,
+        author: comment.author?.name || "Anonymous",
+        post: comment.post?.title || "Unknown"
+      })
+    })
+    
     return comments.map(serializeComment)
   } catch (error) {
-    console.error("Error fetching comments:", error)
+    console.error("❌ Error fetching comments:", error)
     return []
   }
 }
 
 export default async function CommentsAdminPage() {
+  console.log("🚀 CommentsAdminPage component starting...")
+  
   const session = await auth()
+  console.log("🔐 Session check:", {
+    hasSession: !!session,
+    userType: session?.user?.userType,
+    userId: session?.user?.id
+  })
 
   if (!session?.user || session.user.userType !== "ADMIN") {
+    console.log("❌ Not admin, redirecting to login")
     redirect("/login")
   }
 
+  console.log("✅ Admin authenticated, fetching comments...")
   const comments = await getComments()
+  console.log("📊 Comments fetched:", comments.length)
 
   return (
     <div className="space-y-6">

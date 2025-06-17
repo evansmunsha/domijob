@@ -3,16 +3,31 @@ import { prisma } from "@/app/utils/db"
 
 export async function GET() {
   try {
-    console.log("Test API: Fetching comments...")
+    console.log("🔍 Testing comments query...")
     
-    // Get all comments without any filters
-    const allComments = await prisma.blogComment.findMany({
+    // Simple count query
+    const totalComments = await prisma.blogComment.count()
+    console.log(`📊 Total comments in database: ${totalComments}`)
+    
+    // Count by approval status
+    const approvedComments = await prisma.blogComment.count({
+      where: { approved: true }
+    })
+    const pendingComments = await prisma.blogComment.count({
+      where: { approved: false }
+    })
+    
+    console.log(`✅ Approved comments: ${approvedComments}`)
+    console.log(`⏳ Pending comments: ${pendingComments}`)
+    
+    // Get a few sample comments
+    const sampleComments = await prisma.blogComment.findMany({
+      take: 5,
       include: {
         author: {
           select: {
             id: true,
-            name: true,
-            image: true
+            name: true
           }
         },
         post: {
@@ -22,62 +37,36 @@ export async function GET() {
             slug: true
           }
         }
-      }
-    })
-
-    console.log("Test API: Found comments:", {
-      total: allComments.length,
-      approved: allComments.filter(c => c.approved).length,
-      pending: allComments.filter(c => !c.approved).length
-    })
-
-    // Get only top-level comments (parentId is null)
-    const topLevelComments = await prisma.blogComment.findMany({
-      where: {
-        parentId: null
       },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        },
-        post: {
-          select: {
-            id: true,
-            title: true,
-            slug: true
-          }
-        }
-      }
+      orderBy: { createdAt: "desc" }
     })
-
-    console.log("Test API: Top-level comments:", {
-      total: topLevelComments.length,
-      approved: topLevelComments.filter(c => c.approved).length,
-      pending: topLevelComments.filter(c => !c.approved).length
-    })
-
+    
+    console.log(`📝 Sample comments:`, sampleComments.map(c => ({
+      id: c.id,
+      content: c.content.substring(0, 50) + "...",
+      approved: c.approved,
+      author: c.author?.name || "Anonymous",
+      post: c.post?.title || "Unknown"
+    })))
+    
     return NextResponse.json({
-      allComments: allComments.length,
-      topLevelComments: topLevelComments.length,
-      approved: topLevelComments.filter(c => c.approved).length,
-      pending: topLevelComments.filter(c => !c.approved).length,
-      sampleComment: topLevelComments[0] ? {
-        id: topLevelComments[0].id,
-        content: topLevelComments[0].content,
-        approved: topLevelComments[0].approved,
-        author: topLevelComments[0].author?.name,
-        post: topLevelComments[0].post?.title
-      } : null
+      success: true,
+      stats: {
+        total: totalComments,
+        approved: approvedComments,
+        pending: pendingComments
+      },
+      sampleComments: sampleComments.map(c => ({
+        id: c.id,
+        content: c.content,
+        approved: c.approved,
+        author: c.author?.name || "Anonymous",
+        post: c.post?.title || "Unknown",
+        createdAt: c.createdAt
+      }))
     })
   } catch (error) {
-    console.error("Test API: Error fetching comments:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch comments", details: error },
-      { status: 500 }
-    )
+    console.error("❌ Error in test endpoint:", error)
+    return NextResponse.json({ error: "Database error", details: error }, { status: 500 })
   }
 } 
