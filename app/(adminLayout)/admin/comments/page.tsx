@@ -30,7 +30,7 @@ function serializeComment(comment: any): BlogComment {
   }
 }
 
-async function getComments() {
+async function getComments(): Promise<BlogComment[]> {
   try {
     // Use the working API endpoint instead of direct database query
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
@@ -76,8 +76,8 @@ export default async function CommentsAdminPage() {
         </CardHeader>
         <CardContent>
           <p>Total Comments: {comments.length}</p>
-          <p>Approved: {comments.filter(c => c.approved).length}</p>
-          <p>Pending: {comments.filter(c => !c.approved).length}</p>
+          <p>Approved: {comments.filter((c: BlogComment) => c.approved).length}</p>
+          <p>Pending: {comments.filter((c: BlogComment) => !c.approved).length}</p>
           <p>User Type: {session.user.userType}</p>
           <p>User ID: {session.user.id}</p>
           <p>Timestamp: {new Date().toISOString()}</p>
@@ -94,7 +94,7 @@ export default async function CommentsAdminPage() {
           <CardContent>
             <div className="text-2xl font-bold">{comments.length}</div>
             <p className="text-xs text-muted-foreground">
-              {comments.filter(c => c.approved).length} approved
+              {comments.filter((c: BlogComment) => c.approved).length} approved
             </p>
           </CardContent>
         </Card>
@@ -106,7 +106,7 @@ export default async function CommentsAdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {comments.filter(c => !c.approved).length}
+              {comments.filter((c: BlogComment) => !c.approved).length}
             </div>
             <p className="text-xs text-muted-foreground">
               Awaiting review
@@ -121,7 +121,7 @@ export default async function CommentsAdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {comments.reduce((sum, comment) => sum + (comment._count?.replies ?? 0), 0)}
+              {comments.reduce((sum: number, comment: BlogComment) => sum + (comment._count?.replies ?? 0), 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Across all comments
@@ -140,7 +140,7 @@ export default async function CommentsAdminPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {comments.map((comment) => (
+            {comments.map((comment: BlogComment) => (
               <div key={comment.id} className="border rounded-lg p-4 space-y-4">
                 {/* Comment Header */}
                 <div className="flex items-start justify-between">
@@ -193,7 +193,7 @@ export default async function CommentsAdminPage() {
                 {/* Replies */}
                 {comment.replies.length > 0 && (
                   <div className="ml-8 space-y-3">
-                    {comment.replies.map((reply) => (
+                    {comment.replies.map((reply: BlogComment) => (
                       <div key={reply.id} className="border-l-2 pl-4 py-2">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">
