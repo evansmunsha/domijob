@@ -26,55 +26,63 @@ async function getComments(): Promise<BlogComment[]> {
   try {
     console.log("🔍 [getComments] Starting to fetch comments...")
     
-    // Get all comments with their replies and related data
-    const comments = await prisma.blogComment.findMany({
-      where: {
-        parentId: null // Only get top-level comments
-      },
+    // Get all posts with their comments
+    const posts = await prisma.blogPost.findMany({
+      where: { published: true },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            email: true
-          }
-        },
-        post: {
-          select: {
-            id: true,
-            title: true,
-            slug: true
-          }
-        },
-        replies: {
+        comments: {
+          where: { parentId: null }, // Only top-level comments
           include: {
             author: {
               select: {
                 id: true,
                 name: true,
-                image: true
+                image: true,
+                email: true
               }
+            },
+            replies: {
+              include: {
+                author: {
+                  select: {
+                    id: true,
+                    name: true,
+                    image: true
+                  }
+                }
+              },
+              orderBy: { createdAt: 'asc' }
+            },
+            _count: {
+              select: { replies: true }
             }
           },
-          orderBy: { createdAt: "asc" }
-        },
-        _count: {
-          select: {
-            replies: true
-          }
+          orderBy: [
+            { approved: 'asc' },  // Show unapproved first
+            { createdAt: 'desc' } // Newest first
+          ]
         }
       },
-      orderBy: [
-        { approved: 'asc' },  // Show unapproved first
-        { createdAt: 'desc' } // Newest first
-      ]
+      orderBy: { createdAt: 'desc' },
+      take: 50 // Limit number of posts to avoid too much data
     })
 
-    console.log(`✅ [getComments] Found ${comments.length} total comments`)
+    // Flatten comments from all posts
+    const allComments = posts.flatMap(post => 
+      post.comments.map(comment => ({
+        ...comment,
+        post: {
+          id: post.id,
+          title: post.title,
+          slug: post.slug
+        }
+      }))
+    )
+
+    console.log(`✅ [getComments] Found ${allComments.length} comments across ${posts.length} posts`)
     
     // Log some debug info
-    comments.forEach((comment, index) => {
+    allComments.forEach((comment, index) => {
       console.log(`📝 [getComments] Comment ${index + 1}:`, {
         id: comment.id,
         content: comment.content?.substring(0, 30) + "...",
@@ -82,16 +90,12 @@ async function getComments(): Promise<BlogComment[]> {
         author: comment.author ? `${comment.author.name} (${comment.author.email})` : 'No Author',
         post: comment.post?.title || "No Post",
         parentId: comment.parentId || 'None',
-        createdAt: comment.createdAt,
-        updatedAt: comment.updatedAt
+        replies: comment.replies?.length || 0,
+        createdAt: comment.createdAt
       })
     })
     
-    // Filter to only top-level comments for the main view
-    const topLevelComments = comments.filter(comment => comment.parentId === null)
-    console.log(`🔍 [getComments] Found ${topLevelComments.length} top-level comments`)
-    
-    return topLevelComments.map(serializeComment)
+    return allComments.map(serializeComment)
   } catch (error) {
     console.error("❌ [getComments] Error:", error)
     if (error instanceof Error) {
