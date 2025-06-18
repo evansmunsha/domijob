@@ -167,7 +167,7 @@ export default async function CommentsAdminPage() {
       
       // Direct comment query
       if (total === 0) {
-        const tableExists = await prisma.$queryRaw`SELECT to_regclass('public."BlogComment"') as exists`
+        const tableExists = await prisma.$queryRaw<{ exists: string | null }[]>`SELECT to_regclass('public."BlogComment"') as exists`
         const samplePosts = await prisma.blogPost.findMany({ take: 3 })
         
         debugInfo.directCommentCheck = {
