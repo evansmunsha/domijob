@@ -25,8 +25,8 @@ function serializeComment(comment: any): BlogComment {
 async function getComments(): Promise<BlogComment[]> {
   try {
     console.log("🔍 Fetching comments from database...")
+    console.log("Environment:", process.env.NODE_ENV)
     
-    // Use a simpler query that matches the working test endpoint
     const comments = await prisma.blogComment.findMany({
       where: {
         parentId: null // Only top-level comments
@@ -64,7 +64,10 @@ async function getComments(): Promise<BlogComment[]> {
           }
         }
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: [
+        { approved: 'asc' },  // Show unapproved comments first
+        { createdAt: 'desc' } // Then sort by creation date
+      ]
     })
 
     console.log(`✅ Found ${comments.length} comments in admin query`)
