@@ -91,26 +91,67 @@ async function getComments(): Promise<BlogComment[]> {
 }
 
 export default async function CommentsAdminPage() {
-  console.log("🚀 CommentsAdminPage component starting...")
-  
-  const session = await auth()
-  console.log("🔐 Session check:", {
-    hasSession: !!session,
-    userType: session?.user?.userType,
-    userId: session?.user?.id
-  })
-
-  if (!session?.user || session.user.userType !== "ADMIN") {
-    console.log("❌ Not admin, redirecting to login")
-    redirect("/login")
+  let debugInfo = {
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+    session: null as any,
+    error: null as string | null,
+    commentsCount: 0,
+    dbStats: null as any
   }
 
-  console.log("✅ Admin authenticated, fetching comments...")
-  const comments = await getComments()
-  console.log("📊 Comments fetched:", comments.length)
+  try {
+    const session = await auth()
+    debugInfo.session = {
+      userId: session?.user?.id,
+      userType: session?.user?.userType,
+      email: session?.user?.email,
+      isAdmin: session?.user?.userType === 'ADMIN'
+    }
 
-  return (
+    if (!session?.user || session.user.userType !== "ADMIN") {
+      debugInfo.error = 'Not an admin user'
+      console.error('Access denied - not an admin')
+      redirect("/login")
+    }
+
+    // Get database stats
+    try {
+      const [total, approved, pending] = await Promise.all([
+        prisma.blogComment.count(),
+        prisma.blogComment.count({ where: { approved: true }}),
+        prisma.blogComment.count({ where: { approved: false }})
+      ])
+      
+      debugInfo.dbStats = { total, approved, pending }
+      debugInfo.commentsCount = total
+    } catch (dbError) {
+      console.error('Error getting DB stats:', dbError)
+      debugInfo.error = 'Failed to get database stats'
+    }
+
+    const comments = await getComments()
+    debugInfo.commentsCount = comments.length
+
+    return (
     <div className="space-y-6">
+      {/* Debug Panel */}
+      <details className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <summary className="font-medium cursor-pointer text-sm text-gray-600 dark:text-gray-300">Debug Information</summary>
+        <div className="mt-2 p-3 bg-white dark:bg-gray-900 rounded text-xs overflow-auto">
+          <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <a 
+              href="/api/admin/debug/comments" 
+              target="_blank" 
+              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+            >
+              View Raw Comments Data (JSON)
+            </a>
+          </div>
+        </div>
+      </details>
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Comment Management</h1>
@@ -283,4 +324,36 @@ export default async function CommentsAdminPage() {
       </Card>
     </div>
   )
-} 
+} catch (error) {
+  debugInfo.error = error instanceof Error ? error.message : 'Unknown error'
+  console.error("❌ Error in CommentsAdminPage:", error)
+  
+  // Still render the page with error information
+  return (
+    <div className="space-y-6">
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
+        <h2 className="text-lg font-medium text-red-800 dark:text-red-200">Error Loading Comments</h2>
+        <p className="text-red-700 dark:text-red-300 text-sm mt-1">
+          An error occurred while loading comments. Showing debug information below.
+        </p>
+      </div>
+      
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
+        <h3 className="font-medium text-yellow-800 dark:text-yellow-200">Debug Information</h3>
+        <pre className="mt-2 p-3 bg-white dark:bg-gray-900 rounded text-xs overflow-auto">
+          {JSON.stringify(debugInfo, null, 2)}
+        </pre>
+        <div className="mt-3 pt-3 border-t border-yellow-200 dark:border-yellow-800">
+          <a 
+            href="/api/admin/debug/comments" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+          >
+            Try viewing raw comments data
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}}
