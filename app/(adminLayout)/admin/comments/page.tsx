@@ -26,13 +26,11 @@ async function getComments(): Promise<BlogComment[]> {
   try {
     console.log("🔍 [getComments] Starting to fetch comments...")
     
-    // First verify the database connection
-    const dbCheck = await prisma.$queryRaw`SELECT 1 as test`
-    console.log("🔌 [getComments] Database connection check:", dbCheck)
-    
-    // Get all comments without any filtering first
-    const allComments = await prisma.blogComment.findMany({
-      take: 50, // Limit to 50 for testing
+    // Get all comments with their replies and related data
+    const comments = await prisma.blogComment.findMany({
+      where: {
+        parentId: null // Only get top-level comments
+      },
       include: {
         author: {
           select: {
@@ -68,15 +66,15 @@ async function getComments(): Promise<BlogComment[]> {
         }
       },
       orderBy: [
-        { approved: 'asc' },
-        { createdAt: 'desc' }
+        { approved: 'asc' },  // Show unapproved first
+        { createdAt: 'desc' } // Newest first
       ]
     })
 
-    console.log(`✅ [getComments] Found ${allComments.length} total comments`)
+    console.log(`✅ [getComments] Found ${comments.length} total comments`)
     
     // Log some debug info
-    allComments.forEach((comment, index) => {
+    comments.forEach((comment, index) => {
       console.log(`📝 [getComments] Comment ${index + 1}:`, {
         id: comment.id,
         content: comment.content?.substring(0, 30) + "...",
@@ -90,7 +88,7 @@ async function getComments(): Promise<BlogComment[]> {
     })
     
     // Filter to only top-level comments for the main view
-    const topLevelComments = allComments.filter(comment => comment.parentId === null)
+    const topLevelComments = comments.filter(comment => comment.parentId === null)
     console.log(`🔍 [getComments] Found ${topLevelComments.length} top-level comments`)
     
     return topLevelComments.map(serializeComment)
