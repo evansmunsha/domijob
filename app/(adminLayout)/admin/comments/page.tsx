@@ -26,11 +26,11 @@ async function getComments(): Promise<BlogComment[]> {
   try {
     console.log("🔍 [getComments] Starting to fetch comments...")
     
-    // Get all posts with their comments
+    // Get all posts including unpublished ones
     const posts = await prisma.blogPost.findMany({
       include: {
         comments: {
-          where: { parentId: null }, // Only top-level comments
+          where: { parentId: null },
           include: {
             author: {
               select: {
@@ -57,12 +57,22 @@ async function getComments(): Promise<BlogComment[]> {
             }
           },
           orderBy: [
-            { approved: 'asc' },  // Show unapproved first
-            { createdAt: 'desc' } // Newest first
+            { approved: 'asc' },
+            { createdAt: 'desc' }
           ]
         }
       }
     })
+
+    // Log raw post data
+    console.log("📦 Raw posts data:", JSON.stringify(posts, null, 2))
+    
+    // Check if we have any posts
+    if (posts.length === 0) {
+      console.warn("⚠️ No posts found in the database")
+    } else {
+      console.log(`✅ Found ${posts.length} posts`)
+    }
 
     // Flatten comments from all posts
     const allComments = posts.flatMap(post => 
@@ -77,6 +87,18 @@ async function getComments(): Promise<BlogComment[]> {
     )
 
     console.log(`✅ [getComments] Found ${allComments.length} comments across ${posts.length} posts`)
+    
+    // Check if we have any comments
+    if (allComments.length === 0) {
+      console.warn("⚠️ No comments found in any posts")
+      
+      // Try direct comment query
+      console.log("🔍 Attempting direct comment query...")
+      const directComments = await prisma.blogComment.findMany({
+        take: 5
+      })
+      console.log(`Direct query found ${directComments.length} comments`)
+    }
     
     // Log some debug info
     allComments.forEach((comment, index) => {
@@ -113,7 +135,8 @@ export default async function CommentsAdminPage() {
     session: null as any,
     error: null as string | null,
     commentsCount: 0,
-    dbStats: null as any
+    dbStats: null as any,
+    directCommentCheck: null as any
   }
 
   try {
@@ -141,6 +164,17 @@ export default async function CommentsAdminPage() {
       
       debugInfo.dbStats = { total, approved, pending }
       debugInfo.commentsCount = total
+      
+      // Direct comment query
+      if (total === 0) {
+        const tableExists = await prisma.$queryRaw`SELECT to_regclass('public."BlogComment"') as exists`
+        const samplePosts = await prisma.blogPost.findMany({ take: 3 })
+        
+        debugInfo.directCommentCheck = {
+          tableExists: !!tableExists[0]?.exists,
+          samplePosts: samplePosts.map(p => ({ id: p.id, title: p.title }))
+        }
+      }
     } catch (dbError) {
       console.error('Error getting DB stats:', dbError)
       debugInfo.error = 'Failed to get database stats'
