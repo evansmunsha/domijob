@@ -24,19 +24,22 @@ function serializeComment(comment: any): BlogComment {
 
 async function getComments(): Promise<BlogComment[]> {
   try {
-    console.log("🔍 Fetching comments from database...")
-    console.log("Environment:", process.env.NODE_ENV)
+    console.log("🔍 [getComments] Starting to fetch comments...")
     
-    const comments = await prisma.blogComment.findMany({
-      where: {
-        parentId: null // Only top-level comments
-      },
+    // First verify the database connection
+    const dbCheck = await prisma.$queryRaw`SELECT 1 as test`
+    console.log("🔌 [getComments] Database connection check:", dbCheck)
+    
+    // Get all comments without any filtering first
+    const allComments = await prisma.blogComment.findMany({
+      take: 50, // Limit to 50 for testing
       include: {
         author: {
           select: {
             id: true,
             name: true,
-            image: true
+            image: true,
+            email: true
           }
         },
         post: {
@@ -65,27 +68,41 @@ async function getComments(): Promise<BlogComment[]> {
         }
       },
       orderBy: [
-        { approved: 'asc' },  // Show unapproved comments first
-        { createdAt: 'desc' } // Then sort by creation date
+        { approved: 'asc' },
+        { createdAt: 'desc' }
       ]
     })
 
-    console.log(`✅ Found ${comments.length} comments in admin query`)
+    console.log(`✅ [getComments] Found ${allComments.length} total comments`)
     
     // Log some debug info
-    comments.forEach((comment, index) => {
-      console.log(`Comment ${index + 1}:`, {
+    allComments.forEach((comment, index) => {
+      console.log(`📝 [getComments] Comment ${index + 1}:`, {
         id: comment.id,
-        content: comment.content.substring(0, 30) + "...",
+        content: comment.content?.substring(0, 30) + "...",
         approved: comment.approved,
-        author: comment.author?.name || "Anonymous",
-        post: comment.post?.title || "Unknown"
+        author: comment.author ? `${comment.author.name} (${comment.author.email})` : 'No Author',
+        post: comment.post?.title || "No Post",
+        parentId: comment.parentId || 'None',
+        createdAt: comment.createdAt,
+        updatedAt: comment.updatedAt
       })
     })
     
-    return comments.map(serializeComment)
+    // Filter to only top-level comments for the main view
+    const topLevelComments = allComments.filter(comment => comment.parentId === null)
+    console.log(`🔍 [getComments] Found ${topLevelComments.length} top-level comments`)
+    
+    return topLevelComments.map(serializeComment)
   } catch (error) {
-    console.error("❌ Error fetching comments:", error)
+    console.error("❌ [getComments] Error:", error)
+    if (error instanceof Error) {
+      console.error("Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      })
+    }
     return []
   }
 }
