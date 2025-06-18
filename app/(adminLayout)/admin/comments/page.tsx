@@ -28,7 +28,6 @@ async function getComments(): Promise<BlogComment[]> {
     
     // Get all posts with their comments
     const posts = await prisma.blogPost.findMany({
-      where: { published: true },
       include: {
         comments: {
           where: { parentId: null }, // Only top-level comments
@@ -62,9 +61,7 @@ async function getComments(): Promise<BlogComment[]> {
             { createdAt: 'desc' } // Newest first
           ]
         }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50 // Limit number of posts to avoid too much data
+      }
     })
 
     // Flatten comments from all posts
