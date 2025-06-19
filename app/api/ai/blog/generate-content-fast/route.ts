@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
     }
 
-    const { topic, type } = await request.json()
+    const { topic, type: contentType } = await request.json()
 
-    if (!topic || !type) {
+    if (!topic || !contentType) {
       return NextResponse.json({ error: "Topic and type are required" }, { status: 400 })
     }
 
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     let prompt = ""
     let maxTokens = 300
 
-    switch (type) {
+    switch (contentType) {
       case "outline":
         maxTokens = 400
         prompt = `Create a simple 5-point outline for "${topic}":
