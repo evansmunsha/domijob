@@ -1,3 +1,6 @@
+//app/(mainLayout)/blog/[slug]/page.tsx
+
+
 import { notFound } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"

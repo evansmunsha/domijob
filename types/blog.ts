@@ -1,3 +1,4 @@
+//types/blog.ts
 // Blog-related type definitions
 
 export interface BlogAuthor {

@@ -1,3 +1,6 @@
+//app/api/test/admin-comments/route.ts
+
+
 import { NextResponse } from "next/server"
 import { prisma } from "@/app/utils/db"
 import { auth } from "@/app/utils/auth"
