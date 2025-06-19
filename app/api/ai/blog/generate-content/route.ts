@@ -1,14 +1,23 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
 import { auth } from "@/app/utils/auth"
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("🚀 Generate Content API called")
+
     const session = await auth()
 
     if (!session?.user || session.user.userType !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 401 })
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        {
+          error: "OpenAI API key not configured",
+        },
+        { status: 500 },
+      )
     }
 
     const { topic, type, niche } = await request.json()
@@ -17,7 +26,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Topic and type are required" }, { status: 400 })
     }
 
-    const systemPrompt = `You are an expert content writer specializing in ${niche}. Write engaging, informative content that helps job seekers and career-focused professionals.`
+    // Import AI SDK
+    const { generateText } = await import("ai")
+    const { openai } = await import("@ai-sdk/openai")
+
+    const systemPrompt = `You are an expert content writer specializing in ${niche || "career development and AI tools"}. Write engaging, informative content that helps job seekers and career-focused professionals.`
     let userPrompt = ""
 
     switch (type) {
@@ -73,14 +86,21 @@ The conclusion should:
     }
 
     const { text } = await generateText({
-      model: openai("gpt-4o"),
+      model: openai("gpt-4o-mini"),
       system: systemPrompt,
       prompt: userPrompt,
+      maxTokens: 1500,
     })
 
     return NextResponse.json({ content: text })
   } catch (error) {
-    console.error("Error generating content:", error)
-    return NextResponse.json({ error: "Failed to generate content" }, { status: 500 })
+    console.error("❌ Generate Content API error:", error)
+    return NextResponse.json(
+      {
+        error: "Failed to generate content",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
   }
 }
