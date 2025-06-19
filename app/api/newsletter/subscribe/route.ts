@@ -1,101 +1,147 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/app/utils/db"
 import { auth } from "@/app/utils/auth"
-// import { sendEmail } from "@/app/utils/emailService" // Commented out for now
-import { z } from "zod"
 import { sendEmail } from "@/app/utils/emailService"
+import { z } from "zod"
 
 const subscribeSchema = z.object({
   email: z.string().email("Invalid email address"),
   source: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  preferences: z.object({
-    jobAlerts: z.boolean().optional(),
-    careerTips: z.boolean().optional(),
-    weeklyDigest: z.boolean().optional(),
-    productUpdates: z.boolean().optional()
-  }).optional()
+  preferences: z
+    .object({
+      jobAlerts: z.boolean().optional(),
+      careerTips: z.boolean().optional(),
+      weeklyDigest: z.boolean().optional(),
+      productUpdates: z.boolean().optional(),
+    })
+    .optional(),
 })
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("Newsletter subscription started...")
+    console.log("🚀 Newsletter subscription started...")
 
     const body = await request.json()
-    console.log("Request body:", { email: body.email, source: body.source })
+    console.log("📧 Subscribing email:", body.email)
+    console.log("📝 Request body:", { email: body.email, source: body.source })
 
-    const { email, source, tags, preferences } = subscribeSchema.parse(body)
-    console.log("Validation passed for email:", email)
+    // Validate input
+    const validationResult = subscribeSchema.safeParse(body)
+    if (!validationResult.success) {
+      console.log("❌ Validation failed:", validationResult.error.errors)
+      return NextResponse.json({ error: "Invalid input", details: validationResult.error.errors }, { status: 400 })
+    }
+
+    const { email, source, tags, preferences } = validationResult.data
+    console.log("✅ Validation passed for email:", email)
 
     // Check if already subscribed
-    console.log("Checking existing subscription...")
-    const existingSubscription = await prisma.newsletterSubscription.findUnique({
-      where: { email }
-    })
+    console.log("🔍 Checking existing subscription...")
+    let existingSubscription
+    try {
+      existingSubscription = await prisma.newsletterSubscription.findUnique({
+        where: { email },
+      })
+      console.log("📊 Existing subscription found:", !!existingSubscription)
+    } catch (dbError) {
+      console.error("❌ Database error checking existing subscription:", dbError)
+      return NextResponse.json({ error: "Database error occurred" }, { status: 500 })
+    }
 
     if (existingSubscription) {
+      console.log("📋 Existing subscription status:", existingSubscription.status)
+
       if (existingSubscription.status === "ACTIVE") {
-        return NextResponse.json(
-          { message: "Already subscribed to newsletter" },
-          { status: 200 }
-        )
+        console.log("✅ User already has active subscription")
+        return NextResponse.json({ message: "Already subscribed to newsletter" }, { status: 200 })
       } else {
         // Reactivate subscription
-        await prisma.newsletterSubscription.update({
-          where: { email },
-          data: {
-            status: "ACTIVE",
-            preferences: preferences || (existingSubscription.preferences || {
-              jobAlerts: true,
-              careerTips: true,
-              weeklyDigest: true,
-              productUpdates: false
-            }),
-            tags: tags || existingSubscription.tags,
-            source: source || existingSubscription.source,
-            confirmedAt: new Date(),
-            unsubscribedAt: null
-          }
-        })
+        console.log("🔄 Reactivating subscription...")
+        try {
+          await prisma.newsletterSubscription.update({
+            where: { email },
+            data: {
+              status: "ACTIVE",
+              preferences: preferences ||
+                (existingSubscription.preferences as any) || {
+                  jobAlerts: true,
+                  careerTips: true,
+                  weeklyDigest: true,
+                  productUpdates: false,
+                },
+              tags: tags || existingSubscription.tags,
+              source: source || existingSubscription.source,
+              confirmedAt: new Date(),
+              unsubscribedAt: null,
+            },
+          })
+          console.log("✅ Subscription reactivated successfully")
+        } catch (updateError) {
+          console.error("❌ Error reactivating subscription:", updateError)
+          return NextResponse.json({ error: "Failed to reactivate subscription" }, { status: 500 })
+        }
       }
     } else {
-      // Check if user exists
-      const session = await auth()
-      let userId = null
+      console.log("➕ Creating new subscription...")
 
-      if (session?.user?.id) {
-        userId = session.user.id
-      } else {
-        // Check if email belongs to existing user
-        const user = await prisma.user.findUnique({
-          where: { email },
-          select: { id: true }
-        })
-        if (user) {
-          userId = user.id
+      // Check if user exists
+      let userId = null
+      try {
+        const session = await auth()
+        console.log("🔐 Session check:", { hasUser: !!session?.user, userId: session?.user?.id })
+
+        if (session?.user?.id) {
+          userId = session.user.id
+        } else {
+          // Check if email belongs to existing user
+          const user = await prisma.user.findUnique({
+            where: { email },
+            select: { id: true },
+          })
+          if (user) {
+            userId = user.id
+            console.log("👤 Found existing user for email:", userId)
+          }
         }
+      } catch (authError) {
+        console.error("❌ Auth error (non-critical):", authError)
+        // Continue without user association
       }
 
       // Create new subscription
-      await prisma.newsletterSubscription.create({
-        data: {
-          email,
-          userId,
-          status: "ACTIVE",
-          preferences: preferences || {
-            jobAlerts: true,
-            careerTips: true,
-            weeklyDigest: true,
-            productUpdates: false
+      try {
+        const newSubscription = await prisma.newsletterSubscription.create({
+          data: {
+            email,
+            userId,
+            status: "ACTIVE",
+            preferences: preferences || {
+              jobAlerts: true,
+              careerTips: true,
+              weeklyDigest: true,
+              productUpdates: false,
+            },
+            tags: tags || ["general"],
+            source: source || "website",
+            confirmedAt: new Date(),
           },
-          tags: tags || ["general"],
-          source: source || "website",
-          confirmedAt: new Date()
-        }
-      })
+        })
+        console.log("✅ New subscription created:", newSubscription.id)
+      } catch (createError) {
+        console.error("❌ Error creating subscription:", createError)
+        return NextResponse.json(
+          {
+            error: "Failed to create subscription",
+            details: createError instanceof Error ? createError.message : "Unknown error",
+          },
+          { status: 500 },
+        )
+      }
     }
 
-    // Send welcome email
+    // Send welcome email (non-blocking)
+    console.log("📬 Attempting to send welcome email...")
     try {
       const welcomeHtml = `
         <!DOCTYPE html>
@@ -127,7 +173,7 @@ export async function POST(request: NextRequest) {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXT_PUBLIC_URL}/ai-tools/resume-enhancer" 
+              <a href="${process.env.NEXT_PUBLIC_URL || "https://domijob.vercel.app"}/ai-tools/resume-enhancer" 
                  style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
                 Get Started with AI Resume Enhancer
               </a>
@@ -139,9 +185,9 @@ export async function POST(request: NextRequest) {
           <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
             <p>You're receiving this email because you subscribed to our newsletter.</p>
             <p>
-              <a href="${process.env.NEXT_PUBLIC_URL}/newsletter/unsubscribe?email=${encodeURIComponent(email)}" 
+              <a href="${process.env.NEXT_PUBLIC_URL || "https://domijob.vercel.app"}/newsletter/unsubscribe?email=${encodeURIComponent(email)}" 
                  style="color: #667eea;">Unsubscribe</a> | 
-              <a href="${process.env.NEXT_PUBLIC_URL}/newsletter/preferences?email=${encodeURIComponent(email)}" 
+              <a href="${process.env.NEXT_PUBLIC_URL || "https://domijob.vercel.app"}/newsletter/preferences?email=${encodeURIComponent(email)}" 
                  style="color: #667eea;">Update Preferences</a>
             </p>
           </div>
@@ -149,33 +195,40 @@ export async function POST(request: NextRequest) {
         </html>
       `
 
-      await sendEmail(
-        email,
-        "Welcome to DomiJob Newsletter! 🚀",
-        welcomeHtml
-      )
+      await sendEmail(email, "Welcome to DomiJob Newsletter! 🚀", welcomeHtml)
+      console.log("✅ Welcome email sent successfully")
     } catch (emailError) {
-      console.error("Failed to send welcome email:", emailError)
+      console.error("⚠️ Failed to send welcome email (non-critical):", emailError)
       // Don't fail the subscription if email fails
     }
 
+    console.log("🎉 Newsletter subscription completed successfully")
     return NextResponse.json({
       message: "Successfully subscribed to newsletter",
-      email
+      email,
+      timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error("Newsletter subscription error:", error)
-    
+    console.error("❌ Newsletter subscription error:", error)
+
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
 
+    // Log the full error for debugging
+    console.error("❌ Full error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : "No stack trace",
+      name: error instanceof Error ? error.name : "Unknown error type",
+    })
+
     return NextResponse.json(
-      { error: "Failed to subscribe to newsletter" },
-      { status: 500 }
+      {
+        error: "Failed to subscribe to newsletter",
+        details: error instanceof Error ? error.message : "Unknown error occurred",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 },
     )
   }
 }
@@ -183,17 +236,14 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
-    
+
     if (!session?.user || session.user.userType !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "50")
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "50")
     const status = searchParams.get("status")
     const tag = searchParams.get("tag")
 
@@ -211,15 +261,15 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              userType: true
-            }
-          }
+              userType: true,
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
         skip,
-        take: limit
+        take: limit,
       }),
-      prisma.newsletterSubscription.count({ where })
+      prisma.newsletterSubscription.count({ where }),
     ])
 
     return NextResponse.json({
@@ -228,15 +278,11 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     })
   } catch (error) {
     console.error("Error fetching newsletter subscriptions:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch subscriptions" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to fetch subscriptions" }, { status: 500 })
   }
 }
-
