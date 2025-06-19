@@ -1,10 +1,9 @@
-//app/(adminLayout)/admin/blog/new/page.tsx
-
-
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,14 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { 
-  ArrowLeft,
-  Save,
-  Eye,
-  Loader2,
-  Plus,
-  X
-} from "lucide-react"
+import { ArrowLeft, Save, Eye, Loader2, Plus, X, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 const CATEGORIES = [
@@ -31,16 +23,27 @@ const CATEGORIES = [
   "Remote Work",
   "AI Tools",
   "Industry Insights",
-  "Salary Negotiation"
+  "Salary Negotiation",
 ]
 
 const COMMON_TAGS = [
-  "AI", "Resume", "Job Search", "Career", "Interview", "Remote Work",
-  "ATS", "LinkedIn", "Networking", "Skills", "Salary", "Tips"
+  "AI",
+  "Resume",
+  "Job Search",
+  "Career",
+  "Interview",
+  "Remote Work",
+  "ATS",
+  "LinkedIn",
+  "Networking",
+  "Skills",
+  "Salary",
+  "Tips",
 ]
 
 export default function NewBlogPostPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
@@ -52,54 +55,78 @@ export default function NewBlogPostPage() {
     published: false,
     featured: false,
     metaTitle: "",
-    metaDescription: ""
+    metaDescription: "",
   })
   const [newTag, setNewTag] = useState("")
+
+  // Check if coming from AI assistant
+  useEffect(() => {
+    const fromAI = searchParams.get("from") === "ai"
+    if (fromAI) {
+      const aiData = localStorage.getItem("ai-generated-post")
+      if (aiData) {
+        try {
+          const parsedData = JSON.parse(aiData)
+          setFormData((prev) => ({
+            ...prev,
+            ...parsedData,
+            slug: generateSlug(parsedData.title || ""),
+            metaTitle: parsedData.title || "",
+            metaDescription: parsedData.excerpt || "",
+          }))
+          localStorage.removeItem("ai-generated-post")
+          toast.success("AI-generated content loaded!")
+        } catch (error) {
+          console.error("Error loading AI data:", error)
+        }
+      }
+    }
+  }, [searchParams])
 
   const generateSlug = (title: string) => {
     return title
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
   }
 
   const handleTitleChange = (title: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       title,
       slug: generateSlug(title),
-      metaTitle: title
+      metaTitle: title,
     }))
   }
 
   const handleExcerptChange = (excerpt: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       excerpt,
-      metaDescription: excerpt
+      metaDescription: excerpt,
     }))
   }
 
   const addTag = (tag: string) => {
     if (tag && !formData.tags.includes(tag)) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        tags: [...prev.tags, tag]
+        tags: [...prev.tags, tag],
       }))
     }
     setNewTag("")
   }
 
   const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.title || !formData.excerpt || !formData.content || !formData.category) {
       toast.error("Please fill in all required fields")
       return
@@ -115,7 +142,7 @@ export default function NewBlogPostPage() {
         },
         body: JSON.stringify({
           ...formData,
-          readTime: Math.ceil(formData.content.split(" ").length / 200)
+          readTime: Math.ceil(formData.content.split(" ").length / 200),
         }),
       })
 
@@ -136,7 +163,6 @@ export default function NewBlogPostPage() {
   }
 
   const handlePreview = () => {
-    // Store draft in localStorage for preview
     localStorage.setItem("blog-preview", JSON.stringify(formData))
     window.open("/admin/blog/preview", "_blank")
   }
@@ -154,22 +180,22 @@ export default function NewBlogPostPage() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Create New Blog Post</h1>
-            <p className="text-muted-foreground">
-              Write engaging content to attract and educate your audience
-            </p>
+            <p className="text-muted-foreground">Write engaging content to attract and educate your audience</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/blog/ai-assistant">
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Assistant
+            </Link>
+          </Button>
           <Button variant="outline" onClick={handlePreview} disabled={!formData.title}>
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
+            {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             {formData.published ? "Publish" : "Save Draft"}
           </Button>
         </div>
@@ -181,9 +207,7 @@ export default function NewBlogPostPage() {
           <Card>
             <CardHeader>
               <CardTitle>Post Content</CardTitle>
-              <CardDescription>
-                Write your blog post content here
-              </CardDescription>
+              <CardDescription>Write your blog post content here</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -202,7 +226,7 @@ export default function NewBlogPostPage() {
                 <Input
                   id="slug"
                   value={formData.slug}
-                  onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
                   placeholder="url-friendly-slug"
                   className="mt-1"
                 />
@@ -218,9 +242,7 @@ export default function NewBlogPostPage() {
                   className="mt-1"
                   rows={3}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formData.excerpt.length}/300 characters
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">{formData.excerpt.length}/300 characters</p>
               </div>
 
               <div>
@@ -228,12 +250,13 @@ export default function NewBlogPostPage() {
                 <Textarea
                   id="content"
                   value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
                   placeholder="Write your blog post content here. You can use Markdown formatting..."
                   className="mt-1 min-h-[400px]"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formData.content.split(" ").length} words • ~{Math.ceil(formData.content.split(" ").length / 200)} min read
+                  {formData.content.split(" ").length} words • ~{Math.ceil(formData.content.split(" ").length / 200)}{" "}
+                  min read
                 </p>
               </div>
             </CardContent>
@@ -242,6 +265,27 @@ export default function NewBlogPostPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* AI Assistant Card */}
+          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Need Help Writing?
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">
+                Use our AI assistant to generate ideas, outlines, and content for your blog post.
+              </p>
+              <Button asChild size="sm" className="w-full">
+                <Link href="/admin/blog/ai-assistant">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Open AI Assistant
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Publish Settings */}
           <Card>
             <CardHeader>
@@ -253,7 +297,7 @@ export default function NewBlogPostPage() {
                 <Switch
                   id="published"
                   checked={formData.published}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, published: checked }))}
+                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, published: checked }))}
                 />
               </div>
 
@@ -262,7 +306,7 @@ export default function NewBlogPostPage() {
                 <Switch
                   id="featured"
                   checked={formData.featured}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
+                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, featured: checked }))}
                 />
               </div>
             </CardContent>
@@ -281,7 +325,7 @@ export default function NewBlogPostPage() {
                     type="button"
                     variant={formData.category === category ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setFormData(prev => ({ ...prev, category }))}
+                    onClick={() => setFormData((prev) => ({ ...prev, category }))}
                     className="justify-start"
                   >
                     {category}
@@ -309,12 +353,7 @@ export default function NewBlogPostPage() {
                     }
                   }}
                 />
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => addTag(newTag)}
-                  disabled={!newTag}
-                >
+                <Button type="button" size="sm" onClick={() => addTag(newTag)} disabled={!newTag}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -324,11 +363,7 @@ export default function NewBlogPostPage() {
                   {formData.tags.map((tag) => (
                     <Badge key={tag} variant="secondary" className="gap-1">
                       {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        className="hover:text-red-500"
-                      >
+                      <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
                         <X className="h-3 w-3" />
                       </button>
                     </Badge>
@@ -368,7 +403,7 @@ export default function NewBlogPostPage() {
                 <Input
                   id="metaTitle"
                   value={formData.metaTitle}
-                  onChange={(e) => setFormData(prev => ({ ...prev, metaTitle: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, metaTitle: e.target.value }))}
                   placeholder="SEO title..."
                   className="mt-1"
                 />
@@ -379,7 +414,7 @@ export default function NewBlogPostPage() {
                 <Textarea
                   id="metaDescription"
                   value={formData.metaDescription}
-                  onChange={(e) => setFormData(prev => ({ ...prev, metaDescription: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, metaDescription: e.target.value }))}
                   placeholder="SEO description..."
                   className="mt-1"
                   rows={3}
