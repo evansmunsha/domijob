@@ -172,6 +172,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if slug already exists
+    console.log("🔍 Checking if slug exists:", slug)
+    const existingPost = await prisma.blogPost.findUnique({
+      where: { slug },
+    })
+
+    if (existingPost) {
+      console.log("❌ Slug already exists:", slug)
+      return NextResponse.json({ error: "Slug already exists. Please choose a different URL slug." }, { status: 400 })
+    }
+
     console.log("📝 Creating blog post...")
     const post = await prisma.blogPost.create({
       data: {
@@ -219,6 +230,9 @@ export async function POST(request: NextRequest) {
 
     // Provide more specific error messages
     if (typeof error === "object" && error !== null && "code" in error) {
+      if ((error as any).code === "P2002") {
+        return NextResponse.json({ error: "A blog post with this slug already exists" }, { status: 400 })
+      }
       if ((error as any).code === "P2021") {
         return NextResponse.json(
           { error: "Database table does not exist. Please run database migration." },
