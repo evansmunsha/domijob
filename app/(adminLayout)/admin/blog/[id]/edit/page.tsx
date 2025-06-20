@@ -69,7 +69,7 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
   useEffect(() => {
     const loadPost = async () => {
       try {
-        const response = await fetch(`/api/blog/posts/${params.id}`)
+        const response = await fetch(`/api/blog/posts/by-id/${params.id}`)
         if (response.ok) {
           const post = await response.json()
           setFormData({
@@ -151,7 +151,7 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`/api/blog/posts/${params.id}`, {
+      const response = await fetch(`/api/blog/posts/by-id/${params.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -186,7 +186,7 @@ export default function EditBlogPostPage({ params }: EditBlogPostPageProps) {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`/api/blog/posts/${params.id}`, {
+      const response = await fetch(`/api/blog/posts/by-id/${params.id}`, {
         method: "DELETE",
       })
 
