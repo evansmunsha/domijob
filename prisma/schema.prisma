@@ -530,7 +530,7 @@ model CreditTransaction {
 model BlogPost {
   id          String   @id @default(cuid())
   title       String
-  slug        String   @unique
+  slug        String
   excerpt     String   @db.Text
   content     String   @db.Text
   published   Boolean  @default(false)
