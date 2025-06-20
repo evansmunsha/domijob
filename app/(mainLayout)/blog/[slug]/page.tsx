@@ -20,7 +20,6 @@ import {
   TrendingUp
 } from "lucide-react"
 import Link from "next/link"
-import { prisma } from "@/app/utils/db"
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup"
 import { BlogInteractions } from "@/components/blog/BlogInteractions"
 import { CommentSection } from "@/components/blog/CommentSection"
@@ -36,32 +35,10 @@ async function getBlogPost(slug: string) {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/blog/posts/by-slug/${slug}`, { cache: 'no-store' })
     const post = await res.json()
-
     if (!post || !post.published) {
       return null
     }
-
-    // Get related posts
-    const relatedPosts = await prisma.blogPost.findMany({
-      where: {
-        published: true,
-        category: post.category,
-        id: { not: post.id }
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        }
-      },
-      take: 3,
-      orderBy: { publishedAt: "desc" }
-    })
-
-    return { ...post, relatedPosts }
+    return post
   } catch (error) {
     console.error("Error fetching blog post:", error)
     return null
@@ -73,20 +50,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   if (!post) {
     notFound()
-  }
-
-  // Increment view count
-  try {
-    await prisma.blogPost.update({
-      where: { slug: params.slug },
-      data: {
-        views: {
-          increment: 1
-        }
-      }
-    })
-  } catch (error) {
-    console.error("Error incrementing views:", error)
   }
 
   return (
@@ -180,8 +143,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     postTitle={post.title}
                     postUrl={`${process.env.NEXT_PUBLIC_URL || 'https://domijob.vercel.app'}/blog/${post.slug}`}
                     initialLikes={post.likes}
-                    initialComments={post.comments.length}
-                    views={post.views} 
+                    initialComments={post._count?.comments || 0}
+                    views={post.views}
                     initialUserLiked={post.userLiked}
                   />
                 </CardContent>
