@@ -1,14 +1,16 @@
+// app/api/blog/posts/[slug]/route.ts
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/app/utils/db"
 import { auth } from "@/app/utils/auth"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
   try {
-    const { id } = params
+    const { slug } = params
 
     const post = await prisma.blogPost.findUnique({
-      where: { id },
+      where: { slug },
       select: {
+        id: true,
         author: {
           select: {
             id: true,
@@ -40,7 +42,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         publishedAt: true,
         createdAt: true,
         updatedAt: true,
-        id: true,
       },
     })
 
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       userLiked,
     })
   } catch (error) {
-    console.error("Error fetching blog post by ID:", error)
+    console.error("Error fetching blog post by slug:", error)
     return NextResponse.json({ error: "Failed to fetch blog post" }, { status: 500 })
   }
 }

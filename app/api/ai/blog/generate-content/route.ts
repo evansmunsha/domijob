@@ -1,11 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { auth } from "@/app/utils/auth"
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
 
 export async function POST(request: NextRequest) {
-    let contentType: string | undefined
-  let topic: string | undefined
   try {
     console.log("🚀 Generate Content API called")
 
@@ -31,39 +27,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Topic and type are required" }, { status: 400 })
     }
 
-    const systemPrompt = `You are an expert content writer specializing in ${niche || "career development and AI tools"}. Write concise, actionable content that helps job seekers and career-focused professionals. Keep responses focused and practical.`
+    // Import AI SDK
+    const { generateText } = await import("ai")
+    const { openai } = await import("@ai-sdk/openai")
+
+    const systemPrompt = `You are an expert content writer for DomiJob, a career platform with AI-powered tools. 
+
+IMPORTANT: Always naturally integrate mentions of DomiJob's AI tools when relevant:
+- Resume Enhancer (/ai-tools/resume-enhancer) - for resume optimization and ATS compatibility
+- Job Matching (/jobs) - for finding relevant job opportunities  
+- Career Assessment (/ai-tools/career-assessment) - for career guidance
+- Interview Prep (/ai-tools/interview-prep) - for interview preparation
+- Salary Negotiation (/ai-tools/salary-negotiator) - for salary discussions
+
+Write engaging, actionable content that helps job seekers while encouraging them to try relevant AI tools. Use clickable links and call-to-actions naturally within the content.`
 
     let userPrompt = ""
-    let maxTokens = 800 // Default token limit
+    let maxTokens = 800
 
     switch (contentType) {
       case "outline":
-        maxTokens = 600 // Reduced for faster generation
-        userPrompt = `Create a concise blog post outline for: "${topic}"
+        maxTokens = 600
+        userPrompt = `Create a blog post outline for: "${topic}"
 
 Structure:
-1. Hook/Introduction (1-2 sentences)
-2. 4-5 main sections with 2-3 bullet points each
-3. Conclusion with call-to-action
+1. Hook/Introduction 
+2. 4-5 main sections with actionable tips
+3. AI tool recommendations (naturally integrated)
+4. Conclusion with call-to-action
 
-Keep it brief and actionable. Focus on practical career advice.
+Include specific mentions of relevant DomiJob AI tools with links:
+- [Try Resume Enhancer →](/ai-tools/resume-enhancer)
+- [Find Jobs →](/jobs)
+- [Career Assessment →](/ai-tools/career-assessment)
+- [Interview Prep →](/ai-tools/interview-prep)
+- [Salary Negotiator →](/ai-tools/salary-negotiator)
 
-Example format:
-# Introduction
-- Hook about the problem
-- What readers will learn
-
-# Section 1: [Title]
-- Key point 1
-- Key point 2
-
-# Section 2: [Title]
-- Key point 1
-- Key point 2
-
-# Conclusion
-- Summary
-- Call-to-action`
+Format with clear headings and bullet points.`
         break
 
       case "introduction":
@@ -71,36 +71,50 @@ Example format:
         userPrompt = `Write an engaging introduction for: "${topic}"
 
 Requirements:
-- 120-150 words
-- Hook the reader immediately
-- State the problem clearly
-- Preview the solution
-- Include a relevant statistic if possible
+- 150-200 words
+- Hook the reader with a compelling statistic or question
+- Preview the value they'll get
+- Naturally mention how DomiJob's AI tools can help
+- Include a relevant tool link if appropriate
 
-Focus on career advancement benefits.`
+Example tool mentions:
+"...optimize your resume with our AI Resume Enhancer"
+"...find your perfect job match using our AI-powered job search"
+
+Focus on career advancement and practical benefits.`
         break
 
       case "section":
-        maxTokens = 700 // Reduced for faster generation
-        userPrompt = `Write a focused section for: "${topic}"
+        maxTokens = 700
+        userPrompt = `Write a comprehensive section for: "${topic}"
 
 Requirements:
-- 250-350 words (keep it concise)
+- 300-400 words
 - Include 3-4 actionable tips
-- Use bullet points for readability
+- Use bullet points and subheadings
 - Include 1 real-world example
-- Focus on immediate career benefits
+- Naturally integrate 1-2 relevant DomiJob AI tool mentions with clickable links
+
+Available tools to mention:
+- **Resume Enhancer** [Try it →](/ai-tools/resume-enhancer) - for resume optimization
+- **Job Matching** [Find jobs →](/jobs) - for job search
+- **Career Assessment** [Take assessment →](/ai-tools/career-assessment) - for career guidance
+- **Interview Prep** [Practice now →](/ai-tools/interview-prep) - for interviews
+- **Salary Negotiator** [Get insights →](/ai-tools/salary-negotiator) - for salary talks
 
 Structure:
 ## [Section Title]
 Brief intro paragraph
 
-Key tips:
-• Tip 1 with brief explanation
-• Tip 2 with brief explanation
-• Tip 3 with brief explanation
+### Key Strategies:
+• Tip 1 with explanation
+• Tip 2 with explanation  
+• Tip 3 with AI tool integration
+• Tip 4 with explanation
 
-Example: [Brief real-world example]`
+**Pro Tip:** [Mention relevant AI tool naturally]
+
+Example: Brief real-world scenario`
         break
 
       case "conclusion":
@@ -108,11 +122,24 @@ Example: [Brief real-world example]`
         userPrompt = `Write a strong conclusion for: "${topic}"
 
 Requirements:
-- 80-120 words
+- 120-150 words
 - Summarize 2-3 key takeaways
-- Include clear call-to-action
-- End with engaging question
-- Encourage reader engagement`
+- Include call-to-action to try relevant AI tools
+- End with engaging question for comments
+- Encourage newsletter subscription
+
+Template structure:
+"Ready to [achieve goal]? Here are your next steps:
+
+1. [Key takeaway 1]
+2. [Key takeaway 2] 
+3. Try our [relevant AI tool] to [specific benefit]
+
+[Relevant AI tool link with compelling CTA]
+
+Don't forget to subscribe to our newsletter for weekly career tips!
+
+What's your biggest challenge with [topic]? Share in the comments below!"`
         break
 
       default:
@@ -121,131 +148,25 @@ Requirements:
 
     console.log(`🤖 Generating ${contentType} content with ${maxTokens} max tokens`)
 
-    // Add timeout wrapper
-    const generateWithTimeout = async () => {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 25000) // 25 second timeout
-
-      try {
-        const result = await generateText({
-          model: openai("gpt-4o-mini"), // Using faster model
-          system: systemPrompt,
-          prompt: userPrompt,
-          maxTokens: maxTokens,
-          temperature: 0.7, // Slightly more creative but still focused
-        })
-        clearTimeout(timeoutId)
-        return result
-      } catch (error) {
-        clearTimeout(timeoutId)
-        throw error
-      }
-    }
-
-    const { text } = await generateWithTimeout()
+    const { text } = await generateText({
+      model: openai("gpt-4o-mini"),
+      system: systemPrompt,
+      prompt: userPrompt,
+      maxTokens: maxTokens,
+      temperature: 0.7,
+    })
 
     console.log(`✅ Generated ${contentType} content, length: ${text.length}`)
 
     return NextResponse.json({ content: text })
   } catch (error) {
-    console.error(`❌ Generate Content API error for type ${contentType}:`, error)
-
-    // Provide fallback content for timeouts
-    if (error instanceof Error && (error.message.includes("timeout") || error.message.includes("504"))) {
-      const fallbackContent = getFallbackContent(contentType || "outline", topic || "your topic")
-
-      return NextResponse.json({
-        content: fallbackContent,
-        warning: "AI generation timed out, using fallback content. Please try again for AI-generated content.",
-      })
-    }
-
+    console.error(`❌ Generate Content API error:`, error)
     return NextResponse.json(
       {
         error: "Failed to generate content",
         details: error instanceof Error ? error.message : "Unknown error",
-        type: contentType,
       },
       { status: 500 },
     )
-  }
-}
-
-// Fallback content function
-function getFallbackContent(contentType: string, topic: string): string {
-  switch (contentType) {
-    case "outline":
-      return `# ${topic}
-
-## Introduction
-- Hook: Address the main challenge readers face
-- Preview what they'll learn from this post
-
-## Section 1: Understanding the Basics
-- Define key concepts
-- Explain why this matters for career growth
-- Common misconceptions to avoid
-
-## Section 2: Practical Steps
-- Step-by-step approach
-- Tools and resources needed
-- Timeline expectations
-
-## Section 3: Advanced Strategies
-- Pro tips for better results
-- How to stand out from competition
-- Measuring success
-
-## Section 4: Common Mistakes
-- What to avoid
-- How to recover from setbacks
-- Learning from failures
-
-## Conclusion
-- Recap key takeaways
-- Next steps for readers
-- Call-to-action for engagement
-
-*Note: This is a template outline. Please regenerate for AI-customized content.*`
-
-    case "section":
-      return `## Getting Started with ${topic}
-
-When it comes to ${topic.toLowerCase()}, many professionals struggle with knowing where to begin. The key is to start with a solid foundation and build systematically.
-
-### Key Strategies:
-
-• **Start with research**: Understand current industry standards and expectations
-• **Create a plan**: Break down your goals into manageable, actionable steps  
-• **Practice consistently**: Regular practice leads to measurable improvement
-• **Seek feedback**: Get input from mentors, peers, or industry professionals
-
-### Real-World Example:
-Consider Sarah, a marketing professional who successfully transitioned to a new role by following these exact steps. She spent 2 weeks researching, 1 month planning, and 3 months executing her strategy.
-
-The most important thing to remember is that progress takes time, but with the right approach, you'll see results that advance your career.
-
-*Note: This is template content. Please regenerate for AI-customized content.*`
-
-    case "introduction":
-      return `Are you struggling with ${topic.toLowerCase()}? You're not alone. Recent studies show that 73% of professionals face similar challenges in today's competitive job market.
-
-The good news is that with the right strategies and mindset, you can overcome these obstacles and achieve your career goals. In this post, we'll explore proven techniques that have helped thousands of professionals just like you.
-
-By the end of this article, you'll have a clear roadmap for success, practical tools you can implement immediately, and the confidence to take your career to the next level.
-
-*Note: This is template content. Please regenerate for AI-customized content.*`
-
-    case "conclusion":
-      return `${topic} doesn't have to be overwhelming when you have the right approach. Remember these key takeaways: focus on consistent action, leverage available resources, and don't be afraid to seek help when needed.
-
-Your career success depends on taking that first step. Start implementing these strategies today, and you'll be amazed at the progress you can make in just a few weeks.
-
-What's your biggest challenge with ${topic.toLowerCase()}? Share your thoughts in the comments below – I'd love to help you overcome any obstacles you're facing.
-
-*Note: This is template content. Please regenerate for AI-customized content.*`
-
-    default:
-      return `Content for ${topic} will be generated here. Please try regenerating for AI-customized content.`
   }
 }

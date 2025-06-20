@@ -10,6 +10,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { prisma } from "@/app/utils/db"
 import { Suspense } from "react"
+import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup"
 
 async function getBlogPosts() {
   const posts = await prisma.blogPost.findMany({
@@ -384,13 +385,8 @@ export default async function BlogPage() {
           <CardContent className="text-center relative z-10">
             <div className="max-w-md mx-auto space-y-4">
               <div className="flex gap-2">
-                <Input
-                  placeholder="Enter your email address"
-                  className="flex-1 bg-background/50 backdrop-blur-sm"
-                />
-                <Button size="lg" className="px-8">
-                  Subscribe
-                </Button>
+                {/* Newsletter Signup */}
+                <NewsletterSignup variant="sidebar" source="blog_post" />
               </div>
               <p className="text-xs text-muted-foreground">
                 Join 10,000+ professionals. Unsubscribe anytime.

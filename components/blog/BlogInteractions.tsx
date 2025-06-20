@@ -31,6 +31,7 @@ interface BlogInteractionsProps {
   initialLikes: number
   initialComments: number
   views: number
+  initialUserLiked: boolean // <-- add this
 }
 
 export function BlogInteractions({ 
@@ -39,12 +40,16 @@ export function BlogInteractions({
   postUrl, 
   initialLikes, 
   initialComments,
-  views 
+  views,
+  initialUserLiked
 }: BlogInteractionsProps) {
   const [likes, setLikes] = useState(initialLikes)
-  const [isLiked, setIsLiked] = useState(false)
+  const [isLiked, setIsLiked] = useState(initialUserLiked)
   const [isLiking, setIsLiking] = useState(false)
   const [copied, setCopied] = useState(false)
+  
+  
+
 
   const handleLike = async () => {
     if (isLiking) return

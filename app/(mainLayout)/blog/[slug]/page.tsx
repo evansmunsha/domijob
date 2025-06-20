@@ -24,7 +24,7 @@ import { prisma } from "@/app/utils/db"
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup"
 import { BlogInteractions } from "@/components/blog/BlogInteractions"
 import { CommentSection } from "@/components/blog/CommentSection"
-import { serializeBlogPost, BlogPostDB } from "@/types/blog"
+import { Key, ReactElement, JSXElementConstructor, ReactNode, ReactPortal } from "react"
 
 interface BlogPostPageProps {
   params: {
@@ -34,47 +34,8 @@ interface BlogPostPageProps {
 
 async function getBlogPost(slug: string) {
   try {
-    const post = await prisma.blogPost.findUnique({
-      where: { slug },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        },
-        comments: {
-          where: { 
-            approved: true,
-            parentId: null
-          },
-          include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                image: true
-              }
-            },
-            replies: {
-              where: { approved: true },
-              include: {
-                author: {
-                  select: {
-                    id: true,
-                    name: true,
-                    image: true
-                  }
-                }
-              },
-              orderBy: { createdAt: "asc" }
-            }
-          },
-          orderBy: { createdAt: "desc" }
-        }
-      }
-    })
+    const res = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/blog/posts/by-slug/${slug}`, { cache: 'no-store' })
+    const post = await res.json()
 
     if (!post || !post.published) {
       return null
@@ -188,7 +149,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag) => (
+                {post.tags.map((tag: string) => (
                   <Badge key={tag} variant="outline" className="text-xs">
                     #{tag}
                   </Badge>
@@ -220,7 +181,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     postUrl={`${process.env.NEXT_PUBLIC_URL || 'https://domijob.vercel.app'}/blog/${post.slug}`}
                     initialLikes={post.likes}
                     initialComments={post.comments.length}
-                    views={post.views}
+                    views={post.views} 
+                    initialUserLiked={post.userLiked}
                   />
                 </CardContent>
               </Card>
@@ -255,10 +217,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="mt-8">
                 <CommentSection
                   postId={post.id}
-                  comments={post.comments.map(comment => ({
+                  comments={post.comments.map((comment: { createdAt: { toISOString: () => any }; replies: any[] }) => ({
                     ...comment,
                     createdAt: comment.createdAt.toISOString(),
-                    replies: comment.replies.map(reply => ({
+                    replies: comment.replies.map((reply: { createdAt: { toISOString: () => any } }) => ({
                       ...reply,
                       createdAt: reply.createdAt.toISOString(),
                       replies: [] // Replies don't have nested replies
@@ -283,7 +245,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {post.relatedPosts.map((relatedPost) => (
+                    {post.relatedPosts.map((relatedPost: { id: Key | null | undefined; slug: any; title: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; readTime: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; views: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined }) => (
                       <Link 
                         key={relatedPost.id} 
                         href={`/blog/${relatedPost.slug}`}
