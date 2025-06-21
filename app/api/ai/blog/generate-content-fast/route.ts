@@ -1,74 +1,82 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { auth } from "@/app/utils/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const { topic, category } = await request.json()
+    const session = await auth()
 
-    if (!topic) {
-      return NextResponse.json({ error: "Topic is required" }, { status: 400 })
+    if (!session?.user || session.user.userType !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 401 })
     }
 
-    // Fast fallback content generation
-    const fastContent = `<h2>${topic}: A Quick Guide</h2>
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
+    }
 
-<p>Here's a comprehensive overview of ${topic} to help advance your career.</p>
+    const { topic, type: contentType } = await request.json()
 
-<h3>Key Strategies</h3>
+    if (!topic || !contentType) {
+      return NextResponse.json({ error: "Topic and type are required" }, { status: 400 })
+    }
 
-<ul>
-<li><strong>Research thoroughly:</strong> Understand the current market trends and requirements</li>
-<li><strong>Optimize your approach:</strong> Use data-driven strategies to improve your results</li>
-<li><strong>Stay consistent:</strong> Regular effort leads to better outcomes</li>
-<li><strong>Seek feedback:</strong> Learn from experts and peers in your field</li>
-<li><strong>Adapt quickly:</strong> Be flexible and responsive to changing conditions</li>
-</ul>
+    // Import AI SDK
+    const { generateText } = await import("ai")
+    const { openai } = await import("@ai-sdk/openai")
 
-<h3>Common Mistakes to Avoid</h3>
+    // Ultra-simplified prompts for speed
+    let prompt = ""
+    let maxTokens = 300
 
-<ul>
-<li>Not researching your target audience or market</li>
-<li>Using outdated strategies or information</li>
-<li>Failing to track and measure your progress</li>
-<li>Not seeking help when you need it</li>
-<li>Giving up too quickly when facing challenges</li>
-</ul>
+    switch (contentType) {
+      case "outline":
+        maxTokens = 400
+        prompt = `Create a simple 5-point outline for "${topic}":
+1. Introduction
+2. Main Point 1
+3. Main Point 2  
+4. Main Point 3
+5. Conclusion
 
-<h3>Tools and Resources</h3>
+Keep each point to 1-2 sentences. Focus on career advice.`
+        break
 
-<p>Take advantage of AI-powered tools to accelerate your progress:</p>
+      case "section":
+        maxTokens = 500
+        prompt = `Write a 200-word section about "${topic}" with:
+- Brief intro
+- 3 bullet points with tips
+- Short example
+Focus on actionable career advice.`
+        break
 
-<ul>
-<li><strong><a href="/ai-tools/resume-enhancer">Resume Enhancer</a></strong> - Optimize your resume for ATS systems</li>
-<li><strong><a href="/jobs">Job Matching</a></strong> - Find opportunities that match your skills</li>
-<li><strong><a href="/ai-tools/interview-prep">Interview Prep</a></strong> - Practice with AI-powered feedback</li>
-<li><strong><a href="/ai-tools/salary-negotiator">Salary Negotiator</a></strong> - Get market data and negotiation tips</li>
-</ul>
+      case "introduction":
+        maxTokens = 250
+        prompt = `Write a 100-word introduction for "${topic}" that hooks readers and previews the content. Focus on career benefits.`
+        break
 
-<h3>Your Next Steps</h3>
+      case "conclusion":
+        maxTokens = 200
+        prompt = `Write an 80-word conclusion for "${topic}" with key takeaways and a call-to-action question.`
+        break
 
-<p>Success in ${topic} requires consistent effort and the right strategies. Start by identifying your specific goals and creating a plan to achieve them.</p>
+      default:
+        return NextResponse.json({ error: "Invalid content type" }, { status: 400 })
+    }
 
-<p>Remember, every expert was once a beginner. Focus on continuous learning and improvement, and don't be afraid to seek help when you need it.</p>
-
-<p><em>What's your biggest challenge with ${topic}? Share your experience in the comments and let's discuss solutions!</em></p>`
-
-    return NextResponse.json({
-      content: fastContent,
-      success: true,
-      fast: true,
-      metadata: {
-        topic,
-        category: category || "General",
-        wordCount: fastContent.split(" ").length,
-      },
+    const { text } = await generateText({
+      model: openai("gpt-4o-mini"),
+      prompt: prompt,
+      maxTokens: maxTokens,
+      temperature: 0.5, // Lower temperature for faster, more focused responses
     })
+
+    return NextResponse.json({ content: text })
   } catch (error) {
     console.error("Fast content generation error:", error)
-
     return NextResponse.json(
       {
-        error: "Content generation failed",
-        fallback: true,
+        error: "Failed to generate content",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     )
