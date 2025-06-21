@@ -1,3 +1,5 @@
+//app/(adminLayout)/admin/blog/new/page.tsx
+
 "use client"
 
 import type React from "react"

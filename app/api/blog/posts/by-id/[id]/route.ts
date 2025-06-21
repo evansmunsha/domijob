@@ -1,14 +1,27 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/app/utils/db"
-import { auth } from "@/app/utils/auth"
+import { z } from "zod"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+import { prisma } from "@/app/utils/db"
+
+interface Params {
+  id: string
+}
+
+const routeContextSchema = z.object({
+  params: z.object({
+    id: z.string().uuid(),
+  }),
+})
+
+export async function GET(req: NextRequest, context: { params: Params }): Promise<NextResponse> {
   try {
+    const { params } = routeContextSchema.parse(context)
+
     const { id } = params
 
     const post = await prisma.blogPost.findUnique({
       where: { id },
-      select: {
+      include: {
         author: {
           select: {
             id: true,
@@ -16,64 +29,24 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             image: true,
           },
         },
-        likes: true,
         _count: {
           select: {
             comments: {
               where: { approved: true },
             },
+            likes: true,
           },
         },
-        title: true,
-        content: true,
-        slug: true,
-        excerpt: true,
-        category: true,
-        tags: true,
-        readTime: true,
-        views: true,
-        published: true,
-        featured: true,
-        image: true,
-        metaTitle: true,
-        metaDescription: true,
-        publishedAt: true,
-        createdAt: true,
-        updatedAt: true,
-        id: true,
       },
     })
 
     if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 })
+      return NextResponse.json({ message: "Post not found" }, { status: 404 })
     }
 
-    // Don't show unpublished posts to non-admins
-    const session = await auth()
-    if (!post.published && (!session?.user || session.user.userType !== "ADMIN")) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 })
-    }
-
-    // Check if current user liked this post
-    let userLiked = false
-    if (session?.user) {
-      const existingLike = await prisma.blogLike.findUnique({
-        where: {
-          userId_postId: {
-            userId: session.user.id,
-            postId: post.id,
-          },
-        },
-      })
-      userLiked = !!existingLike
-    }
-
-    return NextResponse.json({
-      ...post,
-      userLiked,
-    })
+    return NextResponse.json(post)
   } catch (error) {
-    console.error("Error fetching blog post by ID:", error)
-    return NextResponse.json({ error: "Failed to fetch blog post" }, { status: 500 })
+    console.error(error)
+    return NextResponse.json({ message: "Something went wrong!" }, { status: 500 })
   }
 }

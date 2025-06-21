@@ -34,7 +34,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
 
       if (existingLike) {
-        // Unlike the post
+        // Unlike the post - remove from BlogLike table and decrement likes field
         await tx.blogLike.delete({
           where: {
             userId_postId: {
@@ -44,18 +44,34 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           },
         })
 
-        // Get updated like count
-        const likeCount = await tx.blogLike.count({
-          where: { postId },
+        // Decrement the likes field in BlogPost
+        await tx.blogPost.update({
+          where: { id: postId },
+          data: {
+            likes: {
+              decrement: 1,
+            },
+          },
         })
+
+        // Get updated like count from both sources
+        const [likeCount, updatedPost] = await Promise.all([
+          tx.blogLike.count({
+            where: { postId },
+          }),
+          tx.blogPost.findUnique({
+            where: { id: postId },
+            select: { likes: true },
+          }),
+        ])
 
         return {
           liked: false,
-          likeCount,
+          likeCount: updatedPost?.likes || 0, // Use the likes field from BlogPost
           message: "Post unliked",
         }
       } else {
-        // Like the post
+        // Like the post - add to BlogLike table and increment likes field
         await tx.blogLike.create({
           data: {
             userId: session.user.id,
@@ -63,14 +79,30 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           },
         })
 
-        // Get updated like count
-        const likeCount = await tx.blogLike.count({
-          where: { postId },
+        // Increment the likes field in BlogPost
+        await tx.blogPost.update({
+          where: { id: postId },
+          data: {
+            likes: {
+              increment: 1,
+            },
+          },
         })
+
+        // Get updated like count from both sources
+        const [likeCount, updatedPost] = await Promise.all([
+          tx.blogLike.count({
+            where: { postId },
+          }),
+          tx.blogPost.findUnique({
+            where: { id: postId },
+            select: { likes: true },
+          }),
+        ])
 
         return {
           liked: true,
-          likeCount,
+          likeCount: updatedPost?.likes || 0, // Use the likes field from BlogPost
           message: "Post liked",
         }
       }
@@ -88,10 +120,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const session = await auth()
     const { id: postId } = params
 
-    // Get like count and user like status in a single query
-    const [likeCount, userLike] = await Promise.all([
-      prisma.blogLike.count({
-        where: { postId },
+    // Get like count from the BlogPost likes field and user like status
+    const [post, userLike] = await Promise.all([
+      prisma.blogPost.findUnique({
+        where: { id: postId },
+        select: { likes: true },
       }),
       session?.user
         ? prisma.blogLike.findUnique({
@@ -106,7 +139,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     ])
 
     return NextResponse.json({
-      likeCount,
+      likeCount: post?.likes || 0, // Use the likes field from BlogPost
       userLiked: !!userLike,
     })
   } catch (error) {

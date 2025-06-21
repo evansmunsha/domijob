@@ -1,3 +1,6 @@
+//app/(adminLayout)/admin/page.tsx
+
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { prisma } from "@/app/utils/db"
 

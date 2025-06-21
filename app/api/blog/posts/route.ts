@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // Get posts with author info
+    // Get posts with author info and counts
     const [posts, total] = await Promise.all([
       prisma.blogPost.findMany({
         where,
@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
               comments: {
                 where: { approved: true },
               },
+              likes_rel: true, // Use likes_rel instead of likes
             },
           },
         },
@@ -68,6 +69,15 @@ export async function GET(request: NextRequest) {
       }),
       prisma.blogPost.count({ where }),
     ])
+
+    // Transform the data to include both like counts
+    const transformedPosts = posts.map((post) => ({
+      ...post,
+      _count: {
+        comments: post._count.comments,
+        likes: post._count.likes_rel, // Map likes_rel count to likes for consistency
+      },
+    }))
 
     // Get categories and tags for filters
     const categories = await prisma.blogPost.groupBy({
@@ -89,7 +99,7 @@ export async function GET(request: NextRequest) {
     }, {})
 
     return NextResponse.json({
-      posts,
+      posts: transformedPosts,
       pagination: {
         page,
         limit,
@@ -209,10 +219,27 @@ export async function POST(request: NextRequest) {
             image: true,
           },
         },
+        _count: {
+          select: {
+            comments: {
+              where: { approved: true },
+            },
+            likes_rel: true,
+          },
+        },
       },
     })
 
     console.log("✅ Blog post created successfully:", post.id)
+
+    // Transform the response to include both like counts
+    const transformedPost = {
+      ...post,
+      _count: {
+        comments: post._count.comments,
+        likes: post._count.likes_rel,
+      },
+    }
 
     // 🚀 NEW: Send newsletter notification if published
     if (published) {
@@ -224,30 +251,28 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json(post, { status: 201 })
+    return NextResponse.json(transformedPost, { status: 201 })
   } catch (error) {
     console.error("❌ Error creating blog post:", error)
 
     // Provide more specific error messages
-    if (typeof error === "object" && error !== null && "code" in error) {
-      if ((error as any).code === "P2002") {
-        return NextResponse.json({ error: "A blog post with this slug already exists" }, { status: 400 })
-      }
-      if ((error as any).code === "P2021") {
-        return NextResponse.json(
-          { error: "Database table does not exist. Please run database migration." },
-          { status: 500 },
-        )
-      }
+    if (error.code === "P2002") {
+      return NextResponse.json({ error: "A blog post with this slug already exists" }, { status: 400 })
     }
-    if (typeof error === "object" && error !== null && "message" in error && typeof (error as any).message === "string" && (error as any).message.includes("does not exist")) {
+    if (error.code === "P2021") {
+      return NextResponse.json(
+        { error: "Database table does not exist. Please run database migration." },
+        { status: 500 },
+      )
+    }
+    if (error.message.includes("does not exist")) {
       return NextResponse.json({ error: "Database tables not found. Please run: npx prisma db push" }, { status: 500 })
     }
 
     return NextResponse.json(
       {
         error: "Failed to create blog post",
-        details: typeof error === "object" && error !== null && "message" in error ? (error as any).message : String(error),
+        details: error.message,
       },
       { status: 500 },
     )

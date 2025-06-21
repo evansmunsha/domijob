@@ -8,8 +8,7 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 
     const post = await prisma.blogPost.findUnique({
       where: { slug },
-      select: {
-        id: true,
+      include: {
         author: {
           select: {
             id: true,
@@ -17,7 +16,6 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
             image: true,
           },
         },
-        likes: true,
         _count: {
           select: {
             comments: {
@@ -25,22 +23,6 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
             },
           },
         },
-        title: true,
-        content: true,
-        slug: true,
-        excerpt: true,
-        category: true,
-        tags: true,
-        readTime: true,
-        views: true,
-        published: true,
-        featured: true,
-        image: true,
-        metaTitle: true,
-        metaDescription: true,
-        publishedAt: true,
-        createdAt: true,
-        updatedAt: true,
       },
     })
 

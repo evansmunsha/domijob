@@ -1,3 +1,6 @@
+//app/(adminLayout)/admin/blog/ai-assistant/page.tsx
+
+
 "use client"
 
 import { useState } from "react"

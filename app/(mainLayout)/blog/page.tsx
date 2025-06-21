@@ -1,15 +1,10 @@
-//app/(mainLayout)/blog/page.tsx
-
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Calendar, Clock, ArrowRight, User, Search, TrendingUp, BookOpen, Eye } from "lucide-react"
+import { Calendar, Clock, ArrowRight, User, Search, TrendingUp, BookOpen, Eye, Heart } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 import { prisma } from "@/app/utils/db"
-import { Suspense } from "react"
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup"
 
 async function getBlogPosts() {
@@ -20,22 +15,19 @@ async function getBlogPosts() {
         select: {
           id: true,
           name: true,
-          image: true
-        }
+          image: true,
+        },
       },
       _count: {
         select: {
           comments: {
-            where: { approved: true }
-          }
-        }
-      }
+            where: { approved: true },
+          },
+        },
+      },
     },
-    orderBy: [
-      { featured: "desc" },
-      { publishedAt: "desc" }
-    ],
-    take: 20
+    orderBy: [{ featured: "desc" }, { publishedAt: "desc" }],
+    take: 20,
   })
 
   return posts
@@ -46,30 +38,28 @@ async function getBlogStats() {
     prisma.blogPost.count({ where: { published: true } }),
     prisma.blogPost.aggregate({
       where: { published: true },
-      _sum: { views: true }
+      _sum: { views: true },
     }),
     prisma.blogPost.groupBy({
       by: ["category"],
       where: { published: true },
       _count: true,
-      orderBy: { _count: { category: "desc" } }
-    })
+      orderBy: { _count: { category: "desc" } },
+    }),
   ])
 
   return {
     totalPosts,
     totalViews: totalViews._sum.views || 0,
-    categories
+    categories,
   }
 }
-export default async function BlogPage() {
-  const [posts, stats] = await Promise.all([
-    getBlogPosts(),
-    getBlogStats()
-  ])
 
-  const featuredPost = posts.find(post => post.featured)
-  const otherPosts = posts.filter(post => !post.featured)
+export default async function BlogPage() {
+  const [posts, stats] = await Promise.all([getBlogPosts(), getBlogStats()])
+
+  const featuredPost = posts.find((post) => post.featured)
+  const otherPosts = posts.filter((post) => !post.featured)
 
   // If no posts exist, show empty state
   if (posts.length === 0) {
@@ -82,13 +72,11 @@ export default async function BlogPage() {
             </div>
             <h1 className="text-4xl font-bold mb-4">Blog Coming Soon!</h1>
             <p className="text-xl text-muted-foreground mb-8">
-              We're working on creating amazing content to help accelerate your career.
-              Check back soon for expert tips, industry insights, and career guidance.
+              We're working on creating amazing content to help accelerate your career. Check back soon for expert tips,
+              industry insights, and career guidance.
             </p>
             <div className="space-y-4">
-              <p className="text-muted-foreground">
-                In the meantime, try our AI-powered tools:
-              </p>
+              <p className="text-muted-foreground">In the meantime, try our AI-powered tools:</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild size="lg">
                   <Link href="/ai-tools/resume-enhancer">
@@ -189,15 +177,9 @@ export default async function BlogPage() {
                   <div className="h-64 lg:h-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center relative overflow-hidden">
                     <div className="absolute inset-0 bg-grid-pattern opacity-10" />
                     <div className="text-center p-8 relative z-10">
-                      <Badge className="mb-4 bg-primary text-primary-foreground">
-                        ⭐ Featured Article
-                      </Badge>
-                      <h3 className="text-2xl lg:text-3xl font-bold mb-4 leading-tight">
-                        {featuredPost.title}
-                      </h3>
-                      <p className="text-muted-foreground mb-6 text-lg">
-                        {featuredPost.excerpt}
-                      </p>
+                      <Badge className="mb-4 bg-primary text-primary-foreground">⭐ Featured Article</Badge>
+                      <h3 className="text-2xl lg:text-3xl font-bold mb-4 leading-tight">{featuredPost.title}</h3>
+                      <p className="text-muted-foreground mb-6 text-lg">{featuredPost.excerpt}</p>
                       <Button asChild size="lg" className="shadow-lg">
                         <Link href={`/blog/${featuredPost.slug}`}>
                           Read Article <ArrowRight className="ml-2 h-4 w-4" />
@@ -265,6 +247,10 @@ export default async function BlogPage() {
                         <span>{featuredPost.views.toLocaleString()} views</span>
                       </div>
                       <div className="flex items-center gap-1">
+                        <Heart className="h-4 w-4" />
+                        <span>{featuredPost.likes} likes</span> {/* Use the likes field directly */}
+                      </div>
+                      <div className="flex items-center gap-1">
                         <TrendingUp className="h-4 w-4" />
                         <span>{featuredPost._count.comments} comments</span>
                       </div>
@@ -301,7 +287,10 @@ export default async function BlogPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {otherPosts.map((post) => (
-              <Card key={post.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-background to-muted/20">
+              <Card
+                key={post.id}
+                className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-background to-muted/20"
+              >
                 <div className="h-48 bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 flex items-center justify-center relative overflow-hidden">
                   <div className="absolute inset-0 bg-grid-pattern opacity-5" />
                   <div className="text-center p-6 relative z-10">
@@ -318,9 +307,7 @@ export default async function BlogPage() {
                   <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
                     {post.title}
                   </CardTitle>
-                  <CardDescription className="line-clamp-3 text-sm">
-                    {post.excerpt}
-                  </CardDescription>
+                  <CardDescription className="line-clamp-3 text-sm">{post.excerpt}</CardDescription>
                 </CardHeader>
 
                 <CardContent className="pt-0">
@@ -347,6 +334,10 @@ export default async function BlogPage() {
                         <Eye className="h-3 w-3" />
                         {post.views}
                       </div>
+                      <div className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {post.likes} {/* Use the likes field directly */}
+                      </div>
                     </div>
                   </div>
 
@@ -358,7 +349,11 @@ export default async function BlogPage() {
                     ))}
                   </div>
 
-                  <Button asChild variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                  >
                     <Link href={`/blog/${post.slug}`}>
                       Read Article
                       <ArrowRight className="ml-2 h-3 w-3" />
@@ -388,9 +383,7 @@ export default async function BlogPage() {
                 {/* Newsletter Signup */}
                 <NewsletterSignup variant="sidebar" source="blog_post" />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Join 10,000+ professionals. Unsubscribe anytime.
-              </p>
+              <p className="text-xs text-muted-foreground">Join 10,000+ professionals. Unsubscribe anytime.</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 text-sm">

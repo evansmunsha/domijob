@@ -1,3 +1,5 @@
+//app/api/blog/posts/by-id/[id]/comments/route.ts
+
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/app/utils/db"
 import { auth } from "@/app/utils/auth"
