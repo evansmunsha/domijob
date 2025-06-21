@@ -1,119 +1,74 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { auth } from "@/app/utils/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const { topic, category } = await request.json()
 
-    if (!session?.user || session.user.userType !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 401 })
+    if (!topic) {
+      return NextResponse.json({ error: "Topic is required" }, { status: 400 })
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
-    }
+    // Fast fallback content generation
+    const fastContent = `<h2>${topic}: A Quick Guide</h2>
 
-    const { topic, type: contentType } = await request.json()
+<p>Here's a comprehensive overview of ${topic} to help advance your career.</p>
 
-    if (!topic || !contentType) {
-      return NextResponse.json({ error: "Topic and type are required" }, { status: 400 })
-    }
+<h3>Key Strategies</h3>
 
-    // Import AI SDK
-    const { generateText } = await import("ai")
-    const { openai } = await import("@ai-sdk/openai")
+<ul>
+<li><strong>Research thoroughly:</strong> Understand the current market trends and requirements</li>
+<li><strong>Optimize your approach:</strong> Use data-driven strategies to improve your results</li>
+<li><strong>Stay consistent:</strong> Regular effort leads to better outcomes</li>
+<li><strong>Seek feedback:</strong> Learn from experts and peers in your field</li>
+<li><strong>Adapt quickly:</strong> Be flexible and responsive to changing conditions</li>
+</ul>
 
-    // Ultra-simplified prompts for speed
-    let prompt = ""
-    let maxTokens = 300
+<h3>Common Mistakes to Avoid</h3>
 
-    switch (contentType) {
-      case "outline":
-        maxTokens = 400
-        prompt = `Create a blog outline for "${topic}":
+<ul>
+<li>Not researching your target audience or market</li>
+<li>Using outdated strategies or information</li>
+<li>Failing to track and measure your progress</li>
+<li>Not seeking help when you need it</li>
+<li>Giving up too quickly when facing challenges</li>
+</ul>
 
-## Introduction
-- Hook with statistic or relatable scenario
-- Why this matters for career success
-- Preview of key insights
+<h3>Tools and Resources</h3>
 
-## Main Section 1: [Key Point]
-- Practical tip with explanation
-- Real example or case study
+<p>Take advantage of AI-powered tools to accelerate your progress:</p>
 
-## Main Section 2: [Key Point]  
-- Actionable strategy
-- Common mistake to avoid
+<ul>
+<li><strong><a href="/ai-tools/resume-enhancer">Resume Enhancer</a></strong> - Optimize your resume for ATS systems</li>
+<li><strong><a href="/jobs">Job Matching</a></strong> - Find opportunities that match your skills</li>
+<li><strong><a href="/ai-tools/interview-prep">Interview Prep</a></strong> - Practice with AI-powered feedback</li>
+<li><strong><a href="/ai-tools/salary-negotiator">Salary Negotiator</a></strong> - Get market data and negotiation tips</li>
+</ul>
 
-## Main Section 3: [Key Point]
-- Advanced technique
-- Tool/resource recommendation
+<h3>Your Next Steps</h3>
 
-## Conclusion
-- Key takeaways summary
-- Call-to-action
-- Engagement question
+<p>Success in ${topic} requires consistent effort and the right strategies. Start by identifying your specific goals and creating a plan to achieve them.</p>
 
-Make it specific to the topic and career-focused.`
-        break
+<p>Remember, every expert was once a beginner. Focus on continuous learning and improvement, and don't be afraid to seek help when you need it.</p>
 
-      case "section":
-        maxTokens = 500
-        prompt = `Write an actual blog section about "${topic}":
+<p><em>What's your biggest challenge with ${topic}? Share your experience in the comments and let's discuss solutions!</em></p>`
 
-Start with an engaging heading, then write 200-250 words that include:
-- Clear explanation of the concept
-- 3 practical tips readers can use immediately  
-- A brief real-world example
-- Encouraging, actionable tone
-
-Write as if you're directly helping someone with their career. Use "you" language and be specific.`
-        break
-
-      case "introduction":
-        maxTokens = 250
-        prompt = `Write a blog introduction about "${topic}":
-
-Open with a compelling hook, then write 120-150 words that:
-- Connects with readers' career challenges
-- Explains why this topic is important now
-- Previews the value they'll gain
-- Uses encouraging, helpful tone
-
-Write the actual intro paragraphs, not instructions.`
-        break
-
-      case "conclusion":
-        maxTokens = 200
-        prompt = `Write a blog conclusion for "${topic}":
-
-Write 100-120 words that:
-- Summarizes key insights
-- Motivates readers to take action
-- Includes specific next steps
-- Ends with engagement question
-
-Write actual conclusion content, not outline points.`
-        break
-
-      default:
-        return NextResponse.json({ error: "Invalid content type" }, { status: 400 })
-    }
-
-    const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
-      prompt: prompt,
-      maxTokens: maxTokens,
-      temperature: 0.5, // Lower temperature for faster, more focused responses
+    return NextResponse.json({
+      content: fastContent,
+      success: true,
+      fast: true,
+      metadata: {
+        topic,
+        category: category || "General",
+        wordCount: fastContent.split(" ").length,
+      },
     })
-
-    return NextResponse.json({ content: text })
   } catch (error) {
     console.error("Fast content generation error:", error)
+
     return NextResponse.json(
       {
-        error: "Failed to generate content",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: "Content generation failed",
+        fallback: true,
       },
       { status: 500 },
     )

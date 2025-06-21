@@ -89,28 +89,47 @@ Make sure titles are actionable and benefit-focused. Focus on practical, valuabl
     try {
       const ideas = JSON.parse(text)
       console.log("✅ JSON parsed successfully, ideas count:", ideas.length)
-      return NextResponse.json({ ideas })
+
+      // Validate the structure matches BlogIdea interface
+      const validatedIdeas = ideas.map((idea: any) => ({
+        title: idea.title || "Untitled",
+        excerpt: idea.excerpt || "No description available",
+        keywords: Array.isArray(idea.keywords) ? idea.keywords : [],
+        category: idea.category || "General",
+        difficulty: ["Beginner", "Intermediate", "Advanced"].includes(idea.difficulty) ? idea.difficulty : "Beginner",
+        estimatedReadTime: typeof idea.estimatedReadTime === "number" ? idea.estimatedReadTime : 5,
+      }))
+
+      return NextResponse.json({ ideas: validatedIdeas })
     } catch (parseError) {
       console.error("❌ Failed to parse AI response:", parseError)
       console.log("Raw AI response:", text)
 
-      // Return a fallback response
+      // Return fallback that matches your interface
       const fallbackIdeas = [
         {
-          title: "Resume Optimization Tips for 2024",
+          title: "Resume Optimization for 2024 Job Market",
           excerpt:
-            "Learn how to make your resume stand out in today's competitive job market with these proven strategies.",
-          keywords: ["resume", "optimization", "job search", "ATS"],
+            "Learn proven strategies to make your resume stand out and pass ATS systems in today's competitive market.",
+          keywords: ["resume", "ATS", "job search", "optimization"],
           category: "Resume Tips",
-          difficulty: "Beginner",
+          difficulty: "Beginner" as const,
           estimatedReadTime: 8,
+        },
+        {
+          title: "AI-Powered Job Search Strategies",
+          excerpt:
+            "Discover how to leverage AI tools to find better job opportunities and accelerate your career growth.",
+          keywords: ["AI", "job search", "career", "technology"],
+          category: "Career Advice",
+          difficulty: "Intermediate" as const,
+          estimatedReadTime: 10,
         },
       ]
 
       return NextResponse.json({
         ideas: fallbackIdeas,
         warning: "AI response parsing failed, using fallback content",
-        rawResponse: text.substring(0, 500) + "...",
       })
     }
   } catch (error) {
