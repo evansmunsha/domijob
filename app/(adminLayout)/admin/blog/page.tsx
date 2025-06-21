@@ -16,6 +16,7 @@ import {
   TrendingUp
 } from "lucide-react"
 import Link from "next/link"
+import { DeletePostButton } from "./DeletePostButton"
 
 async function getBlogPosts() {
   try {
@@ -228,9 +229,7 @@ export default async function BlogAdminPage() {
                         <Edit className="h-4 w-4" />
                       </Link>
                     </Button>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <DeletePostButton postId={post.id} postTitle={post.title} />
                   </div>
                 </div>
               ))}
