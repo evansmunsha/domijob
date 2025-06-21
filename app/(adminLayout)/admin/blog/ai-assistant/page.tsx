@@ -1,6 +1,3 @@
-//app/(adminLayout)/admin/blog/ai-assistant/page.tsx
-
-
 "use client"
 
 import { useState } from "react"
@@ -11,9 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
-import { Lightbulb, PenTool, Search, Loader2, Copy, ArrowRight, Sparkles, Target, TrendingUp, Zap } from "lucide-react"
+import { Lightbulb, PenTool, Search, Loader2, Copy, ArrowRight, Sparkles, Target, TrendingUp } from "lucide-react"
 import Link from "next/link"
 
 interface BlogIdea {
@@ -47,7 +43,6 @@ export default function AIBlogAssistantPage() {
   // Content Writing State
   const [writingTopic, setWritingTopic] = useState("")
   const [writingType, setWritingType] = useState("outline")
-  const [fastMode, setFastMode] = useState(false) // New fast mode toggle
   const [generatedContent, setGeneratedContent] = useState("")
 
   // SEO Optimization State
@@ -75,12 +70,7 @@ export default function AIBlogAssistantPage() {
 
       const data = await response.json()
       setGeneratedIdeas(data.ideas)
-
-      if (data.warning) {
-        toast.warning(data.warning)
-      } else {
-        toast.success("Blog ideas generated successfully!")
-      }
+      toast.success("Blog ideas generated successfully!")
     } catch (error) {
       console.error("Error generating ideas:", error)
       toast.error("Failed to generate ideas")
@@ -96,21 +86,8 @@ export default function AIBlogAssistantPage() {
     }
 
     setIsLoading(true)
-
-    // Show different loading messages for different types
-    const loadingMessages = {
-      outline: "Creating outline structure...",
-      section: "Writing detailed section...",
-      introduction: "Crafting introduction...",
-      conclusion: "Writing conclusion...",
-    }
-
-    toast.loading(loadingMessages[writingType as keyof typeof loadingMessages] || "Generating content...")
-
     try {
-      const endpoint = fastMode ? "/api/ai/blog/generate-content-fast" : "/api/ai/blog/generate-content"
-
-      const response = await fetch(endpoint, {
+      const response = await fetch("/api/ai/blog/generate-content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -120,32 +97,14 @@ export default function AIBlogAssistantPage() {
         }),
       })
 
-      if (!response.ok) {
-        if (response.status === 504) {
-          throw new Error("Request timed out. Try using Fast Mode for quicker results.")
-        }
-        throw new Error("Failed to generate content")
-      }
+      if (!response.ok) throw new Error("Failed to generate content")
 
       const data = await response.json()
       setGeneratedContent(data.content)
-
-      toast.dismiss() // Dismiss loading toast
-
-      if (data.warning) {
-        toast.warning(data.warning)
-      } else {
-        toast.success("Content generated successfully!")
-      }
+      toast.success("Content generated successfully!")
     } catch (error) {
-      toast.dismiss() // Dismiss loading toast
       console.error("Error generating content:", error)
-
-      if (error instanceof Error && error.message.includes("timed out")) {
-        toast.error("Generation timed out. Try Fast Mode or a shorter topic.")
-      } else {
-        toast.error("Failed to generate content")
-      }
+      toast.error("Failed to generate content")
     } finally {
       setIsLoading(false)
     }
@@ -169,12 +128,7 @@ export default function AIBlogAssistantPage() {
 
       const data = await response.json()
       setSeoSuggestions(data.suggestions)
-
-      if (data.warning) {
-        toast.warning(data.warning)
-      } else {
-        toast.success("SEO analysis completed!")
-      }
+      toast.success("SEO analysis completed!")
     } catch (error) {
       console.error("Error optimizing content:", error)
       toast.error("Failed to optimize content")
@@ -355,23 +309,9 @@ export default function AIBlogAssistantPage() {
                 </div>
               </div>
 
-              {/* Fast Mode Toggle */}
-              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-orange-500" />
-                  <Label htmlFor="fast-mode" className="font-medium">
-                    Fast Mode
-                  </Label>
-                  <Badge variant="outline" className="text-xs">
-                    Recommended for Outline & Section
-                  </Badge>
-                </div>
-                <Switch id="fast-mode" checked={fastMode} onCheckedChange={setFastMode} />
-              </div>
-
               <Button onClick={generateContent} disabled={isLoading} className="w-full">
                 {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <PenTool className="h-4 w-4 mr-2" />}
-                {fastMode ? "Generate Fast" : "Generate Content"}
+                Generate Content
               </Button>
 
               {generatedContent && (
