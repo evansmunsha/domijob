@@ -30,33 +30,70 @@ export async function POST(request: NextRequest) {
     switch (contentType) {
       case "outline":
         maxTokens = 400
-        prompt = `Create a simple 5-point outline for "${topic}":
-1. Introduction
-2. Main Point 1
-3. Main Point 2  
-4. Main Point 3
-5. Conclusion
+        prompt = `Create a blog outline for "${topic}":
 
-Keep each point to 1-2 sentences. Focus on career advice.`
+## Introduction
+- Hook with statistic or relatable scenario
+- Why this matters for career success
+- Preview of key insights
+
+## Main Section 1: [Key Point]
+- Practical tip with explanation
+- Real example or case study
+
+## Main Section 2: [Key Point]  
+- Actionable strategy
+- Common mistake to avoid
+
+## Main Section 3: [Key Point]
+- Advanced technique
+- Tool/resource recommendation
+
+## Conclusion
+- Key takeaways summary
+- Call-to-action
+- Engagement question
+
+Make it specific to the topic and career-focused.`
         break
 
       case "section":
         maxTokens = 500
-        prompt = `Write a 200-word section about "${topic}" with:
-- Brief intro
-- 3 bullet points with tips
-- Short example
-Focus on actionable career advice.`
+        prompt = `Write an actual blog section about "${topic}":
+
+Start with an engaging heading, then write 200-250 words that include:
+- Clear explanation of the concept
+- 3 practical tips readers can use immediately  
+- A brief real-world example
+- Encouraging, actionable tone
+
+Write as if you're directly helping someone with their career. Use "you" language and be specific.`
         break
 
       case "introduction":
         maxTokens = 250
-        prompt = `Write a 100-word introduction for "${topic}" that hooks readers and previews the content. Focus on career benefits.`
+        prompt = `Write a blog introduction about "${topic}":
+
+Open with a compelling hook, then write 120-150 words that:
+- Connects with readers' career challenges
+- Explains why this topic is important now
+- Previews the value they'll gain
+- Uses encouraging, helpful tone
+
+Write the actual intro paragraphs, not instructions.`
         break
 
       case "conclusion":
         maxTokens = 200
-        prompt = `Write an 80-word conclusion for "${topic}" with key takeaways and a call-to-action question.`
+        prompt = `Write a blog conclusion for "${topic}":
+
+Write 100-120 words that:
+- Summarizes key insights
+- Motivates readers to take action
+- Includes specific next steps
+- Ends with engagement question
+
+Write actual conclusion content, not outline points.`
         break
 
       default:

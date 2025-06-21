@@ -31,16 +31,21 @@ export async function POST(request: NextRequest) {
     const { generateText } = await import("ai")
     const { openai } = await import("@ai-sdk/openai")
 
-    const systemPrompt = `You are an expert content writer for DomiJob, a career platform with AI-powered tools. 
+    const systemPrompt = `You are an expert content writer for DomiJob, a career platform with AI-powered tools. Write engaging, actionable blog content that directly helps job seekers and professionals.
 
-IMPORTANT: Always naturally integrate mentions of DomiJob's AI tools when relevant:
-- Resume Enhancer (/ai-tools/resume-enhancer) - for resume optimization and ATS compatibility
-- Job Matching (/jobs) - for finding relevant job opportunities  
+IMPORTANT GUIDELINES:
+- Write actual article content that users will read, NOT instructions or outlines
+- Use a conversational, helpful tone
+- Include practical tips and real examples
+- Naturally mention DomiJob's AI tools when relevant (don't force it)
+- Write complete paragraphs and sections, not bullet points or instructions
+
+Available tools to mention naturally:
+- Resume Enhancer (/ai-tools/resume-enhancer) - for ATS optimization
+- Job Matching (ai-tools/job-matcher) - for finding opportunities  
 - Career Assessment (/ai-tools/career-assessment) - for career guidance
-- Interview Prep (/ai-tools/interview-prep) - for interview preparation
-- Salary Negotiation (/ai-tools/salary-negotiator) - for salary discussions
-
-Write engaging, actionable content that helps job seekers while encouraging them to try relevant AI tools. Use clickable links and call-to-actions naturally within the content.`
+- Interview Prep (/ai-tools/interview-prep) - for practice
+- Salary Negotiator (/ai-tools/salary-negotiator) - for negotiations`
 
     let userPrompt = ""
     let maxTokens = 800
@@ -48,98 +53,59 @@ Write engaging, actionable content that helps job seekers while encouraging them
     switch (contentType) {
       case "outline":
         maxTokens = 600
-        userPrompt = `Create a blog post outline for: "${topic}"
+        userPrompt = `Create a detailed blog post outline for: "${topic}"
 
-Structure:
-1. Hook/Introduction 
-2. 4-5 main sections with actionable tips
-3. AI tool recommendations (naturally integrated)
-4. Conclusion with call-to-action
+Write this as an actual outline structure that a writer would follow, with:
+- Clear section headings
+- 2-3 bullet points under each section describing what content goes there
+- Logical flow from introduction to conclusion
+- Natural places to mention relevant DomiJob tools
 
-Include specific mentions of relevant DomiJob AI tools with links:
-- [Try Resume Enhancer →](/ai-tools/resume-enhancer)
-- [Find Jobs →](/jobs)
-- [Career Assessment →](/ai-tools/career-assessment)
-- [Interview Prep →](/ai-tools/interview-prep)
-- [Salary Negotiator →](/ai-tools/salary-negotiator)
-
-Format with clear headings and bullet points.`
+Format as a proper outline with headings and sub-points.`
         break
 
       case "introduction":
         maxTokens = 400
-        userPrompt = `Write an engaging introduction for: "${topic}"
+        userPrompt = `Write an engaging introduction for a blog post about: "${topic}"
 
 Requirements:
-- 150-200 words
-- Hook the reader with a compelling statistic or question
-- Preview the value they'll get
-- Naturally mention how DomiJob's AI tools can help
-- Include a relevant tool link if appropriate
+- 150-200 words of actual article content
+- Start with a hook (statistic, question, or relatable scenario)
+- Explain why this topic matters to readers
+- Preview the value they'll get from reading
+- Use a warm, conversational tone
+- Write as if speaking directly to the reader
 
-Example tool mentions:
-"...optimize your resume with our AI Resume Enhancer"
-"...find your perfect job match using our AI-powered job search"
-
-Focus on career advancement and practical benefits.`
+Don't write instructions - write the actual introduction paragraphs.`
         break
 
       case "section":
         maxTokens = 700
-        userPrompt = `Write a comprehensive section for: "${topic}"
+        userPrompt = `Write a comprehensive section for a blog post about: "${topic}"
 
 Requirements:
-- 300-400 words
-- Include 3-4 actionable tips
-- Use bullet points and subheadings
-- Include 1 real-world example
-- Naturally integrate 1-2 relevant DomiJob AI tool mentions with clickable links
+- 300-400 words of actual article content
+- Include a compelling section heading
+- Provide 3-4 actionable tips with explanations
+- Include a real-world example or scenario
+- Use conversational tone with "you" language
+- End with a practical takeaway
 
-Available tools to mention:
-- **Resume Enhancer** [Try it →](/ai-tools/resume-enhancer) - for resume optimization
-- **Job Matching** [Find jobs →](/jobs) - for job search
-- **Career Assessment** [Take assessment →](/ai-tools/career-assessment) - for career guidance
-- **Interview Prep** [Practice now →](/ai-tools/interview-prep) - for interviews
-- **Salary Negotiator** [Get insights →](/ai-tools/salary-negotiator) - for salary talks
-
-Structure:
-## [Section Title]
-Brief intro paragraph
-
-### Key Strategies:
-• Tip 1 with explanation
-• Tip 2 with explanation  
-• Tip 3 with AI tool integration
-• Tip 4 with explanation
-
-**Pro Tip:** [Mention relevant AI tool naturally]
-
-Example: Brief real-world scenario`
+Write the actual section content that readers will see, not instructions about what to write.`
         break
 
       case "conclusion":
         maxTokens = 300
-        userPrompt = `Write a strong conclusion for: "${topic}"
+        userPrompt = `Write a strong conclusion for a blog post about: "${topic}"
 
 Requirements:
-- 120-150 words
-- Summarize 2-3 key takeaways
-- Include call-to-action to try relevant AI tools
-- End with engaging question for comments
-- Encourage newsletter subscription
+- 120-150 words of actual article content
+- Summarize 2-3 key takeaways from the article
+- Include an encouraging call-to-action
+- End with an engaging question for comments
+- Use motivational, forward-looking tone
 
-Template structure:
-"Ready to [achieve goal]? Here are your next steps:
-
-1. [Key takeaway 1]
-2. [Key takeaway 2] 
-3. Try our [relevant AI tool] to [specific benefit]
-
-[Relevant AI tool link with compelling CTA]
-
-Don't forget to subscribe to our newsletter for weekly career tips!
-
-What's your biggest challenge with [topic]? Share in the comments below!"`
+Write the actual conclusion paragraphs, not instructions.`
         break
 
       default:
