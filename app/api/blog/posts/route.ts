@@ -256,23 +256,23 @@ export async function POST(request: NextRequest) {
     console.error("❌ Error creating blog post:", error)
 
     // Provide more specific error messages
-    if (error.code === "P2002") {
+    if (error && typeof error === 'object' && 'code' in error && error.code === "P2002") {
       return NextResponse.json({ error: "A blog post with this slug already exists" }, { status: 400 })
     }
-    if (error.code === "P2021") {
+    if (error && typeof error === 'object' && 'code' in error && error.code === "P2021") {
       return NextResponse.json(
         { error: "Database table does not exist. Please run database migration." },
         { status: 500 },
       )
     }
-    if (error.message.includes("does not exist")) {
+    if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' && error.message.includes("does not exist")) {
       return NextResponse.json({ error: "Database tables not found. Please run: npx prisma db push" }, { status: 500 })
     }
 
     return NextResponse.json(
       {
         error: "Failed to create blog post",
-        details: error.message,
+        details: error && typeof error === 'object' && 'message' in error ? String(error.message) : "Unknown error",
       },
       { status: 500 },
     )

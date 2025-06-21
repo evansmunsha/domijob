@@ -192,7 +192,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
                 <div className="flex items-center gap-1">
                   <Heart className="h-4 w-4" />
-                  <span>{post.likes}</span>
+                  <span>{post.likes}</span> {/* Use the likes field directly */}
                 </div>
               </div>
 
@@ -227,7 +227,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     postId={post.id}
                     postTitle={post.title}
                     postUrl={`${process.env.NEXT_PUBLIC_URL || "https://domijob.vercel.app"}/blog/${post.slug}`}
-                    initialLikes={post.likes}
+                    initialLikes={post.likes} // Use the likes field directly
                     initialComments={post._count.comments}
                     views={post.views}
                     initialUserLiked={post.userLiked}
@@ -265,51 +265,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   comments={post.comments.map((comment: any) => ({
                     ...comment,
                     createdAt: comment.createdAt.toISOString(),
-                    updatedAt: comment.updatedAt.toISOString(),
                     replies: comment.replies.map((reply: any) => ({
                       ...reply,
                       createdAt: reply.createdAt.toISOString(),
-                      updatedAt: reply.updatedAt.toISOString(),
                       replies: [], // Replies don't have nested replies
                     })),
                   }))}
                 />
               </div>
-
-              {/* Debug Info for Development */}
-              {process.env.NODE_ENV === "development" && (
-                <div className="mt-8 space-y-4">
-
-                  <Card className="bg-yellow-50 border-yellow-200">
-                    <CardHeader>
-                      <CardTitle className="text-sm text-yellow-800">API Endpoints</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs text-yellow-700 space-y-2">
-                      <div>
-                        <strong>Comments API:</strong> /api/blog/posts/by-id/{post.id}/comments
-                      </div>
-                      <div>
-                        <strong>Comment Management:</strong> /api/blog/comments/[id] (PATCH)
-                      </div>
-                      <div>
-                        <strong>Admin Panel:</strong> /admin/comments
-                      </div>
-                      <div className="flex gap-2 mt-3">
-                        <Button asChild size="sm" variant="outline">
-                          <Link href="/admin/comments" target="_blank">
-                            Admin Comments
-                          </Link>
-                        </Button>
-                        <Button asChild size="sm" variant="outline">
-                          <Link href={`/api/blog/posts/by-id/${post.id}/comments`} target="_blank">
-                            Test API
-                          </Link>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
             </div>
 
             {/* Sidebar */}
