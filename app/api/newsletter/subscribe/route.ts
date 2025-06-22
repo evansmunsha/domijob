@@ -128,7 +128,20 @@ export async function POST(request: NextRequest) {
           },
         })
         console.log("✅ New subscription created:", newSubscription.id)
-      } catch (createError) {
+      } catch (createError: any) {
+        // Handle unique constraint error for email or userId
+        if (createError.code === "P2002") {
+          console.warn("⚠️ Unique constraint violation (already subscribed):", createError)
+          return NextResponse.json(
+            {
+              error: "Already subscribed",
+              details: createError.meta?.target?.includes("userId")
+                ? "A subscription already exists for this user."
+                : "A subscription already exists for this email.",
+            },
+            { status: 409 },
+          )
+        }
         console.error("❌ Error creating subscription:", createError)
         return NextResponse.json(
           {

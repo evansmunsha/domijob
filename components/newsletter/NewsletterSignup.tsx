@@ -74,6 +74,9 @@ export function NewsletterSignup({ variant = "default", source = "website" }: Ne
         setIsSubscribed(true)
         toast.success("🎉 Successfully subscribed to newsletter!")
         setEmail("") // Clear the email field
+      } else if (response.status === 409) {
+        setIsSubscribed(true)
+        toast.info(data.error || "You are already subscribed to the newsletter.")
       } else {
         console.error("Subscription error:", data)
         toast.error(data.error || "Failed to subscribe. Please try again.")
