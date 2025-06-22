@@ -249,10 +249,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                         Career expert and content creator helping professionals advance their careers through AI-powered
                         tools and strategic guidance.
                       </p>
-                      <Button variant="outline" size="sm">
-                        <User className="h-4 w-4 mr-2" />
-                        View Profile
-                      </Button>
+                      
                     </div>
                   </div>
                 </CardContent>
