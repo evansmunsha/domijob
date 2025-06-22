@@ -2,7 +2,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +35,15 @@ export function NewsletterSignup({ variant = "default", source = "website" }: Ne
     weeklyDigest: true,
     productUpdates: false
   })
+
+  useEffect(() => {
+    // On mount, check if a subscribed email exists in localStorage
+    const savedEmail = typeof window !== 'undefined' ? localStorage.getItem("newsletterSubscribedEmail") : null;
+    if (savedEmail) {
+      setIsSubscribed(true);
+      setEmail(savedEmail);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,9 +83,15 @@ export function NewsletterSignup({ variant = "default", source = "website" }: Ne
         setIsSubscribed(true)
         toast.success("🎉 Successfully subscribed to newsletter!")
         setEmail("") // Clear the email field
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("newsletterSubscribedEmail", email);
+        }
       } else if (response.status === 409) {
         setIsSubscribed(true)
         toast.info(data.error || "You are already subscribed to the newsletter.")
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("newsletterSubscribedEmail", email);
+        }
       } else {
         console.error("Subscription error:", data)
         toast.error(data.error || "Failed to subscribe. Please try again.")
