@@ -378,11 +378,8 @@ export default async function BlogPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center relative z-10">
-            <div className="max-w-md mx-auto space-y-4">
-              <div className="flex gap-2">
-                {/* Newsletter Signup */}
-                <NewsletterSignup variant="sidebar" source="blog_post" />
-              </div>
+            <div className="max-w-md space-y-4">
+              <NewsletterSignup variant="sidebar" source="blog_post" />
               <p className="text-xs text-muted-foreground">Join 10,000+ professionals. Unsubscribe anytime.</p>
             </div>
 
