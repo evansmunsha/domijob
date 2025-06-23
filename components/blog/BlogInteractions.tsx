@@ -94,6 +94,9 @@ export function BlogInteractions({
       case "facebook":
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`
         break
+      case "quora":
+        shareUrl = `https://www.quora.com/share?url=${encodedUrl}`
+        break
       case "copy":
         navigator.clipboard.writeText(postUrl)
         setCopied(true)
@@ -168,6 +171,12 @@ export function BlogInteractions({
             <DropdownMenuItem onClick={() => handleShare("facebook")} className="gap-2">
               <Facebook className="h-4 w-4 text-blue-500" />
               Share on Facebook
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleShare("quora")} className="gap-2">
+              <svg className="h-4 w-4 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.1,12.3c-0.4-0.8-0.9-1.6-1.3-2.4c-0.6,0.9-1.2,1.7-1.7,2.6c1,0.7,2,1.3,3,1.9V12.3z M21.9,7.5 c-0.3-0.7-0.6-1.5-1-2.2C19.7,3.4,17.9,2,15.8,1.2c-1.8-0.7-3.7-1-5.6-1C8.3,0.2,6.4,0.5,4.6,1.2C2.5,2,0.7,3.4-0.5,5.3 c-0.4,0.7-0.8,1.4-1,2.2C-2,9.2-2.2,11-2,12.8c0.2,1.8,0.7,3.5,1.6,5.1c0.9,1.6,2.1,2.9,3.6,3.8c1.5,1,3.2,1.5,5,1.6 c1.8,0.1,3.6-0.2,5.2-0.9c0.9-0.4,1.7-0.9,2.4-1.5c0.7,0.6,1.5,1.1,2.4,1.5c1.7,0.7,3.4,1,5.2,0.9c1.8-0.1,3.5-0.7,5-1.6 c1.5-1,2.7-2.3,3.6-3.8c0.9-1.6,1.4-3.3,1.6-5.1C23.6,11,23.4,9.2,21.9,7.5z M11.9,17.3c-1.5-0.9-3-1.9-4.4-2.8 c0.8-1.2,1.6-2.5,2.4-3.7c-0.8-1.2-1.6-2.5-2.4-3.7c1.4-0.9,2.9-1.9,4.4-2.8V17.3z"/>
+              </svg>
+              Share on Quora
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleShare("copy")} className="gap-2">
               {copied ? (
