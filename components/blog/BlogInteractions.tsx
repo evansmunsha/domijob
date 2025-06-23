@@ -95,7 +95,7 @@ export function BlogInteractions({
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`
         break
       case "quora":
-        shareUrl = `https://www.quora.com/share?url=${encodedUrl}`
+        shareUrl = `https://www.quora.com/search?q=${encodedUrl}`
         break
       case "copy":
         navigator.clipboard.writeText(postUrl)
