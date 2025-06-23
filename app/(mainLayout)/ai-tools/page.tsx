@@ -214,33 +214,6 @@ export default function AIToolsPage() {
           </CardFooter>
         </Card>
 
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Document Parser coming soon
-            </CardTitle>
-            <CardDescription>Extract text from PDF and DOCX files</CardDescription>
-          </CardHeader>
-          <CardContent className="pb-0">
-            <p className="text-sm text-muted-foreground">
-              Quickly extract text content from your documents for easy editing, analysis, or use with other AI tools.
-            </p>
-            <div className="mt-4 flex items-center text-sm">
-              <Badge variant="outline" className="mr-2">
-                {CREDIT_COSTS.file_parsing} credits per use
-              </Badge>
-            </div>
-          </CardContent>
-          <CardFooter className="pt-4">
-            <Button asChild className="w-full">
-              <Link href="#/ai-tools/file-parser">
-                Parse Document coming soon 
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardFooter>
-        </Card>
       </div>
     </div>
   )
