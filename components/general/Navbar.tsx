@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button, buttonVariants } from "@/components/ui/button"
 import Image from "next/image"
 import Logo from "@/public/logo.png"
-import { Menu, BarChart, Users, MessageSquare, Share2, Sparkles } from "lucide-react"
+import { Menu, BarChart, Users, MessageSquare, Share2, Sparkles, BookOpen } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "./ThemeToggle"
 import { useSession, signOut } from "next-auth/react"
@@ -38,6 +38,11 @@ export function Navbar() {
               AI Tools
             </Link>
 
+            <Link href="/blog" className={buttonVariants({ variant: "ghost" })}>
+              <BookOpen className="h-4 w-4 mr-2" />
+              Blog
+            </Link>
+
             <Link href="/messages" className=" hover:text-green-500">
               Messages <UnreadMessagesIndicator />
             </Link>
@@ -62,6 +67,10 @@ export function Navbar() {
             <Link href="/ai-tools" className={buttonVariants({ variant: "ghost" })}>
               <Sparkles className="h-4 w-4 mr-2" />
               AI Tools
+            </Link>
+            <Link href="/blog" className={buttonVariants({ variant: "ghost" })}>
+              <BookOpen className="h-4 w-4 mr-2" />
+              Blog
             </Link>
             <Link href="/affiliate" className={buttonVariants({ variant: "ghost" })}>
               <Share2 className="h-4 w-4 mr-2" />
@@ -136,6 +145,13 @@ export function Navbar() {
                     <Sparkles className="h-4 w-4 mr-2" />
                     AI Tools
                   </Link>
+                  <Link
+                    href="/blog"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200 flex items-center"
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Blog
+                  </Link>
                 </>
               )}
 
@@ -168,6 +184,13 @@ export function Navbar() {
                   >
                     <Sparkles className="h-4 w-4 mr-2" />
                     AI Tools
+                  </Link>
+                  <Link
+                    href="/blog"
+                    className="text-sm px-4 py-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors duration-200 flex items-center"
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Blog
                   </Link>
                   <Link
                     href="/affiliate"
