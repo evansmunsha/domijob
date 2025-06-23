@@ -11,7 +11,9 @@ export async function POST(req: Request) {
   const signature = headersList.get("Stripe-Signature") as string;
 
   let event: Stripe.Event;
-
+  if (!stripe) {
+    return new Response("Stripe not configured", { status: 500 });
+  }
   try {
     event = stripe.webhooks.constructEvent(
       body,
@@ -34,12 +36,12 @@ export async function POST(req: Request) {
       try {
         const userId = metadata.userId;
         const credits = parseInt(metadata.credits, 10);
-        
+    
         if (!userId || isNaN(credits)) {
           console.error("Invalid AI credits metadata:", metadata);
           return new Response("Invalid metadata for AI credits", { status: 400 });
         }
-        
+    
         // Use a transaction to ensure both operations succeed or fail together
         await prisma.$transaction(async (tx) => {
           // Add credits to user's account
@@ -53,7 +55,7 @@ export async function POST(req: Request) {
               balance: credits
             }
           });
-          
+    
           // Log the transaction
           await tx.creditTransaction.create({
             data: {
@@ -63,7 +65,7 @@ export async function POST(req: Request) {
               description: `Purchased ${credits} credits`,
             }
           });
-          
+    
           // Log the usage for accounting
           await tx.aIUsageLog.create({
             data: {
@@ -73,8 +75,42 @@ export async function POST(req: Request) {
               cost: (session.amount_total || 0) / 100, // Convert from cents to dollars
             }
           });
+    
+          // --- Affiliate commission for AI credits purchase ---
+          // Find the user and check for referredByCode
+          const user = await tx.user.findUnique({ where: { id: userId } });
+          if (user && user.referredByCode) {
+            const affiliate = await tx.affiliate.findUnique({ where: { code: user.referredByCode } });
+            if (affiliate) {
+              const amount = session.amount_total ? session.amount_total / 100 : 0; // Convert from cents
+              const commissionAmount = amount * affiliate.commissionRate;
+              if (commissionAmount > 0) {
+                // Create referral record
+                await tx.affiliateReferral.create({
+                  data: {
+                    affiliateId: affiliate.id,
+                    referredUserId: user.id,
+                    commissionAmount,
+                    status: "CONVERTED",
+                    convertedAt: new Date(),
+                    //type: "CREDITS_PURCHASE"
+                  }
+                });
+                // Update affiliate stats
+                await tx.affiliate.update({
+                  where: { id: affiliate.id },
+                  data: {
+                    totalEarnings: { increment: commissionAmount },
+                    pendingEarnings: { increment: commissionAmount },
+                    conversionCount: { increment: 1 }
+                  }
+                });
+              }
+            }
+          }
+          // --- End affiliate commission for AI credits purchase ---
         });
-        
+    
         console.log(`Added ${credits} credits to user ${userId}`);
       } catch (error) {
         console.error("Error processing AI credits purchase:", error);
