@@ -71,19 +71,19 @@ export function MarketingMaterials({ affiliateCode = "YOUR_CODE" }: MarketingMat
       id: "text-4",
       title: "AI Tools - Urgent Benefits",
       description: "Promote the benefits with urgency and power words",
-      text: `Unlock Domijob's AI Tools today—no sign up needed! Discover 50 free guest credits to transform your job search with powerful features like instant job matching and resume enhancement. Start your career transformation now: ${affiliateUrl} #AI #JobSearch #UnlockSuccess`,
+      text: `Unlock Domijob's AI Tools today—no sign up needed! Discover 50 free guest credits to transform your job search with powerful features like job matching, resume enhancement, and more. Start your career transformation now: https://domijob.vercel.app/ai-tools?ref=${affiliateCode} #AI #JobSearch #UnlockSuccess`,
     },
     {
       id: "text-5",
       title: "AI Job Matcher - Specific Results",
       description: "Highlight specific, measurable benefits",
-      text: `Find 10+ perfect job matches in 5 minutes! Unlock Domijob's AI Job Matcher with 50 free guest credits—no sign up needed. Transform your job search today: ${affiliateUrl} #AI #JobMatching #Career #StartToday`,
+      text: `Find 10+ perfect job matches in 5 minutes! Unlock Domijob's AI Job Matcher with 50 free guest credits—no sign up needed. Transform your job search today: https://domijob.vercel.app/ai-tools/job-matcher?ref=${affiliateCode} #AI #JobMatching #Career #StartToday`,
     },
     {
       id: "text-6",
       title: "Resume Enhancer - Transform Results",
       description: "Highlight transformation and urgency",
-      text: `Transform your resume today and unlock more interviews! Discover Domijob's AI Resume Enhancer with 50 free guest credits—no sign up required. Start getting noticed by employers now: ${affiliateUrl} #Resume #AI #JobSearch #TransformCareer`,
+      text: `Transform your resume today and unlock more interviews! Discover Domijob's AI Resume Enhancer with 50 free guest credits—no sign up required. Start getting noticed by employers now: https://domijob.vercel.app/ai-tools/resume-enhancer?ref=${affiliateCode} #Resume #AI #JobSearch #TransformCareer`,
     },
     {
       id: "text-7",
@@ -126,6 +126,21 @@ export function MarketingMaterials({ affiliateCode = "YOUR_CODE" }: MarketingMat
       title: "Sign Up Link",
       url: `${baseUrl}/login?ref=${affiliateCode}`,
     },
+    {
+      id: "link-5",
+      title: "AI Tools Page Link",
+      url: `https://domijob.vercel.app/ai-tools?ref=${affiliateCode}`,
+    },
+    {
+      id: "link-6",
+      title: "Job Matcher Tool Link",
+      url: `https://domijob.vercel.app/ai-tools/job-matcher?ref=${affiliateCode}`,
+    },
+    {
+      id: "link-7",
+      title: "Resume Enhancer Tool Link",
+      url: `https://domijob.vercel.app/ai-tools/resume-enhancer?ref=${affiliateCode}`,
+    },
   ]
 
   const htmlSnippets = [
@@ -152,6 +167,12 @@ export function MarketingMaterials({ affiliateCode = "YOUR_CODE" }: MarketingMat
       title: "Success-Focused Button",
       description: "Transformation-focused CTA button",
       code: `<a href="${affiliateUrl}" style="display: inline-block; background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Discover Your Dream Job Today</a>`,
+    },
+    {
+      id: "html-5",
+      title: "AI Tools CTA Button",
+      description: "Direct link to AI tools with affiliate tracking",
+      code: `<a href="https://domijob.vercel.app/ai-tools?ref=${affiliateCode}" style="display: inline-block; background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Try AI Tools Free - 50 Credits!</a>`,
     },
   ]
 
