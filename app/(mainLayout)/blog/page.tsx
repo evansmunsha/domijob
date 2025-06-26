@@ -58,8 +58,16 @@ async function getBlogStats() {
 export default async function BlogPage() {
   const [posts, stats] = await Promise.all([getBlogPosts(), getBlogStats()])
 
-  const featuredPost = posts.find((post) => post.featured)
-  const otherPosts = posts.filter((post) => !post.featured)
+  // Fix: Only exclude the first featured post from the grid, show all others
+  let featuredPost = null;
+  let otherPosts = posts;
+  for (const post of posts) {
+    if (post.featured) {
+      featuredPost = post;
+      otherPosts = posts.filter((p) => p.id !== post.id);
+      break;
+    }
+  }
 
   // If no posts exist, show empty state
   if (posts.length === 0) {
