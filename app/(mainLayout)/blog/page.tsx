@@ -123,7 +123,6 @@ export default function BlogPage() {
                   className="pl-10 bg-background/50 backdrop-blur-sm border-primary/20"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  disabled={loading}
                 />
                 {loading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">Loading...</span>}
               </div>
