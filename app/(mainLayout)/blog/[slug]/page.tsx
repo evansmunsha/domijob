@@ -12,6 +12,7 @@ import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup"
 import { BlogInteractions } from "@/components/blog/BlogInteractions"
 import { CommentSection } from "@/components/blog/CommentSection"
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface BlogPostPageProps {
   params: {
@@ -218,7 +219,38 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <CardContent className="p-8">
                   {/* Article Content */}
                   <div className="prose prose-lg max-w-none dark:prose-invert">
-                    <ReactMarkdown>{post.content}</ReactMarkdown>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        img: ({node, ...props}) => (
+                          <img
+                            {...props}
+                            style={{ maxWidth: '100%', borderRadius: '0.5rem', margin: '2rem auto', display: 'block' }}
+                            className="rounded-lg shadow-md mx-auto my-8"
+                            alt={props.alt || ''}
+                          />
+                        ),
+                        table: ({node, ...props}) => (
+                          <div className="overflow-x-auto my-6">
+                            <table className="min-w-full border border-gray-300 dark:border-gray-700 text-sm text-left">
+                              {props.children}
+                            </table>
+                          </div>
+                        ),
+                        th: ({node, ...props}) => (
+                          <th className="px-4 py-2 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-200">
+                            {props.children}
+                          </th>
+                        ),
+                        td: ({node, ...props}) => (
+                          <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                            {props.children}
+                          </td>
+                        ),
+                      }}
+                    >
+                      {post.content}
+                    </ReactMarkdown>
                   </div>
 
                   <Separator className="my-8" />
