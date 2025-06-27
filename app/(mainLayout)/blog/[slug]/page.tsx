@@ -11,6 +11,7 @@ import { auth } from "@/app/utils/auth"
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup"
 import { BlogInteractions } from "@/components/blog/BlogInteractions"
 import { CommentSection } from "@/components/blog/CommentSection"
+import ReactMarkdown from 'react-markdown'
 
 interface BlogPostPageProps {
   params: {
@@ -217,7 +218,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <CardContent className="p-8">
                   {/* Article Content */}
                   <div className="prose prose-lg max-w-none dark:prose-invert">
-                    <div dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, "<br>") }} />
+                    <ReactMarkdown>{post.content}</ReactMarkdown>
                   </div>
 
                   <Separator className="my-8" />
