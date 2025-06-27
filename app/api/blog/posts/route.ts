@@ -70,6 +70,12 @@ export async function GET(request: NextRequest) {
       prisma.blogPost.count({ where }),
     ])
 
+    // Add this after the above Promise.all
+    const totalViews = await prisma.blogPost.aggregate({
+      where,
+      _sum: { views: true },
+    })
+
     // Transform the data to include both like counts
     const transformedPosts = posts.map((post) => ({
       ...post,
@@ -105,6 +111,7 @@ export async function GET(request: NextRequest) {
         limit,
         total,
         pages: Math.ceil(total / limit),
+        totalViews: totalViews._sum.views || 0,
       },
       filters: {
         categories: categories.map((c) => ({

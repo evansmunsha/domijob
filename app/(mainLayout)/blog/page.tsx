@@ -21,19 +21,21 @@ export default function BlogPage() {
   const [posts, setPosts] = useState<any[]>([])
   const [stats, setStats] = useState<any>({ totalPosts: 0, totalViews: 0, categories: [] })
   const [loading, setLoading] = useState(true)
+  const [category, setCategory] = useState<string | null>(null)
 
   // Fetch posts from API
-  const fetchPosts = useCallback(async (searchValue: string) => {
+  const fetchPosts = useCallback(async (searchValue: string, categoryValue: string | null) => {
     setLoading(true)
     const params = new URLSearchParams()
     if (searchValue) params.set("search", searchValue)
+    if (categoryValue) params.set("category", categoryValue)
     params.set("limit", "20")
     const res = await fetch(`/api/blog/posts?${params.toString()}`)
     const data = await res.json()
     setPosts(data.posts || [])
     setStats({
       totalPosts: data.pagination?.total || 0,
-      totalViews: data.filters?.categories?.reduce((sum: number, c: any) => sum + (c.count || 0), 0) || 0,
+      totalViews: data.pagination?.totalViews || 0,
       categories: data.filters?.categories || [],
     })
     setLoading(false)
@@ -43,12 +45,12 @@ export default function BlogPage() {
   const debouncedFetch = useCallback(debounce(fetchPosts, 400), [fetchPosts])
 
   useEffect(() => {
-    debouncedFetch(search)
-  }, [search, debouncedFetch])
+    debouncedFetch(search, category)
+  }, [search, category, debouncedFetch])
 
   useEffect(() => {
     // Initial load
-    fetchPosts("")
+    fetchPosts("", null)
   }, [fetchPosts])
 
   // Featured/other logic
@@ -206,15 +208,21 @@ export default function BlogPage() {
         <div className="mb-12">
           <h3 className="text-2xl font-bold mb-6 text-center">Browse by Category</h3>
           <div className="flex flex-wrap justify-center gap-3">
-            {stats.categories.map((category: any) => (
+            {stats.categories.map((cat: any) => (
               <Badge
-                key={category.name}
-                variant="outline"
+                key={cat.name}
+                variant={category === cat.name ? "default" : "outline"}
                 className="px-4 py-2 hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+                onClick={() => setCategory(category === cat.name ? null : cat.name)}
               >
-                {category.name} ({category.count})
+                {cat.name} ({cat.count})
               </Badge>
             ))}
+            {category && (
+              <Button size="sm" variant="ghost" onClick={() => setCategory(null)}>
+                Clear Filter
+              </Button>
+            )}
           </div>
         </div>
         {/* Latest Articles */}
