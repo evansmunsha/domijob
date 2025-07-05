@@ -504,13 +504,14 @@ export async function updateApplicationStatus(applicationId: string, status: App
   revalidatePath(`/my-jobs/${application.job.id}/applications`)
 }
 
-// Update the profileSchema to include skills and languages
+// Update the profileSchema to include skills, languages, and image
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   about: z.string().min(10, "Please provide more information about yourself"),
   email: z.string().email("Please enter a valid email"),
   skills: z.array(z.string().trim()).optional(),
   languages: z.array(z.string().trim()).optional(),
+  image: z.string().optional(),
 })
 
 export async function updateProfile(userId: string, data: z.infer<typeof profileSchema>) {
@@ -528,11 +529,12 @@ export async function updateProfile(userId: string, data: z.infer<typeof profile
   // Validate the input data
   const validatedData = profileSchema.parse(data)
 
-  // Update the user record with email
+  // Update the user record with email and image
   await prisma.user.update({
     where: { id: userId },
     data: {
       email: validatedData.email,
+      image: data.image,
     },
   })
 
